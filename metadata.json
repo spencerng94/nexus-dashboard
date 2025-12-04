@@ -1,5 +1,7 @@
 {
   "name": "Copy of Nexus",
   "description": "An intelligent personal dashboard for goals, habits, and daily scheduling powered by Gemini.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }

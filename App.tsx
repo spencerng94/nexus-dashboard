@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
-import { Goal, Habit, HabitLog, CalendarEvent, User } from './types';
+import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate } from './types';
 import { storageService } from './services/storage';
 import { googleService } from './services/google';
+import { weatherService } from './services/weather';
 import { generateDailyBriefing } from './services/gemini';
 
 // Components
@@ -21,11 +22,15 @@ export default function App() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitLogs, setHabitLogs] = useState<Record<string, HabitLog>>({}); 
   const [events, setEvents] = useState<CalendarEvent[]>([]); 
+  const [importantDates, setImportantDates] = useState<ImportantDate[]>([]);
+  const [weather, setWeather] = useState<{ temp: number, condition: string } | null>(null);
+
   const [briefing, setBriefing] = useState("");
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [loginError, setLoginError] = useState("");
   const [calendarError, setCalendarError] = useState<string | null>(null);
+  
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -49,6 +54,12 @@ export default function App() {
     setGoals(storageService.getGoals());
     setHabits(storageService.getHabits());
     setHabitLogs(storageService.getHabitLogs());
+    setImportantDates(storageService.getImportantDates());
+
+    // Fetch Weather
+    weatherService.getCurrentWeather().then(data => {
+      if (data) setWeather(data);
+    });
 
     // Event Sync Logic
     const syncEvents = async () => {
@@ -132,7 +143,7 @@ export default function App() {
     setCalendarError(null);
   };
 
-  // --- DATA HANDLERS ---
+  // --- GOAL HANDLERS ---
   const handleSaveGoal = (goalData: Omit<Goal, 'id' | 'progress'>) => {
     let updatedGoals = [...goals];
     if (editingGoal) {
@@ -172,6 +183,7 @@ export default function App() {
     storageService.saveGoals(updatedGoals);
   };
 
+  // --- HABIT HANDLERS ---
   const handleSaveHabit = (habitData: Omit<Habit, 'id' | 'streak'>) => {
     let updatedHabits = [...habits];
     if (editingHabit) {
@@ -189,7 +201,6 @@ export default function App() {
     storageService.saveHabits(updatedHabits);
   };
 
-  // Helper for date formatting
   const formatLocalYMD = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -254,6 +265,7 @@ export default function App() {
     }
   };
 
+  // --- EVENT HANDLERS ---
   const handleAddEvent = async (newEventData: Omit<CalendarEvent, 'id'>) => {
     // Optimistic Update
     const tempId = Date.now().toString();
@@ -273,12 +285,24 @@ export default function App() {
         } catch (e: any) {
             console.error("Failed to save to Google Calendar", e);
             alert("Failed to save to Google Calendar: " + e.message);
-            // Revert on failure (or keep local) - keeping local for now as fallback
             storageService.saveEvents(optimisticEvents); 
         }
     } else {
         storageService.saveEvents(optimisticEvents);
     }
+  };
+
+  // --- IMPORTANT DATES HANDLERS ---
+  const handleAddImportantDate = (newDate: Omit<ImportantDate, 'id'>) => {
+    const updated = [...importantDates, { ...newDate, id: Date.now().toString() }];
+    setImportantDates(updated);
+    storageService.saveImportantDates(updated);
+  };
+
+  const handleDeleteImportantDate = (id: string) => {
+    const updated = importantDates.filter(d => d.id !== id);
+    setImportantDates(updated);
+    storageService.saveImportantDates(updated);
   };
 
   const openHabitHistory = (habit: Habit, view: 'calendar' | 'list') => {
@@ -313,6 +337,11 @@ export default function App() {
             onEditGoal={(goal) => { setEditingGoal(goal); setIsGoalModalOpen(true); }}
             displayName={user.displayName || 'User'}
             syncError={calendarError}
+            // New Props
+            importantDates={importantDates}
+            onAddImportantDate={handleAddImportantDate}
+            onDeleteImportantDate={handleDeleteImportantDate}
+            weather={weather}
           />
         )}
         {activeTab === 'goals' && (

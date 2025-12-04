@@ -34,6 +34,13 @@ export interface CalendarEvent {
   duration: string;
 }
 
+export interface ImportantDate {
+  id: string;
+  title: string;
+  date: string; // ISO string YYYY-MM-DD
+  type: string; // e.g. "Urgent", "Personal", "Birthday"
+}
+
 export interface User {
   uid: string;
   displayName: string | null;

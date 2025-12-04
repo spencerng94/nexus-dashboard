@@ -1,4 +1,4 @@
-import { Goal, Habit, HabitLog, CalendarEvent } from '../types';
+import { Goal, Habit, HabitLog, CalendarEvent, ImportantDate } from '../types';
 
 // Keys for LocalStorage
 const KEYS = {
@@ -6,6 +6,7 @@ const KEYS = {
   HABITS: 'nexus_habits',
   HABIT_LOGS: 'nexus_habit_logs',
   EVENTS: 'nexus_events',
+  IMPORTANT_DATES: 'nexus_dates',
   USER: 'nexus_user'
 };
 
@@ -26,6 +27,11 @@ export const INITIAL_EVENTS: CalendarEvent[] = [
   { id: 1, title: "Team Standup", time: "10:00 AM", startTime: new Date().setHours(10,0,0,0), type: "work", duration: "30m" },
   { id: 2, title: "Lunch with Sarah", time: "12:30 PM", startTime: new Date().setHours(12,30,0,0), type: "personal", duration: "1h" },
   { id: 3, title: "Project Review", time: "03:00 PM", startTime: new Date().setHours(15,0,0,0), type: "work", duration: "1h" },
+];
+
+export const INITIAL_IMPORTANT_DATES: ImportantDate[] = [
+  { id: '1', title: "Project Deadline", date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], type: "Work" },
+  { id: '2', title: "Mom's Birthday", date: new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0], type: "Personal" },
 ];
 
 // Helpers
@@ -50,6 +56,9 @@ export const storageService = {
   
   getEvents: () => get<CalendarEvent[]>(KEYS.EVENTS, INITIAL_EVENTS),
   saveEvents: (events: CalendarEvent[]) => set(KEYS.EVENTS, events),
+
+  getImportantDates: () => get<ImportantDate[]>(KEYS.IMPORTANT_DATES, INITIAL_IMPORTANT_DATES),
+  saveImportantDates: (dates: ImportantDate[]) => set(KEYS.IMPORTANT_DATES, dates),
   
   getUser: () => {
     const userStr = localStorage.getItem(KEYS.USER);

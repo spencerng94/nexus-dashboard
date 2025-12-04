@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Sparkles, RefreshCw, Sun, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle } from 'lucide-react';
-import { Goal, CalendarEvent } from '../types';
+import { Sparkles, RefreshCw, Sun, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin } from 'lucide-react';
+import { Goal, CalendarEvent, ImportantDate } from '../types';
 import { ProgressCard } from './GoalComponents';
 
 export const DailyBriefingWidget: React.FC<{ briefing: string, isGenerating: boolean }> = ({ briefing, isGenerating }) => (
@@ -59,6 +59,87 @@ const EventRow: React.FC<{ event: CalendarEvent }> = ({ event }) => (
   </div>
 );
 
+// --- MODAL FOR ADDING IMPORTANT DATES ---
+
+interface DateFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: Omit<ImportantDate, 'id'>) => void;
+}
+
+const DateFormModal: React.FC<DateFormModalProps> = ({ isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    date: new Date().toISOString().split('T')[0],
+    type: 'Personal'
+  });
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+    setFormData({ title: '', date: new Date().toISOString().split('T')[0], type: 'Personal' });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
+      <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-slate-900">Add Date</h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">Event Name</label>
+            <input
+              required
+              type="text"
+              value={formData.title}
+              onChange={e => setFormData({...formData, title: e.target.value})}
+              className="w-full bg-slate-50 border-0 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20"
+              placeholder="e.g. Mom's Birthday"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">Date</label>
+            <input
+              required
+              type="date"
+              value={formData.date}
+              onChange={e => setFormData({...formData, date: e.target.value})}
+              className="w-full bg-slate-50 border-0 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">Category</label>
+            <select
+              value={formData.type}
+              onChange={e => setFormData({...formData, type: e.target.value})}
+              className="w-full bg-slate-50 border-0 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800"
+            >
+              <option value="Personal">Personal</option>
+              <option value="Work">Work</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Billing">Billing</option>
+              <option value="Holiday">Holiday</option>
+            </select>
+          </div>
+          <button type="submit" className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl mt-2 flex items-center justify-center gap-2">
+            <Save size={18} /> Save Date
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+
 // --- MAIN DASHBOARD VIEW ---
 
 interface DashboardViewProps {
@@ -75,17 +156,17 @@ interface DashboardViewProps {
   onEditGoal: (goal: Goal) => void;
   displayName: string;
   syncError?: string | null;
+  // New Props
+  importantDates: ImportantDate[];
+  onAddImportantDate: (d: Omit<ImportantDate, 'id'>) => void;
+  onDeleteImportantDate: (id: string) => void;
+  weather: { temp: number, condition: string } | null;
 }
-
-const IMPORTANT_DATES = [
-  { day: "15", month: "OCT", title: "Quarterly Review", type: "Urgent" },
-  { day: "22", month: "OCT", title: "Dad's Birthday", type: "Personal" },
-  { day: "01", month: "NOV", title: "Gym Renewal", type: "Billing" },
-];
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ 
   goals, events, briefing, isGeneratingBriefing, onRefreshBriefing, openAddModal, onViewCalendar,
-  onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName, syncError
+  onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName, syncError,
+  importantDates, onAddImportantDate, onDeleteImportantDate, weather
 }) => {
   const date = new Date();
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
@@ -98,6 +179,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }).slice(0, 4); 
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+
+  // Sort dates: closest upcoming first
+  const sortedDates = [...importantDates].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto pb-12">
@@ -114,9 +199,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
            >
              <RefreshCw size={20} className={isGeneratingBriefing ? "animate-spin" : ""} />
            </button>
-          <div className="bg-white/60 backdrop-blur-md p-3 px-5 rounded-[1.5rem] shadow-sm border border-white/50 flex items-center gap-3 text-slate-700">
-            <div className="p-1.5 bg-amber-100 rounded-full text-amber-600"><Sun size={16} fill="currentColor" /></div>
-            <span className="font-bold">72°F</span>
+          
+          <div className="bg-white/60 backdrop-blur-md p-3 px-5 rounded-[1.5rem] shadow-sm border border-white/50 flex items-center gap-3 text-slate-700 min-w-[120px]">
+            {weather ? (
+              <>
+                <div className={`p-1.5 rounded-full ${weather.condition === 'Clear' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-600'}`}>
+                   <Sun size={16} fill={weather.condition === 'Clear' ? "currentColor" : "none"} />
+                </div>
+                <div className="flex flex-col leading-none">
+                  <span className="font-bold text-lg">{weather.temp}°F</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{weather.condition}</span>
+                </div>
+              </>
+            ) : (
+               <>
+                 <MapPin size={16} className="text-slate-400 animate-pulse" />
+                 <span className="text-xs font-bold text-slate-400">Locating...</span>
+               </>
+            )}
           </div>
         </div>
       </div>
@@ -176,7 +276,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
             <div className="space-y-1">
-              {todaysEvents.map(event => <EventRow key={event.id} event={event} />)}
+              {todaysEvents.length > 0 ? (
+                todaysEvents.map(event => <EventRow key={event.id} event={event} />)
+              ) : (
+                <div className="text-center py-6 text-slate-400 italic text-sm">No events scheduled today.</div>
+              )}
             </div>
             <button 
               onClick={onViewCalendar}
@@ -186,19 +290,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-8 text-white shadow-xl shadow-slate-900/20 relative overflow-hidden">
+          {/* UPCOMING DATES WIDGET */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-8 text-white shadow-xl shadow-slate-900/20 relative overflow-hidden flex flex-col min-h-[400px]">
              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10" />
              <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500 opacity-20 rounded-full blur-xl -ml-5 -mb-5" />
              
-             <div className="relative z-10">
+             <div className="relative z-10 flex-1">
                <div className="flex justify-between items-center mb-6 relative">
                  <h3 className="font-bold text-lg">Upcoming</h3>
-                 <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-slate-400 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10">
-                   <MoreHorizontal size={20} />
-                 </button>
+                 <div className="flex gap-2">
+                   <button 
+                     onClick={() => setIsDateModalOpen(true)}
+                     className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10"
+                     title="Add Date"
+                   >
+                     <Plus size={18} />
+                   </button>
+                   <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10">
+                     <MoreHorizontal size={18} />
+                   </button>
+                 </div>
                  
                  {isMenuOpen && (
-                   <div className="absolute right-0 top-8 bg-white text-slate-900 rounded-xl shadow-xl py-1 w-40 z-20 animate-in fade-in zoom-in-95 duration-200">
+                   <div className="absolute right-0 top-10 bg-white text-slate-900 rounded-xl shadow-xl py-1 w-40 z-20 animate-in fade-in zoom-in-95 duration-200">
                      <button 
                        onClick={() => { setIsMenuOpen(false); onViewCalendar(); }}
                        className="w-full text-left px-4 py-2 text-sm font-medium hover:bg-slate-50 flex items-center gap-2"
@@ -209,24 +323,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                    </div>
                  )}
                </div>
-               <div className="space-y-5">
-                 {IMPORTANT_DATES.map((d, i) => (
-                   <div key={i} className="flex items-center gap-4 group cursor-pointer">
-                     <div className="bg-white/10 w-14 h-14 rounded-2xl flex flex-col items-center justify-center backdrop-blur-md border border-white/5 group-hover:bg-white/20 transition-colors">
-                       <span className="text-[10px] font-bold text-indigo-300">{d.month}</span>
-                       <span className="text-lg font-bold text-white">{d.day}</span>
-                     </div>
-                     <div>
-                       <p className="font-bold text-slate-100">{d.title}</p>
-                       <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">{d.type}</p>
-                     </div>
+
+               <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+                 {sortedDates.length > 0 ? (
+                   sortedDates.map((d) => {
+                     const dateObj = new Date(d.date);
+                     const month = dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
+                     const day = dateObj.getDate();
+                     
+                     return (
+                       <div key={d.id} className="flex items-center gap-4 group cursor-pointer relative">
+                         <div className="bg-white/10 w-14 h-14 rounded-2xl flex flex-col items-center justify-center backdrop-blur-md border border-white/5 group-hover:bg-white/20 transition-colors shrink-0">
+                           <span className="text-[10px] font-bold text-indigo-300">{month}</span>
+                           <span className="text-lg font-bold text-white">{day}</span>
+                         </div>
+                         <div className="flex-1 min-w-0">
+                           <p className="font-bold text-slate-100 truncate">{d.title}</p>
+                           <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">{d.type}</p>
+                         </div>
+                         <button 
+                           onClick={() => onDeleteImportantDate(d.id)}
+                           className="opacity-0 group-hover:opacity-100 absolute right-0 p-2 text-slate-400 hover:text-rose-400 transition-all bg-slate-800/80 rounded-full"
+                         >
+                           <Trash2 size={14} />
+                         </button>
+                       </div>
+                     );
+                   })
+                 ) : (
+                   <div className="text-center py-8 text-slate-500 italic text-sm">
+                     No important dates added. <br/>Tap + to add one.
                    </div>
-                 ))}
+                 )}
                </div>
              </div>
           </div>
         </div>
       </div>
+      
+      <DateFormModal 
+        isOpen={isDateModalOpen} 
+        onClose={() => setIsDateModalOpen(false)} 
+        onSave={onAddImportantDate} 
+      />
     </div>
   );
 };
