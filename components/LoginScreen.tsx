@@ -53,6 +53,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
       return;
     }
 
+    // Safety check: Ensure Google Script is loaded
+    // @ts-ignore
+    if (typeof window.google === 'undefined' || typeof window.google.accounts === 'undefined') {
+        alert("Google Sign-In script is not loaded yet. Please check your internet connection or ad blockers.");
+        return;
+    }
+
     if (isLoading) return;
     setIsLoading(true);
     

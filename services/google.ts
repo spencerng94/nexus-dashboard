@@ -18,13 +18,8 @@ export const googleService = {
       throw new Error('Google Identity Services script not loaded');
     }
 
-    // Idempotent check: Do not re-initialize if the client ID hasn't changed.
-    // This prevents detaching active callbacks.
-    if (tokenClient && initializedClientId === clientId) {
-      console.log("Google Client already initialized.");
-      return;
-    }
-
+    // Always re-initialize to ensure fresh callback binding. 
+    // This fixes issues where the app gets "stuck" if a previous attempt failed.
     console.log("Initializing Google Client...");
 
     tokenClient = google.accounts.oauth2.initTokenClient({
@@ -121,7 +116,13 @@ export const googleService = {
       };
 
       // Force consent prompt to ensure fresh token and clear flow
-      tokenClient.requestAccessToken({ prompt: 'consent' });
+      try {
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } catch (e) {
+        console.error("GIS Launch Error", e);
+        clearTimeout(timeoutId);
+        reject(new Error("Failed to launch Google Sign-In popup. Please check for popup blockers."));
+      }
     });
   },
 
