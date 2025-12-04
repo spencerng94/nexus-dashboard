@@ -96,8 +96,8 @@ export const googleService = {
           let errorMessage = "Google Sign-In failed.";
       
           if (nonResponseError.type === 'popup_closed') {
-              // This happens if user clicks X, OR if origin mismatch forces a close
-              errorMessage = "Login Window Closed.\n\n1. If you closed it, try again.\n2. If it closed automatically, check your 'Authorized Origins' in Google Cloud Console.\n3. Open your Browser Console (F12) to see specific Google errors.";
+              const currentOrigin = window.location.origin;
+              errorMessage = `Login Popup Closed.\n\n1. Check 'Authorized Origins' in Google Cloud Console.\n2. Ensure this URL is added exactly:\n   ${currentOrigin}\n3. If you closed the window manually, please try again.`;
           } else if (nonResponseError.type === 'popup_blocked') {
               errorMessage = "Popup blocked. Please allow popups for this site.";
           } else {
@@ -148,8 +148,9 @@ export const googleService = {
       }, 120000);
 
       try {
-        // 'consent' prompt forces the selector, helping to unstuck weird states
-        tokenClient.requestAccessToken({ prompt: 'consent' });
+        // Use 'select_account' to avoid 'consent' forcing re-approval loops,
+        // while still allowing the user to pick an account.
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
       } catch (e: any) {
         console.error("GIS Launch Error:", e);
         
