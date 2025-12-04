@@ -11,7 +11,7 @@ let isRequesting = false; // Lock to prevent multiple popups
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
-const resetState = () => {
+const resetState = (clearClient = false) => {
   if (activeTimeoutId) {
     clearTimeout(activeTimeoutId);
     activeTimeoutId = null;
@@ -19,6 +19,12 @@ const resetState = () => {
   isRequesting = false;
   loginResolver = null;
   loginRejector = null;
+  
+  if (clearClient) {
+    console.log("Resetting Google Token Client state.");
+    tokenClient = null;
+    currentClientId = null;
+  }
 };
 
 export const googleService = {
@@ -35,8 +41,8 @@ export const googleService = {
         return;
     }
 
-    // If we are changing IDs or initializing for the first time, reset everything
-    resetState();
+    // Always start fresh if init is called with a new ID or after a hard reset
+    resetState(true);
 
     console.log("Initializing Google Client with ID:", clientId);
 
@@ -54,7 +60,7 @@ export const googleService = {
             if (loginRejector) {
               loginRejector(new Error(`Google Error: ${response.error}`));
             }
-            resetState();
+            resetState(true); // Force reset on error
             return;
           }
   
@@ -87,7 +93,7 @@ export const googleService = {
             console.error("User Info Fetch Error:", err);
             if (loginRejector) loginRejector(err);
           } finally {
-            resetState();
+            resetState(false); // Normal reset, keep client
           }
         },
         error_callback: (nonResponseError: any) => {
@@ -97,7 +103,7 @@ export const googleService = {
       
           if (nonResponseError.type === 'popup_closed') {
               const currentOrigin = window.location.origin;
-              errorMessage = `Login Popup Closed.\n\n1. Check 'Authorized Origins' in Google Cloud Console.\n2. Ensure this URL is added exactly:\n   ${currentOrigin}\n3. If you closed the window manually, please try again.`;
+              errorMessage = `Login Popup Closed.\n\n1. Check 'Authorized Origins' in Google Cloud Console.\n2. Ensure this URL is added exactly:\n   ${currentOrigin}\n3. Check for Ad Blockers or Pop-up Blockers.\n4. If you closed the window manually, please try again.`;
           } else if (nonResponseError.type === 'popup_blocked') {
               errorMessage = "Popup blocked. Please allow popups for this site.";
           } else {
@@ -107,13 +113,13 @@ export const googleService = {
           if (loginRejector) {
               loginRejector(new Error(errorMessage));
           }
-          resetState();
+          resetState(true); // CRITICAL: Force reset client to clear stale state
         }
       });
       currentClientId = clientId;
     } catch (e) {
       console.error("Failed to initialize token client:", e);
-      resetState();
+      resetState(true);
       throw new Error("Failed to initialize Google Sign-In. Check your Client ID.");
     }
   },
@@ -129,8 +135,8 @@ export const googleService = {
       }
 
       if (isRequesting) {
-        reject(new Error('A login popup is already open. Please check your other windows or tabs.'));
-        return;
+        // If it's been requesting for > 5 seconds without result, assume stuck and allow override
+        console.warn("Found existing request lock, but forcing new login attempt.");
       }
 
       console.log("Requesting Access Token...");
@@ -138,19 +144,19 @@ export const googleService = {
       loginResolver = resolve;
       loginRejector = reject;
 
-      // Safety timeout: 2 minutes
+      // Safety timeout: 60 seconds
       activeTimeoutId = setTimeout(() => {
         console.warn("Login timed out by application.");
         if (loginRejector) {
            loginRejector(new Error("Login timed out. Please try again."));
         }
-        resetState();
-      }, 120000);
+        resetState(true); // Force reset on timeout
+      }, 60000);
 
       try {
-        // Use 'select_account' to avoid 'consent' forcing re-approval loops,
-        // while still allowing the user to pick an account.
-        tokenClient.requestAccessToken({ prompt: 'select_account' });
+        // Use 'consent' to force the permission screen. 
+        // This helps clear "stuck" states where the browser remembers a previous failed attempt.
+        tokenClient.requestAccessToken({ prompt: 'consent' });
       } catch (e: any) {
         console.error("GIS Launch Error:", e);
         
@@ -162,7 +168,7 @@ export const googleService = {
             // We do NOT reset state here because the popup IS actually open
         } else {
             msg += " " + (e.message || "");
-            resetState();
+            resetState(true);
         }
 
         reject(new Error(msg));

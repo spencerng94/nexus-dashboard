@@ -91,7 +91,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
            <div className="mb-6 p-4 bg-amber-50/90 backdrop-blur-sm text-amber-800 text-xs md:text-sm rounded-2xl border border-amber-200 flex items-start gap-3 text-left animate-in fade-in slide-in-from-top-2 shadow-sm">
              <AlertTriangle size={18} className="shrink-0 mt-0.5 text-amber-600" />
              <div className="flex-1 min-w-0">
-               <span className="break-words whitespace-pre-wrap font-medium leading-relaxed block font-mono text-[11px]">{loginError}</span>
+               <pre className="whitespace-pre-wrap font-medium leading-relaxed block font-mono text-[11px] font-sans">{loginError}</pre>
              </div>
            </div>
         )}

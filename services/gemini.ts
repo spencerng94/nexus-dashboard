@@ -1,30 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
 import { Goal, CalendarEvent, Habit, DashboardState } from '../types';
 
-// Helper to safely get API Key without crashing if process is undefined
-const getApiKey = (): string => {
-  try {
-    // @ts-ignore
-    return process.env.API_KEY || '';
-  } catch (e) {
-    return '';
-  }
-};
-
 // Lazy initialization of the AI client
 let aiClient: GoogleGenAI | null = null;
 
 const getAIClient = () => {
   if (aiClient) return aiClient;
   
-  const key = getApiKey();
-  if (!key) {
-    console.warn("API Key not found. AI features will be disabled.");
-    return null;
-  }
-
   try {
-    aiClient = new GoogleGenAI({ apiKey: key });
+    // @ts-ignore
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      console.warn("API_KEY not found in environment.");
+      return null;
+    }
+    aiClient = new GoogleGenAI({ apiKey });
     return aiClient;
   } catch (e) {
     console.error("Failed to initialize Gemini Client:", e);
