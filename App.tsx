@@ -202,6 +202,18 @@ export default function App() {
     }
   };
 
+  const handleAddEvent = (newEventData: Omit<CalendarEvent, 'id'>) => {
+    const newEvent: CalendarEvent = {
+      ...newEventData,
+      id: Date.now().toString(),
+    };
+    const updatedEvents = [...events, newEvent].sort((a, b) => 
+      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
+    setEvents(updatedEvents);
+    storageService.saveEvents(updatedEvents);
+  };
+
   const openHabitHistory = (habit: Habit, view: 'calendar' | 'list') => {
     setViewingHabitHistory(habit);
     setHistoryViewMode(view);
@@ -261,7 +273,7 @@ export default function App() {
           </div>
         )}
         {activeTab === 'calendar' && (
-          <CalendarView events={events} />
+          <CalendarView events={events} onAddEvent={handleAddEvent} />
         )}
         {activeTab === 'habits' && (
           <div className="max-w-[1600px] mx-auto">

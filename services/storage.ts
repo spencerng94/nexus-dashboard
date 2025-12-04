@@ -49,6 +49,7 @@ export const storageService = {
   saveHabitLogs: (logs: Record<string, HabitLog>) => set(KEYS.HABIT_LOGS, logs),
   
   getEvents: () => get<CalendarEvent[]>(KEYS.EVENTS, INITIAL_EVENTS),
+  saveEvents: (events: CalendarEvent[]) => set(KEYS.EVENTS, events),
   
   getUser: () => {
     const userStr = localStorage.getItem(KEYS.USER);
