@@ -44,7 +44,8 @@ To enable the "Sign in with Google" feature locally:
 4. Go to **APIs & Services > Credentials**.
 5. Click **Create Credentials > OAuth client ID**.
 6. Select **Web application**.
-7. Under **Authorized JavaScript origins**, add `http://localhost:3000` (or the port your local server runs on).
+7. **CRITICAL STEP**: Under **Authorized JavaScript origins**, paste the exact URL your app is running on (e.g., `http://localhost:3000` or `http://127.0.0.1:5173`).
+   * *Tip: You can find this URL in the "Configure Client ID" section of the app's login screen.*
 8. Copy the **Client ID**.
 
 ### 2. Environment Variables
@@ -71,7 +72,24 @@ To enable the "Sign in with Google" feature locally:
 4. **Login**:
    - On the Login Screen, click **"Configure Client ID"** at the bottom.
    - Paste the **Client ID** you copied from Google Cloud Console.
+   - Verify the "Authorized Origin" matches your browser URL.
    - Click **"Sign in with Google"**.
+
+## 🔧 Troubleshooting
+
+### Error 400: redirect_uri_mismatch
+If you see this error when signing in, it means your current browser URL is not in the "Authorized JavaScript origins" list in Google Cloud Console.
+1. Look at the "Your Current Origin" box on the app's login screen (e.g., `http://localhost:5173`).
+2. Go to Google Cloud Console > Credentials > Your OAuth Client.
+3. Add that **exact** URL to the Authorized JavaScript origins list.
+4. Save and wait 5 minutes for changes to propagate.
+
+### Error 403: access_denied / App not verified
+If you see "This app has not completed the Google verification process", it is because your Google Cloud project is in **Testing** mode.
+1. Go to Google Cloud Console > **APIs & Services** > **OAuth consent screen**.
+2. Scroll to **Test users**.
+3. Click **+ ADD USERS**.
+4. Enter your email address and click Save.
 
 ## 🧠 AI Features
 - **Context-Aware Prompting**: The dashboard feeds your current goals, active habits, and today's calendar events into the prompt context.

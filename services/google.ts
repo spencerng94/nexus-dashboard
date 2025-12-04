@@ -73,18 +73,28 @@ export const googleService = {
    */
   async listEvents(token: string): Promise<CalendarEvent[]> {
     const now = new Date();
-    const nextMonth = new Date();
-    nextMonth.setDate(now.getDate() + 45);
+    
+    // Set timeMin to 2 months ago
+    const startRange = new Date();
+    startRange.setMonth(now.getMonth() - 2);
+    startRange.setHours(0, 0, 0, 0);
+
+    // Set timeMax to 3 months in the future to cover upcoming planning
+    const endRange = new Date();
+    endRange.setMonth(now.getMonth() + 3);
 
     try {
       const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${nextMonth.toISOString()}&singleEvents=true&orderBy=startTime`,
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${startRange.toISOString()}&timeMax=${endRange.toISOString()}&singleEvents=true&orderBy=startTime`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
 
-      if (!response.ok) throw new Error('Failed to fetch events');
+      if (!response.ok) {
+        console.error("Google API Error", response.status, response.statusText);
+        throw new Error('Failed to fetch events');
+      }
       
       const data = await response.json();
       

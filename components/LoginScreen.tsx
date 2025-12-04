@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AlertTriangle, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertTriangle, Settings, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 
 interface LoginScreenProps {
   onLogin: (clientId: string) => void;
@@ -10,6 +10,13 @@ interface LoginScreenProps {
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginError }) => {
   const [clientId, setClientId] = useState("");
   const [showConfig, setShowConfig] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
   const handleGoogleClick = () => {
     onLogin(clientId);
@@ -64,18 +71,32 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
           </button>
           
           {showConfig && (
-            <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <p className="text-xs text-slate-500 mb-2 text-left">
-                Required for Calendar Sync. <br/> 
-                <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-indigo-500 hover:underline">Get ID from Google Cloud Console</a>
-              </p>
-              <input 
-                type="text" 
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                placeholder="Paste OAuth Client ID here..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              />
+            <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300 text-left space-y-4">
+              <div>
+                <p className="text-xs text-slate-500 mb-2">
+                  1. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-indigo-500 hover:underline font-bold">Create OAuth Client ID</a> in Google Cloud.
+                </p>
+                <input 
+                  type="text" 
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  placeholder="Paste Client ID here..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+
+              <div>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+                   2. Add this URL to "Authorized Origins"
+                 </p>
+                 <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-600 break-all select-all flex justify-between items-center group">
+                   {origin}
+                   <span className="text-[10px] text-slate-400 italic opacity-0 group-hover:opacity-100 transition-opacity">copy</span>
+                 </div>
+                 <p className="text-[10px] text-amber-600 mt-1 leading-tight">
+                   ⚠ If this doesn't match exactly in Google Cloud Console, you will get a 400 Error.
+                 </p>
+              </div>
             </div>
           )}
         </div>
