@@ -1,14 +1,23 @@
 import { GoogleGenAI } from "@google/genai";
 import { Goal, CalendarEvent, Habit, DashboardState } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Safely retrieve API key to prevent "process is not defined" crashes in browser-only environments
+let apiKey = '';
+try {
+  apiKey = process.env.API_KEY || '';
+} catch (e) {
+  // process is not defined, likely running in a browser without env injection
+  console.warn("API Key not found in process.env. AI features will be disabled.");
+}
+
+const ai = new GoogleGenAI({ apiKey });
 
 export const generateDailyBriefing = async (
   goals: Goal[],
   events: CalendarEvent[],
   habits: Habit[]
 ): Promise<string> => {
-  if (!process.env.API_KEY) {
+  if (!apiKey) {
     return "API Key is missing. Please configure your environment to use the intelligent briefing features.";
   }
 
@@ -53,7 +62,7 @@ export const chatWithAssistant = async (
   message: string,
   context: DashboardState
 ): Promise<string> => {
-  if (!process.env.API_KEY) {
+  if (!apiKey) {
     return "I cannot reply because the API Key is missing.";
   }
 

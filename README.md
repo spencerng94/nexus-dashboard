@@ -24,19 +24,27 @@ Nexus is an intelligent personal productivity dashboard designed to help you org
   - `services/storage.ts`: Abstraction layer for data persistence. Currently implemented using `localStorage` for immediate setup and offline capability, but designed to be easily swapped for a backend (e.g., Firebase) in the future.
   - `services/gemini.ts`: Handles all interactions with the Google Gemini API, isolating AI logic from UI components.
 - **Component Design**: Modular components split by domain (`GoalComponents`, `HabitComponents`, `DashboardComponents`) to maintain readability and separation of concerns.
-- **Zero-Build Setup (Conceptually)**: The application uses ES Modules and CDN imports in `index.html` to demonstrate a lightweight architecture, though in production a bundler like Vite would be recommended.
 
 ## 🚀 Setup & Installation
 
 ### Prerequisites
+- Node.js installed.
 - A Google AI Studio API Key.
 
 ### Environment Variables
-The application requires a valid API key to power the AI features (Briefing and Chat).
-Ensure `process.env.API_KEY` is available in your runtime environment.
+1. Create a file named `.env` in the root directory.
+2. Add your API key:
+   ```
+   # If using React Scripts (CRA)
+   REACT_APP_API_KEY=your_api_key_here
+
+   # If using Vite (you may need to update vite.config.ts to define process.env or update gemini.ts to use import.meta.env)
+   # For this setup, we recommend defining process.env in your vite.config.ts:
+   # define: { 'process.env': process.env }
+   ```
 
 ### Running the App
-1. **Clone the repository** (if applicable).
+1. **Clone the repository**.
 2. **Install dependencies**:
    ```bash
    npm install
@@ -44,11 +52,13 @@ Ensure `process.env.API_KEY` is available in your runtime environment.
 3. **Start the development server**:
    ```bash
    npm start
+   # or
+   npm run dev
    ```
 4. **Login**:
    - The app features a simulated login screen.
    - Click **"Continue with Google"** (Simulated user "Alex") or **"Continue as Guest"**.
 
 ## 🧠 AI Features
-- **Context-Aware Prompting**: The dashboard feeds your current goals, active habits, and today's calendar events into the prompt context. This allows Gemini to give specific, actionable advice rather than generic motivation.
-- **Models Used**: `gemini-2.5-flash` is used for high-speed, low-latency responses suitable for interactive chat and page-load briefings.
+- **Context-Aware Prompting**: The dashboard feeds your current goals, active habits, and today's calendar events into the prompt context.
+- **Models Used**: `gemini-2.5-flash` is used for high-speed, low-latency responses.
