@@ -95,7 +95,7 @@ export const googleService = {
 
       // Safety timeout: Reject if no response within 60 seconds (user closed popup, etc)
       const timeoutId = setTimeout(() => {
-        const err = new Error("Login timed out. This often happens if the popup was closed, blocked, or if the network connection failed.");
+        const err = new Error("Login timed out. Did you see an error in the popup? Check for 'Error 400: redirect_uri_mismatch' or 'Error 403: access_denied'. If the popup closed immediately, check your popup blocker.");
         if (loginRejector) {
            loginRejector(err);
            // Clear handlers to prevent late resolution

@@ -66,7 +66,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
     try {
       await onLogin(clientId);
     } catch (e) {
-      // Error is set in App.tsx, but we must stop loading here
+      // If error occurs (timeout or other), open config to show users where to fix origin/id
+      setShowConfig(true);
     } finally {
       setIsLoading(false);
     }
