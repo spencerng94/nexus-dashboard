@@ -2,124 +2,47 @@ import { CalendarEvent, User } from '../types';
 
 declare const google: any;
 
-let tokenClient: any;
+let tokenClient: any | null = null;
 let currentClientId: string | null = null;
-let loginResolver: ((user: User) => void) | null = null;
-let loginRejector: ((error: any) => void) | null = null;
-let activeTimeoutId: any = null;
-let isRequesting = false; // Lock to prevent multiple popups
+let isRequesting = false;
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
-
-const resetState = (clearClient = false) => {
-  if (activeTimeoutId) {
-    clearTimeout(activeTimeoutId);
-    activeTimeoutId = null;
-  }
-  isRequesting = false;
-  loginResolver = null;
-  loginRejector = null;
-  
-  if (clearClient) {
-    console.log("Resetting Google Token Client state.");
-    tokenClient = null;
-    currentClientId = null;
-  }
-};
 
 export const googleService = {
   /**
    * Initialize the Google Identity Services Token Client
+   * This is now idempotent - it won't re-initialize if the client ID hasn't changed.
    */
   init(clientId: string) {
     if (typeof google === 'undefined') {
       throw new Error('Google Identity Services script not loaded. Check internet connection.');
     }
 
-    // If we are already initialized with this ID, don't re-init
+    // Idempotency check: If already initialized with the same ID, do nothing.
     if (tokenClient && currentClientId === clientId) {
+        console.log("Google Token Client already initialized.");
         return;
     }
 
-    // Always start fresh if init is called with a new ID or after a hard reset
-    resetState(true);
-
-    console.log("Initializing Google Client with ID:", clientId);
+    console.log("Initializing Google Token Client...");
 
     try {
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: SCOPES,
+        // The callback function is standard for handling the response
         callback: async (response: any) => {
-          console.log("GIS Callback received.");
-          if (activeTimeoutId) clearTimeout(activeTimeoutId);
-          isRequesting = false;
-  
-          if (response.error) {
-            console.error("GIS Error Response:", response);
-            if (loginRejector) {
-              loginRejector(new Error(`Google Error: ${response.error}`));
-            }
-            resetState(true); // Force reset on error
-            return;
-          }
-  
-          const accessToken = response.access_token;
-  
-          try {
-            // Fetch user profile
-            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-              headers: { Authorization: `Bearer ${accessToken}` }
-            });
-            
-            if (!userInfoResponse.ok) {
-               throw new Error("Failed to fetch user profile");
-            }
-  
-            const userInfo = await userInfoResponse.json();
-  
-            const user: User = {
-              uid: userInfo.sub,
-              displayName: userInfo.name,
-              photoURL: userInfo.picture,
-              email: userInfo.email,
-              accessToken: accessToken
-            };
-            
-            if (loginResolver) {
-              loginResolver(user);
-            }
-          } catch (err) {
-            console.error("User Info Fetch Error:", err);
-            if (loginRejector) loginRejector(err);
-          } finally {
-            resetState(false); // Normal reset, keep client
-          }
+          // This global handler will be overridden by the specific promise resolver in login(),
+          // but we define a default here to prevent crashes if called externally.
+          console.log("Global callback received (should be handled by promise).", response);
         },
         error_callback: (nonResponseError: any) => {
-          console.error("GIS Configuration/Popup Error:", nonResponseError);
-          
-          let errorMessage = "Google Sign-In failed.";
-      
-          if (nonResponseError.type === 'popup_closed') {
-              const currentOrigin = window.location.origin;
-              errorMessage = `Login Popup Closed.\n\n1. Check 'Authorized Origins' in Google Cloud Console.\n2. Ensure this URL is added exactly:\n   ${currentOrigin}\n3. Check for Ad Blockers or Pop-up Blockers.\n4. If you closed the window manually, please try again.`;
-          } else if (nonResponseError.type === 'popup_blocked') {
-              errorMessage = "Popup blocked. Please allow popups for this site.";
-          } else {
-              errorMessage = `Configuration Error: ${nonResponseError.message}`;
-          }
-  
-          if (loginRejector) {
-              loginRejector(new Error(errorMessage));
-          }
-          resetState(true); // CRITICAL: Force reset client to clear stale state
+             console.error("Global error callback:", nonResponseError);
         }
       });
       currentClientId = clientId;
     } catch (e) {
       console.error("Failed to initialize token client:", e);
-      resetState(true);
       throw new Error("Failed to initialize Google Sign-In. Check your Client ID.");
     }
   },
@@ -135,42 +58,92 @@ export const googleService = {
       }
 
       if (isRequesting) {
-        // If it's been requesting for > 5 seconds without result, assume stuck and allow override
-        console.warn("Found existing request lock, but forcing new login attempt.");
+        // If a request is already in progress, we can't easily cancel it in GIS.
+        // We reject the new request to prevent stacking.
+        const msg = "A login popup is already open. Please check your other windows.";
+        console.warn(msg);
+        reject(new Error(msg));
+        return;
       }
 
-      console.log("Requesting Access Token...");
       isRequesting = true;
-      loginResolver = resolve;
-      loginRejector = reject;
 
-      // Safety timeout: 60 seconds
-      activeTimeoutId = setTimeout(() => {
-        console.warn("Login timed out by application.");
-        if (loginRejector) {
-           loginRejector(new Error("Login timed out. Please try again."));
+      // Define the handler for this specific login attempt
+      tokenClient.callback = async (response: any) => {
+        isRequesting = false; // Release lock
+        
+        if (response.error) {
+          console.error("GIS Response Error:", response);
+          reject(new Error(`Google Error: ${response.error}`));
+          return;
         }
-        resetState(true); // Force reset on timeout
-      }, 60000);
+
+        const accessToken = response.access_token;
+        if (!accessToken) {
+            reject(new Error("No access token received."));
+            return;
+        }
+
+        try {
+          // Fetch user profile
+          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          
+          if (!userInfoResponse.ok) {
+             throw new Error("Failed to fetch user profile");
+          }
+
+          const userInfo = await userInfoResponse.json();
+
+          const user: User = {
+            uid: userInfo.sub,
+            displayName: userInfo.name,
+            photoURL: userInfo.picture,
+            email: userInfo.email,
+            accessToken: accessToken
+          };
+          
+          resolve(user);
+        } catch (err) {
+          console.error("User Info Fetch Error:", err);
+          reject(err);
+        }
+      };
+
+      // Define the error handler for this specific login attempt
+      tokenClient.error_callback = (nonResponseError: any) => {
+        isRequesting = false; // Release lock
+        console.error("GIS Error Callback:", nonResponseError);
+        
+        let errorMessage = "Google Sign-In failed.";
+    
+        if (nonResponseError.type === 'popup_closed') {
+            const currentOrigin = window.location.origin;
+            errorMessage = `Login Window Closed.\n\n1. Check 'Authorized Origins' in Google Cloud Console.\n2. Ensure this URL is added EXACTLY (no trailing slash):\n   ${currentOrigin}\n3. If you just added it, wait 5 minutes.\n4. If you closed the window manually, try again.`;
+        } else if (nonResponseError.type === 'popup_blocked') {
+            errorMessage = "Popup blocked. Please check your browser address bar for a blocked popup icon.";
+        } else {
+            errorMessage = `Configuration Error: ${nonResponseError.message}`;
+        }
+
+        reject(new Error(errorMessage));
+      };
 
       try {
-        // Use 'consent' to force the permission screen. 
-        // This helps clear "stuck" states where the browser remembers a previous failed attempt.
-        tokenClient.requestAccessToken({ prompt: 'consent' });
+        // 'select_account' is often more robust than 'consent' for repeated logins
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
       } catch (e: any) {
         console.error("GIS Launch Error:", e);
+        isRequesting = false; // Release lock on crash
         
         let msg = "Failed to launch Google Sign-In.";
-        
-        // Handle the specific "pending" error from Google
         if (e.message && e.message.includes('pending')) {
-            msg = "A login window is already open in the background.\n\nPlease find and close the existing Google Sign-in window, then try again.";
-            // We do NOT reset state here because the popup IS actually open
+           // This specific error means the lock variable got out of sync with Google's internal state
+           msg = "A login window is already open in the background. Please close it and try again.";
         } else {
-            msg += " " + (e.message || "");
-            resetState(true);
+           msg += " " + (e.message || "");
         }
-
         reject(new Error(msg));
       }
     });
