@@ -3,7 +3,8 @@ import { CalendarEvent, User } from '../types';
 declare const google: any;
 
 let tokenClient: any;
-let accessToken: string | null = null;
+let loginResolver: ((user: User) => void) | null = null;
+let loginRejector: ((error: any) => void) | null = null;
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
@@ -19,8 +20,39 @@ export const googleService = {
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: SCOPES,
-      callback: (response: any) => {
-        // Callback handled in login promise
+      callback: async (response: any) => {
+        if (response.error) {
+          if (loginRejector) loginRejector(response);
+          return;
+        }
+
+        const accessToken = response.access_token;
+
+        try {
+          // Fetch user profile immediately after getting token
+          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          
+          if (!userInfoResponse.ok) {
+             throw new Error("Failed to fetch user profile");
+          }
+
+          const userInfo = await userInfoResponse.json();
+
+          const user: User = {
+            uid: userInfo.sub,
+            displayName: userInfo.name,
+            photoURL: userInfo.picture,
+            email: userInfo.email,
+            accessToken: accessToken
+          };
+          
+          if (loginResolver) loginResolver(user);
+        } catch (err) {
+          console.error("User Info Fetch Error:", err);
+          if (loginRejector) loginRejector(err);
+        }
       },
     });
   },
@@ -35,35 +67,11 @@ export const googleService = {
         return;
       }
 
-      // Override callback for this specific request
-      tokenClient.callback = async (resp: any) => {
-        if (resp.error) {
-          reject(resp);
-          return;
-        }
-        
-        accessToken = resp.access_token;
+      // Store resolvers to be called by the global callback
+      loginResolver = resolve;
+      loginRejector = reject;
 
-        // Fetch user profile
-        try {
-          const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          }).then(r => r.json());
-
-          const user: User = {
-            uid: userInfo.sub,
-            displayName: userInfo.name,
-            photoURL: userInfo.picture,
-            email: userInfo.email,
-            accessToken: accessToken || undefined
-          };
-          
-          resolve(user);
-        } catch (err) {
-          reject(err);
-        }
-      };
-
+      // Force consent prompt to ensure fresh token and clear flow
       tokenClient.requestAccessToken({ prompt: 'consent' });
     });
   },
@@ -79,7 +87,7 @@ export const googleService = {
     startRange.setMonth(now.getMonth() - 2);
     startRange.setHours(0, 0, 0, 0);
 
-    // Set timeMax to 3 months in the future to cover upcoming planning
+    // Set timeMax to 3 months in the future
     const endRange = new Date();
     endRange.setMonth(now.getMonth() + 3);
 
@@ -109,7 +117,7 @@ export const googleService = {
         if (item.start.dateTime) {
              durationStr = durationHrs > 0 ? `${durationHrs}h` : "";
              if (durationMins > 0) durationStr += ` ${durationMins}m`;
-             if (durationStr === "") durationStr = "30m"; // fallback
+             if (durationStr === "") durationStr = "30m"; 
         }
 
         return {
@@ -117,7 +125,7 @@ export const googleService = {
           title: item.summary || "Untitled",
           time: start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           startTime: start.getTime(),
-          type: 'work', // Default categorization logic could be improved with AI
+          type: 'work',
           duration: durationStr.trim()
         };
       });
@@ -132,10 +140,9 @@ export const googleService = {
    */
   async createEvent(token: string, event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent | null> {
     const start = new Date(event.startTime);
-    // Parse duration string roughly to get end time
-    // Simple parser: assumes '1h 30m' or '1h' or '30m' format
     let durationMinutes = 60; 
     const dStr = event.duration;
+    
     if (dStr === 'All Day') {
         durationMinutes = 1440;
     } else {

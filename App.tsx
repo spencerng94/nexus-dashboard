@@ -99,7 +99,9 @@ export default function App() {
         setUser(loggedInUser);
     } catch (e: any) {
         console.error(e);
-        setLoginError(e.message || "Google Login Failed");
+        const errMsg = e.message || (e.error ? `Google Error: ${e.error}` : "Login Failed");
+        setLoginError(errMsg);
+        throw e; // Re-throw so button knows to stop loading
     }
   };
 
