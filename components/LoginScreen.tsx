@@ -42,8 +42,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
   };
 
   const handleGoogleClick = async () => {
+    const finalId = clientId.trim();
+    
     // Check for ID before loading
-    if (!clientId) {
+    if (!finalId) {
       setShowConfig(true);
       // Wait for animation frame/render then focus
       setTimeout(() => {
@@ -64,7 +66,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
     setIsLoading(true);
     
     try {
-      await onLogin(clientId);
+      await onLogin(finalId);
     } catch (e) {
       // If error occurs (timeout or other), open config to show users where to fix origin/id
       setShowConfig(true);
@@ -149,14 +151,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
 
               <div>
                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
-                   2. Add this URL to "Authorized Origins"
+                   2. Add this EXACT URL to <br/><span className="text-indigo-600">"Authorized JavaScript Origins"</span>
                  </p>
                  <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-600 break-all select-all flex justify-between items-center group">
                    {origin}
                    <span className="text-[10px] text-slate-400 italic opacity-0 group-hover:opacity-100 transition-opacity">copy</span>
                  </div>
                  <p className="text-[10px] text-amber-600 mt-2 leading-tight">
-                   ⚠ <strong>IMPORTANT:</strong> Ensure NO trailing slash (e.g., use <code>.com</code>, not <code>.com/</code>). Changes take 5 mins to propagate.
+                   ⚠ <strong>DO NOT</strong> use "Authorized Redirect URIs". <br/>
+                   ⚠ <strong>NO</strong> trailing slash (e.g. use <code>.com</code> not <code>.com/</code>). <br/>
+                   ⚠ Changes take 5 mins to work.
                  </p>
               </div>
             </div>

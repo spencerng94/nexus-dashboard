@@ -18,17 +18,25 @@ export const googleService = {
       throw new Error('Google Identity Services script not loaded. Check internet connection.');
     }
 
+    // Validation
+    if (!clientId || clientId.trim() === '') {
+        throw new Error("Client ID is empty.");
+    }
+    const cleanId = clientId.trim();
+
     // Idempotency check: If already initialized with the same ID, do nothing.
-    if (tokenClient && currentClientId === clientId) {
-        console.log("Google Token Client already initialized.");
+    if (tokenClient && currentClientId === cleanId) {
+        console.log("Google Token Client already initialized for ID:", cleanId);
         return;
     }
 
-    console.log("Initializing Google Token Client...");
+    console.log(`Initializing Google Token Client...`);
+    console.log(`- Client ID: ${cleanId}`);
+    console.log(`- Origin: ${window.location.origin}`);
 
     try {
       tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
+        client_id: cleanId,
         scope: SCOPES,
         // The callback function is standard for handling the response
         callback: async (response: any) => {
@@ -40,7 +48,7 @@ export const googleService = {
              console.error("Global error callback:", nonResponseError);
         }
       });
-      currentClientId = clientId;
+      currentClientId = cleanId;
     } catch (e) {
       console.error("Failed to initialize token client:", e);
       throw new Error("Failed to initialize Google Sign-In. Check your Client ID.");
@@ -58,18 +66,18 @@ export const googleService = {
       }
 
       if (isRequesting) {
-        // If a request is already in progress, we can't easily cancel it in GIS.
-        // We reject the new request to prevent stacking.
         const msg = "A login popup is already open. Please check your other windows.";
         console.warn(msg);
         reject(new Error(msg));
         return;
       }
 
+      console.log("Starting login flow...");
       isRequesting = true;
 
       // Define the handler for this specific login attempt
       tokenClient.callback = async (response: any) => {
+        console.log("Login callback received.");
         isRequesting = false; // Release lock
         
         if (response.error) {
@@ -116,31 +124,40 @@ export const googleService = {
         isRequesting = false; // Release lock
         console.error("GIS Error Callback:", nonResponseError);
         
+        // CRITICAL: If an error occurs, we destroy the client to force a fresh init next time.
+        // This prevents the "pending" loop if the browser's internal state gets desynced.
+        tokenClient = null;
+        currentClientId = null;
+        
         let errorMessage = "Google Sign-In failed.";
     
         if (nonResponseError.type === 'popup_closed') {
             const currentOrigin = window.location.origin;
-            errorMessage = `Login Window Closed.\n\n1. Check 'Authorized Origins' in Google Cloud Console.\n2. Ensure this URL is added EXACTLY (no trailing slash):\n   ${currentOrigin}\n3. If you just added it, wait 5 minutes.\n4. If you closed the window manually, try again.`;
+            errorMessage = `Login Window Closed.\n\n1. Check 'Authorized JavaScript Origins' (NOT Redirect URIs) in Google Cloud.\n2. Ensure this URL is added EXACTLY:\n   ${currentOrigin}\n3. Note: Changes take 5 minutes to propagate.`;
         } else if (nonResponseError.type === 'popup_blocked') {
-            errorMessage = "Popup blocked. Please check your browser address bar for a blocked popup icon.";
+            errorMessage = "Popup blocked. Please check your address bar for a blocked popup icon.";
         } else {
-            errorMessage = `Configuration Error: ${nonResponseError.message}`;
+            errorMessage = `Configuration Error: ${nonResponseError.message || nonResponseError.type}`;
         }
 
         reject(new Error(errorMessage));
       };
 
       try {
-        // 'select_account' is often more robust than 'consent' for repeated logins
+        // We use 'select_account' to ensure the user actually sees the Google screen
+        // and doesn't get auto-rejected by a silent failure.
         tokenClient.requestAccessToken({ prompt: 'select_account' });
       } catch (e: any) {
         console.error("GIS Launch Error:", e);
-        isRequesting = false; // Release lock on crash
+        isRequesting = false; 
+        
+        // If we crash here, also reset the client to be safe.
+        tokenClient = null;
+        currentClientId = null;
         
         let msg = "Failed to launch Google Sign-In.";
         if (e.message && e.message.includes('pending')) {
-           // This specific error means the lock variable got out of sync with Google's internal state
-           msg = "A login window is already open in the background. Please close it and try again.";
+           msg = "A login window is already open or stuck. Please reload the page and try again.";
         } else {
            msg += " " + (e.message || "");
         }
