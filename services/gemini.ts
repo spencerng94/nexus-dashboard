@@ -114,3 +114,35 @@ export const chatWithAssistant = async (
     return "I'm having trouble connecting right now. Please try again later.";
   }
 };
+
+export const generateSuggestions = async (
+  type: 'goal' | 'habit',
+  existingItems: string[]
+): Promise<Array<{ title: string; category: string; icon: string }>> => {
+  const ai = getAIClient();
+  if (!ai) return [];
+
+  try {
+    const prompt = `
+      Generate 4 unique, high-quality, actionable ideas for a new ${type}.
+      The user already has these: ${existingItems.join(', ')}.
+      
+      Output strictly valid JSON array of objects with keys: "title", "category", "icon" (single emoji).
+      Example: [{"title": "Drink 2L Water", "category": "Health", "icon": "💧"}]
+      Do not include markdown block markers like \`\`\`json.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+    
+    const text = response.text || "[]";
+    // Clean potential markdown code blocks if the model ignores instruction
+    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanText);
+  } catch (error) {
+    console.error("Suggestion Error:", error);
+    return [];
+  }
+};

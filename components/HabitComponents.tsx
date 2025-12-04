@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2, Check, AlignLeft, List, CalendarDays, X, Save, CornerDownLeft } from 'lucide-react';
+import { Pencil, Trash2, Check, AlignLeft, List, CalendarDays, X, Save, CornerDownLeft, Sparkles, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Habit, HabitLog } from '../types';
+import { generateSuggestions } from '../services/gemini';
 
 // Helper for date formatting in this module
 const formatLocalYMD = (date: Date) => {
@@ -150,15 +151,19 @@ interface HabitFormModalProps {
   onClose: () => void;
   onSave: (data: Omit<Habit, 'id' | 'streak'>) => void;
   editingHabit: Habit | null;
+  existingHabits?: Habit[];
 }
 
-export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose, onSave, editingHabit }) => {
+export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose, onSave, editingHabit, existingHabits = [] }) => {
   const [formData, setFormData] = useState({
     title: '',
     category: 'Health',
     color: 'text-blue-500 bg-blue-500',
     icon: '💪'
   });
+
+  const [suggestions, setSuggestions] = useState<Array<{title: string, category: string, icon: string}>>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     if (editingHabit) {
@@ -171,7 +176,21 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
     } else {
       setFormData({ title: '', category: 'Health', color: 'text-blue-500 bg-blue-500', icon: '💪' });
     }
+    setSuggestions([]);
   }, [editingHabit, isOpen]);
+
+  const fetchSuggestions = async () => {
+    setLoadingSuggestions(true);
+    const existingTitles = existingHabits.map(h => h.title);
+    const ideas = await generateSuggestions('habit', existingTitles);
+    setSuggestions(ideas);
+    setLoadingSuggestions(false);
+  };
+
+  const applySuggestion = (s: {title: string, category: string, icon: string}) => {
+    setFormData(prev => ({ ...prev, title: s.title, category: s.category, icon: s.icon }));
+    setSuggestions([]);
+  };
 
   if (!isOpen) return null;
 
@@ -194,8 +213,8 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
-        <div className="flex justify-between items-center mb-8">
+      <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-2xl font-bold text-slate-900">{editingHabit ? 'Edit Habit' : 'New Habit'}</h3>
             <p className="text-slate-500 text-sm">{editingHabit ? 'Modify routine details' : 'Build a new routine'}</p>
@@ -207,7 +226,40 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Habit Title</label>
+             <div className="flex justify-between items-end mb-2">
+                <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Habit Title</label>
+                {!editingHabit && (
+                  <button 
+                    type="button" 
+                    onClick={fetchSuggestions}
+                    disabled={loadingSuggestions}
+                    className="text-xs font-bold text-emerald-500 flex items-center gap-1 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    {loadingSuggestions ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    AI Ideas
+                  </button>
+                )}
+             </div>
+
+             {suggestions.length > 0 && (
+               <div className="mb-3 grid grid-cols-1 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                 {suggestions.map((s, idx) => (
+                   <button 
+                     key={idx}
+                     type="button"
+                     onClick={() => applySuggestion(s)}
+                     className="text-left bg-emerald-50/50 hover:bg-emerald-100 border border-emerald-100 p-2 rounded-xl text-xs flex items-center gap-2 transition-colors"
+                   >
+                     <span className="text-lg">{s.icon}</span>
+                     <div>
+                       <span className="font-bold text-slate-800 block">{s.title}</span>
+                       <span className="text-emerald-600">{s.category}</span>
+                     </div>
+                   </button>
+                 ))}
+               </div>
+             )}
+
             <input
               required
               type="text"
@@ -281,7 +333,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
   );
 };
 
-// --- HISTORY MODAL ---
+// --- HABIT HISTORY MODAL ---
 
 interface HabitHistoryModalProps {
   isOpen: boolean;
@@ -289,163 +341,169 @@ interface HabitHistoryModalProps {
   habit: Habit | null;
   habitLogs: Record<string, HabitLog>;
   onToggleHabit: (habitId: string, completed: boolean, dateKey: string) => void;
-  initialView: 'calendar' | 'list';
+  initialView?: 'calendar' | 'list';
   onUpdateNote: (habitId: string, note: string, dateKey: string) => void;
 }
 
-export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ isOpen, onClose, habit, habitLogs, onToggleHabit, initialView, onUpdateNote }) => {
-  const [view, setView] = useState<'calendar' | 'list'>(initialView || 'calendar'); 
-  const [editingLogDate, setEditingLogDate] = useState<string | null>(null);
-  const [editNote, setEditNote] = useState("");
+export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ 
+  isOpen, onClose, habit, habitLogs, onToggleHabit, initialView = 'calendar', onUpdateNote
+}) => {
+  const [view, setView] = useState<'calendar' | 'list'>(initialView);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
-    if (isOpen && initialView) setView(initialView);
-  }, [isOpen, initialView]);
+    setView(initialView);
+  }, [initialView, isOpen]);
 
   if (!isOpen || !habit) return null;
 
-  const today = new Date();
-  const getDaysForMiniCalendar = () => {
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    return Array.from({ length: daysInMonth }, (_, i) => {
-       const date = new Date(today.getFullYear(), today.getMonth(), i + 1);
-       return date;
-    });
-  };
-  const miniCalendarDays = getDaysForMiniCalendar();
-
-  const historyList = (Object.values(habitLogs) as HabitLog[])
-    .filter(log => log.habitId === habit.id)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  const startEditing = (log: HabitLog) => {
-    setEditingLogDate(log.date);
-    setEditNote(log.note || "");
+  const getLogsForHabit = () => {
+    return (Object.values(habitLogs) as HabitLog[])
+      .filter(log => log.habitId === habit.id)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  const saveEdit = (log: HabitLog) => {
-    onUpdateNote(habit.id, editNote, log.date);
-    setEditingLogDate(null);
+  const renderCalendar = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay(); // 0 = Sunday
+
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const emptyDays = Array.from({ length: firstDay }, (_, i) => i);
+
+    const monthName = currentDate.toLocaleString('default', { month: 'long' });
+
+    return (
+      <div className="animate-in fade-in slide-in-from-bottom-2">
+         <div className="flex justify-between items-center mb-6">
+            <button 
+              onClick={() => setCurrentDate(new Date(year, month - 1))}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <span className="font-bold text-slate-800 text-lg">{monthName} {year}</span>
+            <button 
+              onClick={() => setCurrentDate(new Date(year, month + 1))}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500"
+            >
+              <ChevronRight size={20} />
+            </button>
+         </div>
+
+         <div className="grid grid-cols-7 gap-2 mb-2">
+            {['S','M','T','W','T','F','S'].map(d => (
+              <div key={d} className="text-center text-xs font-bold text-slate-400">{d}</div>
+            ))}
+         </div>
+         <div className="grid grid-cols-7 gap-2">
+            {emptyDays.map(i => <div key={`empty-${i}`} />)}
+            {days.map(day => {
+               const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+               const logKey = `${habit.id}_${dateStr}`;
+               const isCompleted = !!habitLogs[logKey];
+               const isToday = dateStr === formatLocalYMD(new Date());
+               
+               return (
+                 <button
+                   key={day}
+                   onClick={() => onToggleHabit(habit.id, !isCompleted, dateStr)}
+                   className={`
+                     aspect-square rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300
+                     ${isCompleted 
+                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-105' 
+                        : isToday 
+                           ? 'bg-slate-100 text-slate-900 border-2 border-slate-300' 
+                           : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}
+                   `}
+                 >
+                   {day}
+                 </button>
+               );
+            })}
+         </div>
+         <div className="mt-6 flex justify-center gap-6 text-xs font-medium text-slate-400">
+            <div className="flex items-center gap-2">
+               <div className="w-3 h-3 rounded-full bg-emerald-500"></div> Completed
+            </div>
+            <div className="flex items-center gap-2">
+               <div className="w-3 h-3 rounded-full bg-slate-100 border border-slate-300"></div> Missed
+            </div>
+         </div>
+      </div>
+    );
+  };
+
+  const renderList = () => {
+    const logs = getLogsForHabit();
+    return (
+      <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar animate-in fade-in slide-in-from-bottom-2">
+         {logs.length > 0 ? logs.map(log => (
+            <div key={log.date} className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex gap-4">
+               <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Check size={20} />
+               </div>
+               <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                     <span className="font-bold text-slate-800">
+                        {new Date(log.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                     </span>
+                  </div>
+                  {log.note ? (
+                    <p className="text-sm text-slate-600 bg-white p-2 rounded-lg border border-slate-100 inline-block">
+                      {log.note}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No notes added.</p>
+                  )}
+               </div>
+            </div>
+         )) : (
+            <div className="text-center py-10 text-slate-400 italic">No history yet. Start today!</div>
+         )}
+      </div>
+    );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300 max-h-[85vh] flex flex-col">
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${habit.color.replace('text-', 'bg-')} text-white shadow-lg`}>
-              {habit.icon}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
+      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+         <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${habit.color.replace('text-','bg-')} text-white`}>
+                 {habit.icon}
+               </div>
+               <div>
+                 <h3 className="font-bold text-slate-900 text-xl">{habit.title}</h3>
+                 <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">{habit.category}</p>
+               </div>
             </div>
-            <div>
-              <h3 className="text-2xl font-bold text-slate-900">{habit.title}</h3>
-              <div className="flex gap-2 mt-1">
-                 <button 
-                   onClick={() => setView('calendar')}
-                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${view === 'calendar' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                 >
-                   Calendar
-                 </button>
-                 <button 
-                   onClick={() => setView('list')}
-                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${view === 'list' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                 >
-                   List
-                 </button>
-              </div>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
-            <X size={24} />
-          </button>
-        </div>
+            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+              <X size={24} />
+            </button>
+         </div>
 
-        {/* View Content */}
-        {view === 'calendar' ? (
-          <div className="bg-slate-50/80 rounded-2xl p-5 mb-2 border border-slate-100">
-             <div className="flex justify-between items-center mb-4">
-               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                 {today.toLocaleString('default', { month: 'long', year: 'numeric' })}
-               </span>
-             </div>
-             <div className="grid grid-cols-7 gap-2">
-               {['S','M','T','W','T','F','S'].map((d, i) => (
-                 <div key={i} className="text-center text-[10px] font-bold text-slate-300">{d}</div>
-               ))}
-               {miniCalendarDays.map((date, i) => {
-                  const dateStr = formatLocalYMD(date); 
-                  const dayLog = habitLogs[`${habit.id}_${dateStr}`];
-                  const isFuture = date > new Date();
-                  const isToday = dateStr === formatLocalYMD(new Date());
-                  
-                  return (
-                    <button 
-                      key={i}
-                      disabled={isFuture}
-                      onClick={() => onToggleHabit(habit.id, !dayLog, dateStr)}
-                      className={`aspect-square rounded-lg flex items-center justify-center text-xs font-bold transition-all ${
-                         dayLog 
-                           ? `${habit.color.replace('text-', 'bg-')} text-white shadow-sm scale-105` 
-                           : isFuture ? 'opacity-20 cursor-not-allowed' : 'bg-white text-slate-400 hover:bg-slate-200'
-                      } ${isToday && !dayLog ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}`}
-                    >
-                      {date.getDate()}
-                    </button>
-                  )
-               })}
-             </div>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar min-h-[300px]">
-            {historyList.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 italic">No history recorded yet.</div>
-            ) : (
-              historyList.map((log) => (
-                <div key={log.date} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-100 transition-colors">
-                  <div className="w-14 flex flex-col items-center justify-center text-slate-500 bg-white rounded-xl py-2 border border-slate-100 shadow-sm shrink-0">
-                    <span className="text-[10px] font-bold uppercase tracking-wide">{new Date(log.date).toLocaleString('default', { month: 'short' })}</span>
-                    <span className="text-xl font-bold text-slate-800">{new Date(log.date).getDate() + 1}</span>
-                  </div>
-                  <div className="flex-1 pt-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-slate-800">{habit.title}</span>
-                      <Check size={14} className="text-emerald-500" strokeWidth={3} />
-                    </div>
-                    
-                    {editingLogDate === log.date ? (
-                      <div className="flex gap-2 items-center">
-                        <input 
-                          type="text" 
-                          value={editNote}
-                          onChange={(e) => setEditNote(e.target.value)}
-                          className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          autoFocus
-                        />
-                        <button onClick={() => saveEdit(log)} className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
-                          <Check size={14} />
-                        </button>
-                        <button onClick={() => setEditingLogDate(null)} className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200">
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex justify-between items-center group/note">
-                        <p className="text-sm text-slate-600 bg-white p-2 rounded-lg border border-slate-100 inline-block min-w-[50%] truncate">
-                          {log.note || <span className="italic opacity-50">No details added</span>}
-                        </p>
-                        <button 
-                          onClick={() => startEditing(log)}
-                          className="p-1.5 text-slate-400 hover:text-emerald-600 opacity-0 group-hover/note:opacity-100 transition-opacity"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
+         <div className="bg-slate-100 p-1 rounded-xl flex mb-6">
+            <button 
+              onClick={() => setView('calendar')}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                view === 'calendar' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <CalendarDays size={16} /> Calendar
+            </button>
+            <button 
+              onClick={() => setView('list')}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                view === 'list' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <List size={16} /> List
+            </button>
+         </div>
+
+         {view === 'calendar' ? renderCalendar() : renderList()}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Calendar as CalendarIcon, Target, Dumbbell, User as UserIcon, LogOut } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Target, Dumbbell, User as UserIcon, LogOut, Info } from 'lucide-react';
 import { User } from '../types';
 
 interface SidebarProps {
@@ -14,8 +14,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
     { id: 'calendar', icon: CalendarIcon, label: 'Calendar' },
-    { id: 'goals', icon: Target, label: 'Focus' },
+    { id: 'goals', icon: Target, label: 'Goals' },
     { id: 'habits', icon: Dumbbell, label: 'Habits' },
+    { id: 'about', icon: Info, label: 'About' },
   ];
 
   const displayName = user?.displayName || "Guest";
@@ -52,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
                 onClick={() => setActiveTab(item.id)}
                 className={`group relative flex items-center justify-center lg:justify-start p-3 lg:px-5 lg:py-4 rounded-2xl transition-all duration-200 shrink-0 ${
                   isActive 
-                    ? 'bg-gradient-to-tr from-emerald-400 to-teal-500 text-white shadow-xl shadow-emerald-500/30 scale-105' 
+                    ? 'bg-gradient-to-tr from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-500/30 scale-105' 
                     : 'text-slate-500 hover:bg-slate-50 hover:text-emerald-500'
                 }`}
                 title={item.label}

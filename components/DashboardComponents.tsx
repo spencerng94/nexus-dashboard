@@ -288,10 +288,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* ROW 1: AI BRIEFING (Full Width) */}
         <DailyBriefingWidget briefing={briefing} isGenerating={isGeneratingBriefing} />
 
-        {/* ROW 2: CORE FOCUS (Full Width) */}
+        {/* ROW 2: GOALS (Full Width) */}
         <div className="space-y-6">
           <div className="flex justify-between items-end px-2">
-            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Core Focus</h3>
+            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Goals</h3>
             <button onClick={openAddModal} className="text-emerald-500 text-sm font-bold hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors">Add New</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">

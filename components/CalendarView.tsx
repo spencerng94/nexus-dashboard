@@ -146,7 +146,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave
 
           <button 
             type="submit" 
-            className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl mt-4 hover:bg-black hover:scale-[1.02] transition-all shadow-xl shadow-slate-900/20 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg py-4 rounded-2xl mt-4 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
           >
             <Save size={20} />
             Save Event
@@ -177,15 +177,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent }) => {
 
            return (
              <div key={i} className={`rounded-[1.5rem] p-3 relative group transition-all duration-300 hover:bg-white hover:shadow-lg hover:shadow-emerald-100/50 hover:scale-[1.02] border border-transparent hover:border-emerald-50 ${isToday ? 'bg-white shadow-md border-emerald-100' : ''}`}>
-               <span className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/30' : 'text-slate-600'}`}>
+               <span className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${isToday ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'text-slate-600'}`}>
                  {date.getDate()}
                </span>
                <div className="mt-2 space-y-1">
-                  {dayEvents.map((ev, idx) => (
-                    <div key={idx} className="text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded truncate">
+                  {dayEvents.slice(0, 3).map((ev, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
+                        ev.type === 'work' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'
+                      }`}
+                    >
                       {ev.title}
                     </div>
                   ))}
+                  {dayEvents.length > 3 && <div className="text-[10px] text-slate-400 pl-1">+{dayEvents.length - 3} more</div>}
                </div>
              </div>
            )
@@ -196,38 +202,82 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent }) => {
 
   const renderWeekView = () => {
     const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Start on Sunday
+
+    // Time range: 6 AM to 9 PM (16 hours)
+    const hours = Array.from({ length: 16 }, (_, i) => i + 6);
 
     return (
-      <div className="h-[650px] overflow-y-auto">
-        <div className="grid grid-cols-7 gap-2 min-h-full">
-          {Array.from({ length: 7 }).map((_, i) => {
-            const date = new Date(startOfWeek);
-            date.setDate(startOfWeek.getDate() + i);
-            const isToday = date.getDate() === new Date().getDate();
-            
-            const dayEvents = events.filter(e => {
-              const eDate = new Date(e.startTime);
-              return eDate.getDate() === date.getDate() && eDate.getMonth() === date.getMonth();
-            });
+      <div className="h-[650px] flex flex-col overflow-hidden">
+        {/* Header: Days */}
+        <div className="flex pl-14 pr-2 pb-4 border-b border-slate-100">
+           {Array.from({ length: 7 }).map((_, i) => {
+              const date = new Date(startOfWeek);
+              date.setDate(startOfWeek.getDate() + i);
+              const isToday = date.getDate() === new Date().getDate() && date.getMonth() === new Date().getMonth();
+              
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center justify-center">
+                   <span className="text-xs font-bold text-slate-400 uppercase mb-1">
+                     {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                   </span>
+                   <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold ${
+                     isToday ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'text-slate-700'
+                   }`}>
+                     {date.getDate()}
+                   </div>
+                </div>
+              );
+           })}
+        </div>
 
-            return (
-              <div key={i} className={`flex flex-col border-r border-slate-100 last:border-0 ${isToday ? 'bg-emerald-50/30' : ''} pt-2`}>
-                 <div className="text-center mb-4 sticky top-0 bg-white/50 backdrop-blur-sm py-2 border-b border-slate-100">
-                   <span className="block text-xs font-bold text-slate-400 uppercase">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                   <span className={`block text-lg font-bold ${isToday ? 'text-emerald-500' : 'text-slate-800'}`}>{date.getDate()}</span>
-                 </div>
-                 <div className="flex-1 space-y-2 px-1">
-                   {dayEvents.map((ev, idx) => (
-                     <div key={idx} className="bg-white p-2 rounded-lg border border-slate-100 shadow-sm text-xs">
-                       <div className="font-bold text-slate-700">{ev.time}</div>
-                       <div className="truncate text-slate-500">{ev.title}</div>
-                     </div>
-                   ))}
-                 </div>
-              </div>
-            );
-          })}
+        {/* Scrollable Grid */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+           <div className="grid grid-rows-[repeat(16,minmax(60px,1fr))]">
+              {hours.map((hour) => (
+                <div key={hour} className="flex min-h-[60px] border-b border-slate-50 hover:bg-slate-50/20 transition-colors">
+                   {/* Time Column */}
+                   <div className="w-14 shrink-0 -mt-2.5 px-2 text-right relative z-10">
+                      <span className="text-xs font-bold text-slate-400">
+                        {hour > 12 ? hour - 12 : hour} {hour >= 12 ? 'PM' : 'AM'}
+                      </span>
+                   </div>
+
+                   {/* Days Columns */}
+                   <div className="flex-1 grid grid-cols-7 divide-x divide-slate-50">
+                      {Array.from({ length: 7 }).map((_, dIndex) => {
+                         const date = new Date(startOfWeek);
+                         date.setDate(startOfWeek.getDate() + dIndex);
+                         
+                         const cellEvents = events.filter(e => {
+                            const eDate = new Date(e.startTime);
+                            return eDate.getDate() === date.getDate() && 
+                                   eDate.getMonth() === date.getMonth() &&
+                                   eDate.getHours() === hour;
+                         });
+
+                         return (
+                           <div key={dIndex} className="p-1 group hover:bg-slate-50/30 transition-colors relative">
+                              {cellEvents.map((ev, evIdx) => (
+                                <div 
+                                  key={evIdx}
+                                  className={`mb-1 p-1.5 rounded-lg text-[10px] font-semibold border-l-2 truncate shadow-sm cursor-pointer hover:scale-105 transition-transform z-10 relative
+                                    ${ev.type === 'work' 
+                                      ? 'bg-blue-50 text-blue-700 border-blue-400' 
+                                      : 'bg-rose-50 text-rose-700 border-rose-400'}
+                                  `}
+                                  title={`${ev.time} - ${ev.title}`}
+                                >
+                                  {ev.time.split(' ')[0]} {ev.title}
+                                </div>
+                              ))}
+                           </div>
+                         );
+                      })}
+                   </div>
+                </div>
+              ))}
+           </div>
         </div>
       </div>
     );
@@ -240,21 +290,28 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent }) => {
      });
 
      return (
-       <div className="h-[650px] overflow-y-auto pr-2">
+       <div className="h-[650px] overflow-y-auto pr-2 custom-scrollbar">
          {Array.from({ length: 14 }).map((_, i) => {
             const hour = i + 6; // Start at 6 AM
             const hourEvents = dayEvents.filter(e => new Date(e.startTime).getHours() === hour);
             
             return (
-              <div key={i} className="flex border-b border-slate-100 min-h-[60px] group">
-                <div className="w-20 text-xs font-bold text-slate-400 py-2 border-r border-slate-100 text-center">
+              <div key={i} className="flex border-b border-slate-50 min-h-[60px] group hover:bg-slate-50/30 transition-colors">
+                <div className="w-20 text-xs font-bold text-slate-400 py-2 border-r border-slate-50 text-center shrink-0">
                   {hour > 12 ? hour - 12 : hour} {hour >= 12 ? 'PM' : 'AM'}
                 </div>
                 <div className="flex-1 p-1">
                    {hourEvents.map((ev, idx) => (
-                      <div key={idx} className="bg-emerald-50 border-l-4 border-emerald-400 p-2 rounded mb-1">
-                         <span className="font-bold text-emerald-900 text-sm">{ev.title}</span>
-                         <span className="ml-2 text-emerald-600 text-xs">{ev.duration}</span>
+                      <div 
+                        key={idx} 
+                        className={`border-l-4 p-2 rounded mb-1 shadow-sm ${
+                          ev.type === 'work' 
+                             ? 'bg-blue-50 border-blue-400' 
+                             : 'bg-rose-50 border-rose-400'
+                        }`}
+                      >
+                         <span className={`font-bold text-sm ${ev.type === 'work' ? 'text-blue-900' : 'text-rose-900'}`}>{ev.title}</span>
+                         <span className={`ml-2 text-xs ${ev.type === 'work' ? 'text-blue-600' : 'text-rose-600'}`}>{ev.duration}</span>
                       </div>
                    ))}
                 </div>
@@ -277,7 +334,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent }) => {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:shadow-emerald-500/30 hover:scale-105 transition-all flex items-center gap-2 text-sm"
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:scale-105 transition-all flex items-center gap-2 text-sm"
           >
             <Plus size={18} /> New Event
           </button>
@@ -289,7 +346,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent }) => {
                 onClick={() => setView(v.toLowerCase() as any)}
                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                   view === v.toLowerCase() 
-                    ? 'bg-white shadow-md text-slate-900' 
+                    ? 'bg-white shadow-md text-emerald-600' 
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
               >

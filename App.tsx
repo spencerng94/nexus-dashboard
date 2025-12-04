@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate } from './types';
 import { storageService } from './services/storage';
 import { googleService } from './services/google';
 import { weatherService } from './services/weather';
-import { generateDailyBriefing } from './services/gemini';
+import { generateDailyBriefing, generateSuggestions } from './services/gemini';
 
 // Components
 import Sidebar from './components/Sidebar';
 import LoginScreen from './components/LoginScreen';
 import ChatWidget from './components/ChatWidget';
 import CalendarView from './components/CalendarView';
+import AboutView from './components/AboutView'; // New Import
 import { DashboardView } from './components/DashboardComponents';
-import { ProgressCard, GoalFormModal } from './components/GoalComponents';
+import { ProgressCard, GoalFormModal, GoalSuggestionCard } from './components/GoalComponents';
 import { HabitCard, HabitFormModal, HabitHistoryModal } from './components/HabitComponents';
 
 export default function App() {
@@ -35,9 +36,14 @@ export default function App() {
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [goalDefaultValues, setGoalDefaultValues] = useState<{title?: string, category?: string, icon?: string} | undefined>(undefined);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [viewingHabitHistory, setViewingHabitHistory] = useState<Habit | null>(null);
   const [historyViewMode, setHistoryViewMode] = useState<'calendar' | 'list'>('calendar');
+
+  // Suggestions State
+  const [suggestedGoals, setSuggestedGoals] = useState<Array<{title: string, category: string, icon: string}>>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
   // Load User on Mount
   useEffect(() => {
@@ -193,6 +199,20 @@ export default function App() {
     storageService.saveGoals(updatedGoals);
   };
 
+  const loadGoalSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    const existingTitles = goals.map(g => g.title);
+    const suggestions = await generateSuggestions('goal', existingTitles);
+    setSuggestedGoals(suggestions);
+    setIsLoadingSuggestions(false);
+  };
+
+  const handleAcceptSuggestion = (suggestion: {title: string, category: string, icon: string}) => {
+    setGoalDefaultValues(suggestion);
+    setEditingGoal(null);
+    setIsGoalModalOpen(true);
+  };
+
   // --- HABIT HANDLERS ---
   const handleSaveHabit = (habitData: Omit<Habit, 'id' | 'streak'>) => {
     let updatedHabits = [...habits];
@@ -346,7 +366,7 @@ export default function App() {
             briefing={briefing}
             isGeneratingBriefing={isGeneratingBriefing}
             onRefreshBriefing={() => generateBriefingHelper(goals, events, habits)}
-            openAddModal={() => { setEditingGoal(null); setIsGoalModalOpen(true); }}
+            openAddModal={() => { setEditingGoal(null); setGoalDefaultValues(undefined); setIsGoalModalOpen(true); }}
             onViewCalendar={() => setActiveTab('calendar')}
             onGoalIncrement={handleGoalIncrement} 
             onGoalDecrement={handleGoalDecrement}
@@ -364,9 +384,9 @@ export default function App() {
         {activeTab === 'goals' && (
           <div className="max-w-[1600px] mx-auto">
              <div className="flex justify-between items-center mb-8">
-               <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Focus Areas</h1>
+               <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Goals & Focus</h1>
                <button 
-                onClick={() => { setEditingGoal(null); setIsGoalModalOpen(true); }}
+                onClick={() => { setEditingGoal(null); setGoalDefaultValues(undefined); setIsGoalModalOpen(true); }}
                 className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all flex items-center gap-2"
                >
                  <Plus size={20} /> New Goal
@@ -383,6 +403,57 @@ export default function App() {
                   onEdit={(goal) => { setEditingGoal(goal); setIsGoalModalOpen(true); }}
                 />
               ))}
+              <button 
+                onClick={() => { setEditingGoal(null); setGoalDefaultValues(undefined); setIsGoalModalOpen(true); }}
+                className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 hover:border-emerald-400/50 hover:bg-emerald-50/30 transition-all duration-300 group min-h-[200px]"
+              >
+                <div className="w-16 h-16 rounded-full bg-slate-50 group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
+                  <Plus size={28} className="group-hover:text-emerald-500" />
+                </div>
+                <span className="font-bold text-sm">Create New Goal</span>
+              </button>
+             </div>
+
+             {/* Goal Suggestions Section */}
+             <div className="mt-12">
+               <div className="flex items-center justify-between mb-6">
+                 <div className="flex items-center gap-3">
+                   <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
+                     <Sparkles size={20} />
+                   </div>
+                   <h2 className="text-2xl font-bold text-slate-900">Suggested for you</h2>
+                 </div>
+                 <button 
+                   onClick={loadGoalSuggestions}
+                   disabled={isLoadingSuggestions}
+                   className="text-emerald-600 font-bold text-sm hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+                 >
+                   <RefreshCw size={14} className={isLoadingSuggestions ? "animate-spin" : ""} />
+                   Refresh Ideas
+                 </button>
+               </div>
+               
+               {isLoadingSuggestions ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+                   {[1,2,3,4].map(i => (
+                     <div key={i} className="h-32 bg-slate-100 rounded-[1.5rem]" />
+                   ))}
+                 </div>
+               ) : suggestedGoals.length > 0 ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                   {suggestedGoals.map((s, idx) => (
+                     <GoalSuggestionCard 
+                       key={idx} 
+                       suggestion={s} 
+                       onAdd={() => handleAcceptSuggestion(s)} 
+                     />
+                   ))}
+                 </div>
+               ) : (
+                 <div className="bg-white/50 border border-slate-100 rounded-[1.5rem] p-8 text-center">
+                   <p className="text-slate-500 font-medium">Click "Refresh Ideas" to get personalized goal suggestions based on your current focus.</p>
+                 </div>
+               )}
              </div>
           </div>
         )}
@@ -422,6 +493,9 @@ export default function App() {
              </div>
           </div>
         )}
+        {activeTab === 'about' && (
+           <AboutView />
+        )}
         {activeTab === 'settings' && (
           <div className="max-w-2xl mx-auto pt-12">
              <h1 className="text-4xl font-bold text-slate-900 mb-8 text-center">Profile & Settings</h1>
@@ -457,7 +531,7 @@ export default function App() {
                    >
                      Sign Out
                    </button>
-                   <p className="text-xs text-slate-400 mt-4 font-mono">Version 1.1.0 • Nexus Dashboard</p>
+                   <p className="text-xs text-slate-400 mt-4 font-mono">Version 1.2.0 • Nexus Dashboard</p>
                 </div>
              </div>
           </div>
@@ -471,6 +545,7 @@ export default function App() {
         onClose={() => setIsGoalModalOpen(false)} 
         onSave={handleSaveGoal}
         editingGoal={editingGoal}
+        defaultValues={goalDefaultValues}
       />
 
       <HabitFormModal

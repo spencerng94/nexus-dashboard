@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2, Plus, Minus, X, Save } from 'lucide-react';
+import { Pencil, Trash2, Plus, Minus, X, Save, Sparkles, Loader2, ArrowRight } from 'lucide-react';
 import { Goal } from '../types';
+import { generateSuggestions } from '../services/gemini';
 
 interface ProgressCardProps {
   goal: Goal;
@@ -74,14 +75,41 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, o
   </div>
 );
 
+interface GoalSuggestionCardProps {
+  suggestion: { title: string; category: string; icon: string };
+  onAdd: () => void;
+}
+
+export const GoalSuggestionCard: React.FC<GoalSuggestionCardProps> = ({ suggestion, onAdd }) => {
+  return (
+    <button 
+      onClick={onAdd}
+      className="bg-white p-5 rounded-[1.5rem] border border-slate-100 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 text-left group flex flex-col h-full"
+    >
+      <div className="flex justify-between items-start mb-3">
+        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-xl">
+          {suggestion.icon}
+        </div>
+        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+          <Plus size={16} />
+        </div>
+      </div>
+      <h4 className="font-bold text-slate-800 text-sm mb-1">{suggestion.title}</h4>
+      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">{suggestion.category}</span>
+    </button>
+  );
+};
+
 interface GoalFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: Omit<Goal, 'id' | 'progress'>) => void;
   editingGoal: Goal | null;
+  existingGoals?: Goal[];
+  defaultValues?: { title?: string, category?: string, icon?: string };
 }
 
-export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, editingGoal }) => {
+export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, editingGoal, existingGoals = [], defaultValues }) => {
   const [formData, setFormData] = useState({
     title: '',
     category: 'Personal',
@@ -90,6 +118,9 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
     color: 'text-blue-500 bg-blue-500',
     icon: '🎯'
   });
+  
+  const [suggestions, setSuggestions] = useState<Array<{title: string, category: string, icon: string}>>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     if (editingGoal) {
@@ -101,10 +132,33 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
         color: editingGoal.color,
         icon: editingGoal.icon || '🎯'
       });
+    } else if (defaultValues) {
+      setFormData({
+        title: defaultValues.title || '',
+        category: defaultValues.category || 'Personal',
+        target: 10,
+        unit: 'pts',
+        color: 'text-blue-500 bg-blue-500',
+        icon: defaultValues.icon || '🎯'
+      });
     } else {
       setFormData({ title: '', category: 'Personal', target: 10, unit: 'pts', color: 'text-blue-500 bg-blue-500', icon: '🎯' });
     }
-  }, [editingGoal, isOpen]);
+    setSuggestions([]);
+  }, [editingGoal, isOpen, defaultValues]);
+
+  const fetchSuggestions = async () => {
+    setLoadingSuggestions(true);
+    const existingTitles = existingGoals.map(g => g.title);
+    const ideas = await generateSuggestions('goal', existingTitles);
+    setSuggestions(ideas);
+    setLoadingSuggestions(false);
+  };
+
+  const applySuggestion = (s: {title: string, category: string, icon: string}) => {
+    setFormData(prev => ({ ...prev, title: s.title, category: s.category, icon: s.icon }));
+    setSuggestions([]);
+  };
 
   if (!isOpen) return null;
 
@@ -127,10 +181,10 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
-        <div className="flex justify-between items-center mb-8">
+      <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-slate-900">{editingGoal ? 'Edit Focus' : 'New Focus'}</h3>
+            <h3 className="text-2xl font-bold text-slate-900">{editingGoal ? 'Edit Goal' : 'New Goal'}</h3>
             <p className="text-slate-500 text-sm">{editingGoal ? 'Update your target' : 'Set a new target for yourself'}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
@@ -140,7 +194,40 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Goal Title</label>
+            <div className="flex justify-between items-end mb-2">
+               <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Goal Title</label>
+               {!editingGoal && (
+                 <button 
+                   type="button" 
+                   onClick={fetchSuggestions}
+                   disabled={loadingSuggestions}
+                   className="text-xs font-bold text-emerald-500 flex items-center gap-1 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors"
+                 >
+                   {loadingSuggestions ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                   AI Ideas
+                 </button>
+               )}
+            </div>
+            
+            {suggestions.length > 0 && (
+              <div className="mb-3 grid grid-cols-1 gap-2">
+                {suggestions.map((s, idx) => (
+                  <button 
+                    key={idx}
+                    type="button"
+                    onClick={() => applySuggestion(s)}
+                    className="text-left bg-emerald-50/50 hover:bg-emerald-100 border border-emerald-100 p-2 rounded-xl text-xs flex items-center gap-2 transition-colors"
+                  >
+                    <span className="text-lg">{s.icon}</span>
+                    <div>
+                      <span className="font-bold text-slate-800 block">{s.title}</span>
+                      <span className="text-emerald-600">{s.category}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <input
               required
               type="text"
