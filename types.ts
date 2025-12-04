@@ -1,0 +1,48 @@
+export interface Goal {
+  id: string;
+  title: string;
+  category: string;
+  progress: number;
+  target: number;
+  unit: string;
+  color: string;
+  icon: string;
+}
+
+export interface Habit {
+  id: string;
+  title: string;
+  category: string;
+  icon: string;
+  color: string;
+  streak: number;
+}
+
+export interface HabitLog {
+  habitId: string;
+  date: string;
+  completed: boolean;
+  note?: string;
+}
+
+export interface CalendarEvent {
+  id: string | number;
+  title: string;
+  time: string;
+  startTime: number | Date;
+  type: string;
+  duration: string;
+}
+
+export interface User {
+  uid: string;
+  displayName: string | null;
+  photoURL: string | null;
+  isGuest?: boolean;
+}
+
+export interface DashboardState {
+  goals: Goal[];
+  habits: Habit[];
+  events: CalendarEvent[];
+}
