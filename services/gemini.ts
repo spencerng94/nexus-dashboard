@@ -1,24 +1,46 @@
 import { GoogleGenAI } from "@google/genai";
 import { Goal, CalendarEvent, Habit, DashboardState } from '../types';
 
-// Safely retrieve API key to prevent "process is not defined" crashes in browser-only environments
-let apiKey = '';
-try {
-  apiKey = process.env.API_KEY || '';
-} catch (e) {
-  // process is not defined, likely running in a browser without env injection
-  console.warn("API Key not found in process.env. AI features will be disabled.");
-}
+// Helper to safely get API Key without crashing if process is undefined
+const getApiKey = (): string => {
+  try {
+    // @ts-ignore
+    return process.env.API_KEY || '';
+  } catch (e) {
+    return '';
+  }
+};
 
-const ai = new GoogleGenAI({ apiKey });
+// Lazy initialization of the AI client
+let aiClient: GoogleGenAI | null = null;
+
+const getAIClient = () => {
+  if (aiClient) return aiClient;
+  
+  const key = getApiKey();
+  if (!key) {
+    console.warn("API Key not found. AI features will be disabled.");
+    return null;
+  }
+
+  try {
+    aiClient = new GoogleGenAI({ apiKey: key });
+    return aiClient;
+  } catch (e) {
+    console.error("Failed to initialize Gemini Client:", e);
+    return null;
+  }
+};
 
 export const generateDailyBriefing = async (
   goals: Goal[],
   events: CalendarEvent[],
   habits: Habit[]
 ): Promise<string> => {
-  if (!apiKey) {
-    return "API Key is missing. Please configure your environment to use the intelligent briefing features.";
+  const ai = getAIClient();
+  
+  if (!ai) {
+    return "API Key is missing or invalid. Please check your environment configuration.";
   }
 
   try {
@@ -62,8 +84,10 @@ export const chatWithAssistant = async (
   message: string,
   context: DashboardState
 ): Promise<string> => {
-  if (!apiKey) {
-    return "I cannot reply because the API Key is missing.";
+  const ai = getAIClient();
+
+  if (!ai) {
+    return "I cannot reply because the API Key is missing. Please configure it in your settings.";
   }
 
   try {

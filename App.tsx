@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User } from './types';
 import { storageService } from './services/storage';
+import { googleService } from './services/google';
 import { generateDailyBriefing } from './services/gemini';
 
 // Components
@@ -47,24 +48,59 @@ export default function App() {
     setGoals(storageService.getGoals());
     setHabits(storageService.getHabits());
     setHabitLogs(storageService.getHabitLogs());
-    setEvents(storageService.getEvents());
-    // Auto-generate briefing if empty
-    if (!briefing && events.length > 0) {
-      generateBriefingHelper();
-    }
+
+    // Event Sync Logic
+    const syncEvents = async () => {
+        if (user.accessToken && !user.isGuest) {
+            try {
+                const googleEvents = await googleService.listEvents(user.accessToken);
+                setEvents(googleEvents);
+                if (!briefing && googleEvents.length > 0) {
+                     // small delay to ensure state is ready
+                     setTimeout(() => generateBriefingHelper(goals, googleEvents, habits), 500);
+                }
+            } catch (e) {
+                console.error("Failed to sync Google Calendar", e);
+                // Fallback to local
+                const localEvents = storageService.getEvents();
+                setEvents(localEvents);
+            }
+        } else {
+            const localEvents = storageService.getEvents();
+            setEvents(localEvents);
+            if (!briefing && localEvents.length > 0) {
+                 generateBriefingHelper(goals, localEvents, habits);
+            }
+        }
+    };
+
+    syncEvents();
+
   }, [user]);
 
-  const generateBriefingHelper = async () => {
+  const generateBriefingHelper = async (
+      currentGoals = goals, 
+      currentEvents = events, 
+      currentHabits = habits
+    ) => {
     setIsGeneratingBriefing(true);
-    const newBriefing = await generateDailyBriefing(goals, events, habits);
+    const newBriefing = await generateDailyBriefing(currentGoals, currentEvents, currentHabits);
     setBriefing(newBriefing);
     setIsGeneratingBriefing(false);
   };
 
-  const handleLogin = () => {
-    const newUser: User = { uid: '123', displayName: 'Alex', photoURL: null };
-    storageService.saveUser(newUser);
-    setUser(newUser);
+  const handleLogin = async (clientId: string) => {
+    setLoginError("");
+    try {
+        if (!clientId) throw new Error("Please configure a Client ID first.");
+        googleService.init(clientId);
+        const loggedInUser = await googleService.login();
+        storageService.saveUser(loggedInUser);
+        setUser(loggedInUser);
+    } catch (e: any) {
+        console.error(e);
+        setLoginError(e.message || "Google Login Failed");
+    }
   };
 
   const handleGuestLogin = () => {
@@ -202,16 +238,30 @@ export default function App() {
     }
   };
 
-  const handleAddEvent = (newEventData: Omit<CalendarEvent, 'id'>) => {
-    const newEvent: CalendarEvent = {
-      ...newEventData,
-      id: Date.now().toString(),
-    };
-    const updatedEvents = [...events, newEvent].sort((a, b) => 
-      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+  const handleAddEvent = async (newEventData: Omit<CalendarEvent, 'id'>) => {
+    // Optimistic Update
+    const tempId = Date.now().toString();
+    const tempEvent = { ...newEventData, id: tempId };
+    const optimisticEvents = [...events, tempEvent].sort((a, b) => 
+       new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
-    setEvents(updatedEvents);
-    storageService.saveEvents(updatedEvents);
+    setEvents(optimisticEvents);
+
+    if (user?.accessToken && !user.isGuest) {
+        try {
+            const createdEvent = await googleService.createEvent(user.accessToken, newEventData);
+            if (createdEvent) {
+                // Replace temp event with real one
+                setEvents(prev => prev.map(e => e.id === tempId ? createdEvent : e));
+            }
+        } catch (e) {
+            console.error("Failed to save to Google Calendar", e);
+            // Revert on failure (or keep local) - keeping local for now as fallback
+            storageService.saveEvents(optimisticEvents); 
+        }
+    } else {
+        storageService.saveEvents(optimisticEvents);
+    }
   };
 
   const openHabitHistory = (habit: Habit, view: 'calendar' | 'list') => {
@@ -237,7 +287,7 @@ export default function App() {
             events={events}
             briefing={briefing}
             isGeneratingBriefing={isGeneratingBriefing}
-            onRefreshBriefing={generateBriefingHelper}
+            onRefreshBriefing={() => generateBriefingHelper(goals, events, habits)}
             openAddModal={() => { setEditingGoal(null); setIsGoalModalOpen(true); }}
             onViewCalendar={() => setActiveTab('calendar')}
             onGoalIncrement={handleGoalIncrement} 

@@ -7,7 +7,9 @@ Nexus is an intelligent personal productivity dashboard designed to help you org
 - **Daily Briefing**: Starts your day with an AI-generated summary of your schedule, focus areas, and habits, acting as a personal concierge.
 - **Goal Tracking**: Set targets (e.g., "Read 100 pages") and track progress visually with increment/decrement controls.
 - **Habit Tracker**: Build consistency with daily check-ins, streak tracking, and detailed history views (Calendar & List). Includes note-taking for every check-in.
-- **Calendar**: A unified view of your schedule with Month, Week, and Day views.
+- **Calendar**: 
+  - **Google Calendar Sync**: View and add events directly to your primary Google Calendar (Requires Login).
+  - **Local Calendar**: Full functionality available for guest users.
 - **AI Assistant**: A built-in chat widget context-aware of your dashboard data, ready to answer questions about your schedule or help you brainstorm.
 - **Local Privacy**: Data is currently persisted to your browser's LocalStorage, ensuring your personal data stays on your device.
 
@@ -18,11 +20,13 @@ Nexus is an intelligent personal productivity dashboard designed to help you org
 - **Styling**: Tailwind CSS (Utility-first styling for rapid UI development)
 - **Icons**: Lucide React
 - **AI Integration**: Google GenAI SDK (`@google/genai`) using the Gemini 2.5 Flash model.
+- **Auth & Calendar**: Google Identity Services SDK (OAuth 2.0).
 
 ### Architecture
 - **Service Layer Pattern**:
-  - `services/storage.ts`: Abstraction layer for data persistence. Currently implemented using `localStorage` for immediate setup and offline capability, but designed to be easily swapped for a backend (e.g., Firebase) in the future.
-  - `services/gemini.ts`: Handles all interactions with the Google Gemini API, isolating AI logic from UI components.
+  - `services/storage.ts`: Abstraction layer for local data persistence.
+  - `services/google.ts`: Handles Google OAuth authentication and Calendar API interactions.
+  - `services/gemini.ts`: Handles interactions with the Google Gemini API.
 - **Component Design**: Modular components split by domain (`GoalComponents`, `HabitComponents`, `DashboardComponents`) to maintain readability and separation of concerns.
 
 ## 🚀 Setup & Installation
@@ -30,20 +34,29 @@ Nexus is an intelligent personal productivity dashboard designed to help you org
 ### Prerequisites
 - Node.js installed.
 - A Google AI Studio API Key.
+- A Google Cloud Project for OAuth.
 
-### Environment Variables
+### 1. Google Cloud Configuration (For Calendar Sync)
+To enable the "Sign in with Google" feature locally:
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project.
+3. Search for **"Google Calendar API"** and enable it.
+4. Go to **APIs & Services > Credentials**.
+5. Click **Create Credentials > OAuth client ID**.
+6. Select **Web application**.
+7. Under **Authorized JavaScript origins**, add `http://localhost:3000` (or the port your local server runs on).
+8. Copy the **Client ID**.
+
+### 2. Environment Variables
 1. Create a file named `.env` in the root directory.
-2. Add your API key:
+2. Add your API key (for Gemini) and optionally your Client ID (for Calendar):
    ```
-   # If using React Scripts (CRA)
-   REACT_APP_API_KEY=your_api_key_here
-
-   # If using Vite (you may need to update vite.config.ts to define process.env or update gemini.ts to use import.meta.env)
-   # For this setup, we recommend defining process.env in your vite.config.ts:
-   # define: { 'process.env': process.env }
+   REACT_APP_API_KEY=your_gemini_api_key
+   # Optional: Pre-fill Client ID in Login Screen code if using a build system that supports env injection
+   # REACT_APP_GOOGLE_CLIENT_ID=your_oauth_client_id 
    ```
 
-### Running the App
+### 3. Running the App
 1. **Clone the repository**.
 2. **Install dependencies**:
    ```bash
@@ -56,8 +69,9 @@ Nexus is an intelligent personal productivity dashboard designed to help you org
    npm run dev
    ```
 4. **Login**:
-   - The app features a simulated login screen.
-   - Click **"Continue with Google"** (Simulated user "Alex") or **"Continue as Guest"**.
+   - On the Login Screen, click **"Configure Client ID"** at the bottom.
+   - Paste the **Client ID** you copied from Google Cloud Console.
+   - Click **"Sign in with Google"**.
 
 ## 🧠 AI Features
 - **Context-Aware Prompting**: The dashboard feeds your current goals, active habits, and today's calendar events into the prompt context.
