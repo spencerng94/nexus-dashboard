@@ -3,6 +3,7 @@ import { CalendarEvent, User } from '../types';
 declare const google: any;
 
 let tokenClient: any;
+let currentClientId: string | null = null;
 let loginResolver: ((user: User) => void) | null = null;
 let loginRejector: ((error: any) => void) | null = null;
 let activeTimeoutId: any = null;
@@ -16,6 +17,12 @@ export const googleService = {
   init(clientId: string) {
     if (typeof google === 'undefined') {
       throw new Error('Google Identity Services script not loaded. Check internet connection.');
+    }
+
+    // Avoid re-initializing if already set up with same ID
+    if (tokenClient && currentClientId === clientId) {
+        console.log("Google Client already initialized.");
+        return;
     }
 
     // Cleanup previous attempts if any
@@ -32,97 +39,103 @@ export const googleService = {
 
     console.log("Initializing Google Client...");
 
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: SCOPES,
-      callback: async (response: any) => {
-        // Clear timeout immediately upon response
-        if (activeTimeoutId) {
-            clearTimeout(activeTimeoutId);
-            activeTimeoutId = null;
-        }
-
-        console.log("GIS Callback received:", response);
-
-        if (response.error) {
-          console.error("GIS Error:", response);
-          if (loginRejector) {
-            let msg = `Google Auth Error: ${response.error}`;
-            if (response.error === 'popup_closed_by_user') {
-                msg = "Login cancelled.\n\nDid you see an error in the popup? If you saw 'Error 400: redirect_uri_mismatch', you need to add this domain to your Authorized Origins in Google Cloud Console.";
-            } else if (response.error === 'access_denied') {
-                msg = "Access denied. You must grant permission to use the app.";
+    try {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: SCOPES,
+        callback: async (response: any) => {
+          // Clear timeout immediately upon response
+          if (activeTimeoutId) {
+              clearTimeout(activeTimeoutId);
+              activeTimeoutId = null;
+          }
+  
+          console.log("GIS Callback received:", response);
+  
+          if (response.error) {
+            console.error("GIS Error:", response);
+            if (loginRejector) {
+              let msg = `Google Auth Error: ${response.error}`;
+              if (response.error === 'popup_closed_by_user') {
+                  msg = "Login cancelled by user.";
+              } else if (response.error === 'access_denied') {
+                  msg = "Access denied. You must grant permission to use the app.";
+              }
+              loginRejector(new Error(msg));
+              loginRejector = null;
+              loginResolver = null;
             }
-            loginRejector(new Error(msg));
-            loginRejector = null;
-            loginResolver = null;
+            return;
           }
-          return;
-        }
-
-        const accessToken = response.access_token;
-
-        try {
-          console.log("Fetching user profile...");
-          // Fetch user profile immediately after getting token
-          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
+  
+          const accessToken = response.access_token;
+  
+          try {
+            console.log("Fetching user profile...");
+            // Fetch user profile immediately after getting token
+            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            
+            if (!userInfoResponse.ok) {
+               throw new Error("Failed to fetch user profile");
+            }
+  
+            const userInfo = await userInfoResponse.json();
+            console.log("User profile fetched successfully.");
+  
+            const user: User = {
+              uid: userInfo.sub,
+              displayName: userInfo.name,
+              photoURL: userInfo.picture,
+              email: userInfo.email,
+              accessToken: accessToken
+            };
+            
+            if (loginResolver) {
+              loginResolver(user);
+              loginResolver = null;
+              loginRejector = null;
+            }
+          } catch (err) {
+            console.error("User Info Fetch Error:", err);
+            if (loginRejector) {
+              loginRejector(err);
+              loginRejector = null;
+              loginResolver = null;
+            }
+          }
+        },
+        error_callback: (nonResponseError: any) => {
+          // Handles configuration errors or immediate load failures
+          if (activeTimeoutId) {
+              clearTimeout(activeTimeoutId);
+              activeTimeoutId = null;
+          }
+          console.error("GIS Configuration Error:", nonResponseError);
           
-          if (!userInfoResponse.ok) {
-             throw new Error("Failed to fetch user profile");
+          let errorMessage = "Google Sign-In failed.";
+      
+          if (nonResponseError.type === 'popup_closed') {
+              errorMessage = "Login cancelled.\n\nDid you see an error in the popup?\n• Check for 'Error 400: redirect_uri_mismatch'. If so, update your Authorized Origins in Google Cloud.\n• Check for 'Error 403: access_denied'. Check your Test Users list.";
+          } else if (nonResponseError.type === 'popup_blocked') {
+              errorMessage = "Popup blocked. Please allow popups for this website in your browser settings.";
+          } else {
+              errorMessage = `Configuration Error: ${nonResponseError.message || JSON.stringify(nonResponseError)}`;
           }
-
-          const userInfo = await userInfoResponse.json();
-          console.log("User profile fetched successfully.");
-
-          const user: User = {
-            uid: userInfo.sub,
-            displayName: userInfo.name,
-            photoURL: userInfo.picture,
-            email: userInfo.email,
-            accessToken: accessToken
-          };
-          
-          if (loginResolver) {
-            loginResolver(user);
-            loginResolver = null;
-            loginRejector = null;
-          }
-        } catch (err) {
-          console.error("User Info Fetch Error:", err);
+  
           if (loginRejector) {
-            loginRejector(err);
-            loginRejector = null;
-            loginResolver = null;
+              loginRejector(new Error(errorMessage));
+              loginRejector = null;
+              loginResolver = null;
           }
         }
-      },
-      error_callback: (nonResponseError: any) => {
-        // Handles configuration errors or immediate load failures
-        if (activeTimeoutId) {
-            clearTimeout(activeTimeoutId);
-            activeTimeoutId = null;
-        }
-        console.error("GIS Configuration Error:", nonResponseError);
-        
-        let errorMessage = "Google Sign-In failed.";
-    
-        if (nonResponseError.type === 'popup_closed') {
-            errorMessage = "Login cancelled.\n\nDid you see an error in the popup?\n• Check for 'Error 400: redirect_uri_mismatch'. If so, update your Authorized Origins in Google Cloud.\n• Check for 'Error 403: access_denied'. Check your Test Users list.";
-        } else if (nonResponseError.type === 'popup_blocked') {
-            errorMessage = "Popup blocked. Please allow popups for this website in your browser settings.";
-        } else {
-            errorMessage = `Configuration Error: ${nonResponseError.message || JSON.stringify(nonResponseError)}`;
-        }
-
-        if (loginRejector) {
-            loginRejector(new Error(errorMessage));
-            loginRejector = null;
-            loginResolver = null;
-        }
-      }
-    });
+      });
+      currentClientId = clientId;
+    } catch (e) {
+      console.error("Failed to initialize token client:", e);
+      throw new Error("Failed to initialize Google Sign-In. Check your Client ID.");
+    }
   },
 
   /**
@@ -159,13 +172,21 @@ export const googleService = {
       try {
         // Use overridablePrompt to force account selection if needed
         tokenClient.requestAccessToken({ prompt: 'consent' });
-      } catch (e) {
+      } catch (e: any) {
         console.error("GIS Launch Error", e);
         if (activeTimeoutId) {
             clearTimeout(activeTimeoutId);
             activeTimeoutId = null;
         }
-        reject(new Error("Failed to launch Google Sign-In popup. Please check for popup blockers."));
+        
+        let msg = "Failed to launch Google Sign-In popup.";
+        if (e.message && e.message.includes('pending')) {
+            msg = "A login popup is already open or pending. Please check other windows or try again in a moment.";
+        } else {
+            msg += " " + (e.message || "");
+        }
+
+        reject(new Error(msg));
         loginResolver = null;
         loginRejector = null;
       }
