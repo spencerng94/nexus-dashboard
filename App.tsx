@@ -25,6 +25,7 @@ export default function App() {
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [loginError, setLoginError] = useState("");
+  const [calendarError, setCalendarError] = useState<string | null>(null);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -53,14 +54,16 @@ export default function App() {
     const syncEvents = async () => {
         if (user.accessToken && !user.isGuest) {
             try {
+                setCalendarError(null);
                 const googleEvents = await googleService.listEvents(user.accessToken);
                 setEvents(googleEvents);
                 if (!briefing && googleEvents.length > 0) {
                      // small delay to ensure state is ready
                      setTimeout(() => generateBriefingHelper(goals, googleEvents, habits), 500);
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error("Failed to sync Google Calendar", e);
+                setCalendarError(e.message || "Failed to sync Calendar");
                 // Fallback to local
                 const localEvents = storageService.getEvents();
                 setEvents(localEvents);
@@ -126,6 +129,7 @@ export default function App() {
     setUser(null);
     setEvents([]);
     setBriefing("");
+    setCalendarError(null);
   };
 
   // --- DATA HANDLERS ---
@@ -266,8 +270,9 @@ export default function App() {
                 // Replace temp event with real one
                 setEvents(prev => prev.map(e => e.id === tempId ? createdEvent : e));
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to save to Google Calendar", e);
+            alert("Failed to save to Google Calendar: " + e.message);
             // Revert on failure (or keep local) - keeping local for now as fallback
             storageService.saveEvents(optimisticEvents); 
         }
@@ -307,6 +312,7 @@ export default function App() {
             onDeleteGoal={handleDeleteGoal}
             onEditGoal={(goal) => { setEditingGoal(goal); setIsGoalModalOpen(true); }}
             displayName={user.displayName || 'User'}
+            syncError={calendarError}
           />
         )}
         {activeTab === 'goals' && (

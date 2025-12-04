@@ -190,8 +190,18 @@ export const googleService = {
       );
 
       if (!response.ok) {
-        console.error("Google API Error", response.status, response.statusText);
-        throw new Error('Failed to fetch events');
+        let detailedError = response.statusText;
+        try {
+            const errorBody = await response.json();
+            if (errorBody.error && errorBody.error.message) {
+                detailedError = errorBody.error.message;
+            }
+        } catch (jsonErr) {
+            // If json parse fails, stick with statusText
+        }
+        
+        console.error("Google Calendar API Error Detail:", detailedError);
+        throw new Error(detailedError);
       }
       
       const data = await response.json();
@@ -219,9 +229,10 @@ export const googleService = {
           duration: durationStr.trim()
         };
       });
-    } catch (e) {
-      console.error("Google Calendar Fetch Error", e);
-      return [];
+    } catch (e: any) {
+      console.error("Google Calendar Fetch Error:", e);
+      // Re-throw so the UI knows there was an error
+      throw e;
     }
   },
 
@@ -265,7 +276,10 @@ export const googleService = {
         }
       );
       
-      if (!response.ok) throw new Error('Failed to create event');
+      if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData?.error?.message || "Failed to create event");
+      }
       const data = await response.json();
       
       return {
@@ -275,7 +289,7 @@ export const googleService = {
       };
     } catch (e) {
       console.error("Create Event Error", e);
-      return null;
+      throw e;
     }
   }
 };

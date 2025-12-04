@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, RefreshCw, Sun, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays } from 'lucide-react';
+import { Sparkles, RefreshCw, Sun, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle } from 'lucide-react';
 import { Goal, CalendarEvent } from '../types';
 import { ProgressCard } from './GoalComponents';
 
@@ -74,6 +74,7 @@ interface DashboardViewProps {
   onDeleteGoal: (id: string) => void;
   onEditGoal: (goal: Goal) => void;
   displayName: string;
+  syncError?: string | null;
 }
 
 const IMPORTANT_DATES = [
@@ -84,7 +85,7 @@ const IMPORTANT_DATES = [
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ 
   goals, events, briefing, isGeneratingBriefing, onRefreshBriefing, openAddModal, onViewCalendar,
-  onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName
+  onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName, syncError
 }) => {
   const date = new Date();
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
@@ -119,6 +120,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {syncError && (
+         <div className="bg-rose-50 border-l-4 border-rose-500 p-4 rounded-r-2xl flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-4">
+            <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={20} />
+            <div>
+               <h4 className="font-bold text-rose-800 text-sm">Calendar Sync Issue</h4>
+               <p className="text-rose-700 text-sm mt-1">{syncError}</p>
+               {syncError.toLowerCase().includes('enabled') && (
+                 <p className="text-xs font-bold text-rose-800 mt-2 bg-rose-100/50 p-2 rounded-lg">
+                   Action: Enable 'Google Calendar API' in your Google Cloud Console project.
+                 </p>
+               )}
+            </div>
+         </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <DailyBriefingWidget briefing={briefing} isGenerating={isGeneratingBriefing} />
