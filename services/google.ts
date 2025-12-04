@@ -5,7 +5,7 @@ declare const google: any;
 let tokenClient: any;
 let loginResolver: ((user: User) => void) | null = null;
 let loginRejector: ((error: any) => void) | null = null;
-let initializedClientId: string | null = null;
+let activeTimeoutId: any = null;
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
@@ -15,23 +15,45 @@ export const googleService = {
    */
   init(clientId: string) {
     if (typeof google === 'undefined') {
-      throw new Error('Google Identity Services script not loaded');
+      throw new Error('Google Identity Services script not loaded. Check internet connection.');
     }
 
-    // Always re-initialize to ensure fresh callback binding. 
-    // This fixes issues where the app gets "stuck" if a previous attempt failed.
+    // Cleanup previous attempts if any
+    if (loginRejector) {
+      const err = new Error("Interrupted by new initialization.");
+      loginRejector(err);
+      loginRejector = null;
+      loginResolver = null;
+    }
+    if (activeTimeoutId) {
+      clearTimeout(activeTimeoutId);
+      activeTimeoutId = null;
+    }
+
     console.log("Initializing Google Client...");
 
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: SCOPES,
       callback: async (response: any) => {
+        // Clear timeout immediately upon response
+        if (activeTimeoutId) {
+            clearTimeout(activeTimeoutId);
+            activeTimeoutId = null;
+        }
+
         console.log("GIS Callback received:", response);
 
         if (response.error) {
           console.error("GIS Error:", response);
           if (loginRejector) {
-            loginRejector(new Error(`Google Auth Error: ${response.error}`));
+            let msg = `Google Auth Error: ${response.error}`;
+            if (response.error === 'popup_closed_by_user') {
+                msg = "Login cancelled: The popup was closed before sign-in completed.";
+            } else if (response.error === 'access_denied') {
+                msg = "Access denied. You must grant permission to use the app.";
+            }
+            loginRejector(new Error(msg));
             loginRejector = null;
             loginResolver = null;
           }
@@ -76,9 +98,20 @@ export const googleService = {
           }
         }
       },
+      error_callback: (nonResponseError: any) => {
+        // Handles configuration errors or immediate load failures
+        if (activeTimeoutId) {
+            clearTimeout(activeTimeoutId);
+            activeTimeoutId = null;
+        }
+        console.error("GIS Configuration Error:", nonResponseError);
+        if (loginRejector) {
+            loginRejector(new Error(`Google Client Configuration Error. \nDetails: ${JSON.stringify(nonResponseError)}`));
+            loginRejector = null;
+            loginResolver = null;
+        }
+      }
     });
-    
-    initializedClientId = clientId;
   },
 
   /**
@@ -87,41 +120,43 @@ export const googleService = {
   login(): Promise<User> {
     return new Promise((resolve, reject) => {
       if (!tokenClient) {
-        reject(new Error('Google Client not initialized. Please provide a Client ID.'));
+        reject(new Error('Google Client not initialized. Please configure Client ID.'));
         return;
       }
 
       console.log("Requesting Access Token...");
 
-      // Safety timeout: Reject if no response within 60 seconds (user closed popup, etc)
-      const timeoutId = setTimeout(() => {
-        const err = new Error("Login timed out. Did you see an error in the popup? Check for 'Error 400: redirect_uri_mismatch' or 'Error 403: access_denied'. If the popup closed immediately, check your popup blocker.");
+      // Clear any stale timeouts
+      if (activeTimeoutId) {
+          clearTimeout(activeTimeoutId);
+      }
+
+      // Safety timeout
+      activeTimeoutId = setTimeout(() => {
+        const err = new Error("Login timed out.\n\nPossible causes:\n1. 'Authorized Javascript Origin' mismatch in Google Cloud Console.\n2. Popup was blocked or closed manually.\n3. Network firewall blocked the script.");
         if (loginRejector) {
            loginRejector(err);
-           // Clear handlers to prevent late resolution
            loginResolver = null;
            loginRejector = null;
         }
+        activeTimeoutId = null;
       }, 60000);
 
-      // Set up the single-use handlers for this specific login attempt
-      loginResolver = (user) => {
-        clearTimeout(timeoutId);
-        resolve(user);
-      };
+      loginResolver = resolve;
+      loginRejector = reject;
 
-      loginRejector = (error) => {
-        clearTimeout(timeoutId);
-        reject(error);
-      };
-
-      // Force consent prompt to ensure fresh token and clear flow
       try {
+        // Use overridablePrompt to force account selection if needed
         tokenClient.requestAccessToken({ prompt: 'consent' });
       } catch (e) {
         console.error("GIS Launch Error", e);
-        clearTimeout(timeoutId);
+        if (activeTimeoutId) {
+            clearTimeout(activeTimeoutId);
+            activeTimeoutId = null;
+        }
         reject(new Error("Failed to launch Google Sign-In popup. Please check for popup blockers."));
+        loginResolver = null;
+        loginRejector = null;
       }
     });
   },
