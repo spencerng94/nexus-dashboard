@@ -49,7 +49,7 @@ export const googleService = {
           if (loginRejector) {
             let msg = `Google Auth Error: ${response.error}`;
             if (response.error === 'popup_closed_by_user') {
-                msg = "Login cancelled: The popup was closed before sign-in completed.";
+                msg = "Login cancelled.\n\nDid you see an error in the popup? If you saw 'Error 400: redirect_uri_mismatch', you need to add this domain to your Authorized Origins in Google Cloud Console.";
             } else if (response.error === 'access_denied') {
                 msg = "Access denied. You must grant permission to use the app.";
             }
@@ -105,8 +105,19 @@ export const googleService = {
             activeTimeoutId = null;
         }
         console.error("GIS Configuration Error:", nonResponseError);
+        
+        let errorMessage = "Google Sign-In failed.";
+    
+        if (nonResponseError.type === 'popup_closed') {
+            errorMessage = "Login cancelled.\n\nDid you see an error in the popup?\n• Check for 'Error 400: redirect_uri_mismatch'. If so, update your Authorized Origins in Google Cloud.\n• Check for 'Error 403: access_denied'. Check your Test Users list.";
+        } else if (nonResponseError.type === 'popup_blocked') {
+            errorMessage = "Popup blocked. Please allow popups for this website in your browser settings.";
+        } else {
+            errorMessage = `Configuration Error: ${nonResponseError.message || JSON.stringify(nonResponseError)}`;
+        }
+
         if (loginRejector) {
-            loginRejector(new Error(`Google Client Configuration Error. \nDetails: ${JSON.stringify(nonResponseError)}`));
+            loginRejector(new Error(errorMessage));
             loginRejector = null;
             loginResolver = null;
         }
@@ -133,7 +144,7 @@ export const googleService = {
 
       // Safety timeout
       activeTimeoutId = setTimeout(() => {
-        const err = new Error("Login timed out.\n\nPossible causes:\n1. 'Authorized Javascript Origin' mismatch in Google Cloud Console.\n2. Popup was blocked or closed manually.\n3. Network firewall blocked the script.");
+        const err = new Error("Login timed out.\n\nDid you see an error in the popup?\nCheck for 'Error 400: redirect_uri_mismatch' or 'Error 403: access_denied'.\nIf the popup closed immediately, check your popup blocker.");
         if (loginRejector) {
            loginRejector(err);
            loginResolver = null;
