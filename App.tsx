@@ -92,8 +92,18 @@ export default function App() {
   const handleLogin = async (clientId: string) => {
     setLoginError("");
     try {
-        if (!clientId) throw new Error("Please configure a Client ID first.");
-        googleService.init(clientId);
+        let finalClientId = clientId;
+        // Fallback to env var if missing
+        if (!finalClientId) {
+          try {
+             // @ts-ignore
+             finalClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+          } catch(e) {}
+        }
+        
+        if (!finalClientId) throw new Error("Please configure a Client ID first.");
+        
+        googleService.init(finalClientId);
         const loggedInUser = await googleService.login();
         storageService.saveUser(loggedInUser);
         setUser(loggedInUser);

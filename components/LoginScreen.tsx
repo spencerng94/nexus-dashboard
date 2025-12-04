@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, Settings, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 
 interface LoginScreenProps {
@@ -12,20 +12,54 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
   const [showConfig, setShowConfig] = useState(false);
   const [origin, setOrigin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setOrigin(window.location.origin);
+      
+      // 1. Try Local Storage
+      const storedId = localStorage.getItem('nexus_client_id');
+      if (storedId) {
+        setClientId(storedId);
+      } else {
+        // 2. Try Environment Variable (Safely)
+        try {
+          // @ts-ignore
+          const envId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+          if (envId) setClientId(envId);
+        } catch (e) {
+          // ignore
+        }
+      }
     }
   }, []);
 
+  const handleClientIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    setClientId(newVal);
+    localStorage.setItem('nexus_client_id', newVal);
+  };
+
   const handleGoogleClick = async () => {
+    // Check for ID before loading
+    if (!clientId) {
+      setShowConfig(true);
+      // Wait for animation frame/render then focus
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
+
     if (isLoading) return;
     setIsLoading(true);
+    
     try {
       await onLogin(clientId);
     } catch (e) {
-      // Error handled in parent state, but we stop loading here
+      // Error is set in App.tsx, but we must stop loading here
     } finally {
       setIsLoading(false);
     }
@@ -46,16 +80,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
         </p>
         
         {loginError && (
-           <div className="mb-6 p-4 bg-amber-50/80 backdrop-blur-sm text-amber-700 text-sm rounded-2xl border border-amber-100/50 flex items-center gap-3 text-left">
+           <div className="mb-6 p-4 bg-amber-50/80 backdrop-blur-sm text-amber-700 text-sm rounded-2xl border border-amber-100/50 flex items-center gap-3 text-left animate-in fade-in slide-in-from-top-2">
              <AlertTriangle size={18} className="shrink-0" />
-             {loginError}
+             <span className="break-words">{loginError}</span>
            </div>
         )}
 
         <button 
           onClick={handleGoogleClick}
           disabled={isLoading}
-          className="group w-full bg-slate-900 hover:bg-black text-white font-medium text-lg py-4 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-[1.02] mb-4 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="group w-full bg-slate-900 hover:bg-black text-white font-medium text-lg py-4 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-[1.02] mb-4 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <Loader2 className="animate-spin w-6 h-6 text-white" />
@@ -94,9 +128,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
                   1. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-indigo-500 hover:underline font-bold">Create OAuth Client ID</a> in Google Cloud.
                 </p>
                 <input 
+                  ref={inputRef}
                   type="text" 
                   value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
+                  onChange={handleClientIdChange}
                   placeholder="Paste Client ID here..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />

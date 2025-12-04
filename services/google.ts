@@ -67,9 +67,27 @@ export const googleService = {
         return;
       }
 
-      // Store resolvers to be called by the global callback
-      loginResolver = resolve;
-      loginRejector = reject;
+      // Safety timeout: Reject if no response within 60 seconds (user closed popup, etc)
+      const timeoutId = setTimeout(() => {
+        const err = new Error("Login timed out. Please try again.");
+        if (loginRejector) {
+           loginRejector(err);
+           // Clear handlers to prevent late resolution
+           loginResolver = null;
+           loginRejector = null;
+        }
+      }, 60000);
+
+      // Wrap resolve/reject to clear timeout
+      loginResolver = (user) => {
+        clearTimeout(timeoutId);
+        resolve(user);
+      };
+
+      loginRejector = (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      };
 
       // Force consent prompt to ensure fresh token and clear flow
       tokenClient.requestAccessToken({ prompt: 'consent' });
