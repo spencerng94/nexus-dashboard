@@ -30,7 +30,7 @@ export const generateDailyBriefing = async (
   const ai = getAIClient();
   
   if (!ai) {
-    return "API Key is missing or invalid. Please check your environment configuration.";
+    return "<p>API Key is missing. Please check your settings.</p>";
   }
 
   try {
@@ -43,17 +43,26 @@ export const generateDailyBriefing = async (
     });
 
     const prompt = `
-      Act as a high-end personal concierge. Write a "Daily Briefing" for me.
+      Act as a high-end personal concierge. Create a "Plan for Today" for me.
       
       Today's Schedule: ${JSON.stringify(todaysEvents)}
       Current Goals: ${JSON.stringify(goals.map(g => ({ title: g.title, progress: g.progress, target: g.target })))}
       Habits to maintain: ${JSON.stringify(habits.map(h => h.title))}
       
-      Output pure text with no markdown symbols.
+      Output format: HTML string (no markdown code blocks, just raw HTML tags).
+      
+      Styling Rules (Apply these classes exactly):
+      1. Wrap ALL times (e.g. "10:00 AM", "Morning"), dates, time-references, AND specific event names/titles in this span:
+         <span class="text-emerald-600 font-semibold">...</span>
+      
+      2. Do NOT use background colors, pills, or underlines. Just colored text.
+
       Structure:
-      1. A short, elegant greeting sentence.
-      2. Two clear, actionable focus points based on my schedule and goals.
-      3. A thoughtful closing or heads-up.
+      - Start with a <p class="mb-4 text-xl md:text-2xl leading-relaxed text-slate-700"> containing a short, elegant greeting.
+      - Follow with a <ul class="list-disc pl-6 space-y-2 mb-4 marker:text-emerald-400"> containing 2-3 clear, actionable focus points for the day.
+      - Each <li> should have class="text-base md:text-lg text-slate-600 pl-1 leading-relaxed".
+      - Do NOT use emojis (like ✅) at the start of list items. Use the standard bullet point.
+      - End with a <p class="text-slate-500 italic"> containing a thoughtful closing.
       
       Keep it concise, encouraging, and professional.
     `;
@@ -63,10 +72,10 @@ export const generateDailyBriefing = async (
       contents: prompt,
     });
 
-    return response.text || "Your day is looking productive. Stay focused on your goals.";
+    return response.text || "<p>Your day is looking productive. Stay focused on your goals.</p>";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Ready to conquer the day? Check your goals to get started.";
+    return "<p>Ready to conquer the day? Check your goals to get started.</p>";
   }
 };
 

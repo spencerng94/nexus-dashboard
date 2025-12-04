@@ -77,11 +77,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-200/30 rounded-full blur-[100px]" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-purple-200/30 rounded-full blur-[100px]" />
+      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-100/40 rounded-full blur-[100px]" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-teal-100/40 rounded-full blur-[100px]" />
 
       <div className="bg-white/80 backdrop-blur-2xl rounded-[2.5rem] p-12 max-w-md w-full shadow-2xl border border-white/50 relative z-10 text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center mb-8 shadow-lg shadow-indigo-500/20">
+        <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl mx-auto flex items-center justify-center mb-8 shadow-lg shadow-emerald-500/20">
           <span className="text-4xl font-bold text-white tracking-tight">N</span>
         </div>
         <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">Nexus</h1>
@@ -101,14 +101,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
         <button 
           onClick={handleGoogleClick}
           disabled={isLoading}
-          className="group w-full bg-slate-900 hover:bg-black text-white font-medium text-lg py-4 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-[1.02] mb-4 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+          className="group w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-medium text-lg py-4 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:scale-[1.02] mb-4 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <Loader2 className="animate-spin w-6 h-6 text-white" />
           ) : (
             <>
               <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
-                   <span className="text-slate-900 font-bold text-xs">G</span>
+                   <span className="text-emerald-500 font-bold text-xs">G</span>
               </div>
               <span>Sign in with Google</span>
             </>
@@ -126,7 +126,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
         <div className="border-t border-slate-100 pt-6">
           <button 
             onClick={() => setShowConfig(!showConfig)}
-            className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 hover:text-indigo-500 transition-colors mx-auto uppercase tracking-wider"
+            className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 hover:text-emerald-500 transition-colors mx-auto uppercase tracking-wider"
           >
              <Settings size={14} />
              Configure Client ID
@@ -137,7 +137,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
             <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300 text-left space-y-4">
               <div>
                 <p className="text-xs text-slate-500 mb-2">
-                  1. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-indigo-500 hover:underline font-bold">Create OAuth Client ID</a> in Google Cloud.
+                  1. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-emerald-500 hover:underline font-bold">Create OAuth Client ID</a> in Google Cloud.
                 </p>
                 <input 
                   ref={inputRef}
@@ -145,13 +145,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
                   value={clientId}
                   onChange={handleClientIdChange}
                   placeholder="Paste Client ID here..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                 />
               </div>
 
               <div>
                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
-                   2. Add this EXACT URL to <br/><span className="text-indigo-600">"Authorized JavaScript Origins"</span>
+                   2. Add this EXACT URL to <br/><span className="text-emerald-500">"Authorized JavaScript Origins"</span>
                  </p>
                  <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-600 break-all select-all flex justify-between items-center group">
                    {origin}

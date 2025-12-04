@@ -51,10 +51,17 @@ export default function App() {
   // Load Data when User loads
   useEffect(() => {
     if (!user) return;
-    setGoals(storageService.getGoals());
-    setHabits(storageService.getHabits());
-    setHabitLogs(storageService.getHabitLogs());
-    setImportantDates(storageService.getImportantDates());
+    
+    // Load local data synchronously to ensure we have it for the briefing
+    const localGoals = storageService.getGoals();
+    const localHabits = storageService.getHabits();
+    const localLogs = storageService.getHabitLogs();
+    const localDates = storageService.getImportantDates();
+
+    setGoals(localGoals);
+    setHabits(localHabits);
+    setHabitLogs(localLogs);
+    setImportantDates(localDates);
 
     // Fetch Weather
     weatherService.getCurrentWeather().then(data => {
@@ -63,28 +70,31 @@ export default function App() {
 
     // Event Sync Logic
     const syncEvents = async () => {
+        let currentEvents: CalendarEvent[] = [];
+        
         if (user.accessToken && !user.isGuest) {
             try {
                 setCalendarError(null);
                 const googleEvents = await googleService.listEvents(user.accessToken);
+                currentEvents = googleEvents;
                 setEvents(googleEvents);
-                if (!briefing && googleEvents.length > 0) {
-                     // small delay to ensure state is ready
-                     setTimeout(() => generateBriefingHelper(goals, googleEvents, habits), 500);
-                }
             } catch (e: any) {
                 console.error("Failed to sync Google Calendar", e);
                 setCalendarError(e.message || "Failed to sync Calendar");
                 // Fallback to local
                 const localEvents = storageService.getEvents();
+                currentEvents = localEvents;
                 setEvents(localEvents);
             }
         } else {
             const localEvents = storageService.getEvents();
+            currentEvents = localEvents;
             setEvents(localEvents);
-            if (!briefing && localEvents.length > 0) {
-                 generateBriefingHelper(goals, localEvents, habits);
-            }
+        }
+
+        // Generate briefing using the FRESH data, not the state variables (which might be stale in closure)
+        if (!briefing) {
+            generateBriefingHelper(localGoals, currentEvents, localHabits);
         }
     };
 
@@ -318,10 +328,17 @@ export default function App() {
   const dashboardState = { goals, events, habits };
 
   return (
-    <div className="bg-[#F5F5F7] min-h-screen font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 overflow-x-hidden">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onSignOut={handleSignOut} />
+    <div className="bg-[#F5F5F7] min-h-screen font-sans text-slate-900 selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        user={user} 
+        onSignOut={handleSignOut} 
+        onProfileClick={() => setActiveTab('settings')}
+      />
       
-      <main className="lg:pl-[340px] p-6 lg:p-10 min-h-screen transition-all duration-300">
+      {/* Increased padding-left to separate sidebar from content */}
+      <main className="md:pl-[120px] lg:pl-[360px] p-6 pb-32 md:pb-10 min-h-screen transition-all duration-300">
         {activeTab === 'dashboard' && (
           <DashboardView 
             goals={goals} 
@@ -350,7 +367,7 @@ export default function App() {
                <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Focus Areas</h1>
                <button 
                 onClick={() => { setEditingGoal(null); setIsGoalModalOpen(true); }}
-                className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all flex items-center gap-2"
                >
                  <Plus size={20} /> New Goal
                </button>
@@ -381,7 +398,7 @@ export default function App() {
                </div>
                <button 
                 onClick={() => { setEditingHabit(null); setIsHabitModalOpen(true); }}
-                className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all flex items-center gap-2"
                >
                  <Plus size={20} /> New Habit
                </button>
@@ -402,6 +419,46 @@ export default function App() {
                   />
                 );
               })}
+             </div>
+          </div>
+        )}
+        {activeTab === 'settings' && (
+          <div className="max-w-2xl mx-auto pt-12">
+             <h1 className="text-4xl font-bold text-slate-900 mb-8 text-center">Profile & Settings</h1>
+             <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden">
+                <div className="absolute top-0 w-full h-32 bg-gradient-to-r from-emerald-100 to-teal-100 opacity-50"></div>
+                
+                <div className="w-28 h-28 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-[2rem] flex items-center justify-center text-4xl font-bold text-white mb-6 shadow-xl shadow-emerald-500/20 relative z-10 p-1 border-4 border-white">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-[1.8rem] object-cover" />
+                  ) : (
+                    <span>{user.displayName?.charAt(0) || 'U'}</span>
+                  )}
+                </div>
+                
+                <h2 className="text-2xl font-bold text-slate-900">{user.displayName}</h2>
+                <p className="text-slate-500 mb-8 font-medium bg-slate-100 px-4 py-1 rounded-full text-sm mt-2">{user.email || 'Guest User'}</p>
+                
+                <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center hover:bg-white hover:shadow-lg transition-all duration-300">
+                      <div className="text-3xl font-bold text-emerald-500 mb-1">{goals.length}</div>
+                      <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Goals</div>
+                   </div>
+                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center hover:bg-white hover:shadow-lg transition-all duration-300">
+                      <div className="text-3xl font-bold text-teal-500 mb-1">{habits.length}</div>
+                      <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Habits</div>
+                   </div>
+                </div>
+
+                <div className="mt-12 w-full max-w-md">
+                   <button 
+                     onClick={handleSignOut}
+                     className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-lg hover:shadow-xl"
+                   >
+                     Sign Out
+                   </button>
+                   <p className="text-xs text-slate-400 mt-4 font-mono">Version 1.1.0 • Nexus Dashboard</p>
+                </div>
              </div>
           </div>
         )}

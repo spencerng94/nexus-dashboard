@@ -1,63 +1,69 @@
-import React, { useState } from 'react';
-import { Sparkles, RefreshCw, Sun, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin } from 'lucide-react';
 import { Goal, CalendarEvent, ImportantDate } from '../types';
 import { ProgressCard } from './GoalComponents';
 
 export const DailyBriefingWidget: React.FC<{ briefing: string, isGenerating: boolean }> = ({ briefing, isGenerating }) => (
-  <div className="col-span-1 lg:col-span-3 bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 shadow-xl shadow-indigo-100/40 relative overflow-hidden group">
-    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-indigo-100/40 to-purple-100/40 rounded-full blur-3xl opacity-50 -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-1000" />
-    <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-blue-100/40 to-emerald-100/40 rounded-full blur-3xl opacity-50 -ml-20 -mb-20" />
+  <div className="w-full bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 shadow-xl shadow-emerald-100/40 relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-emerald-100/40 to-teal-100/40 rounded-full blur-3xl opacity-50 -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-1000" />
+    <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-stone-100/40 to-green-100/40 rounded-full blur-3xl opacity-50 -ml-20 -mb-20" />
     
     <div className="relative z-10 max-w-4xl">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+        <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
           <Sparkles size={20} />
         </div>
-        <span className="text-sm font-bold text-indigo-900 tracking-wider uppercase opacity-60">Morning Intelligence</span>
+        <span className="text-sm font-bold text-emerald-900 tracking-wider uppercase opacity-60">Plan for Today</span>
       </div>
       
       {isGenerating ? (
         <div className="flex items-center gap-4 py-8">
           <div className="relative">
-            <div className="w-12 h-12 border-4 border-indigo-100 rounded-full" />
-            <div className="w-12 h-12 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin absolute top-0 left-0" />
+            <div className="w-12 h-12 border-4 border-emerald-100 rounded-full" />
+            <div className="w-12 h-12 border-4 border-emerald-400 rounded-full border-t-transparent animate-spin absolute top-0 left-0" />
           </div>
           <div>
-            <p className="text-slate-900 font-semibold">Generating briefing...</p>
+            <p className="text-slate-900 font-semibold">Generating plan...</p>
             <p className="text-slate-400 text-sm">Analyzing schedule & priorities</p>
           </div>
         </div>
       ) : (
-        <div className="prose prose-lg prose-indigo max-w-none">
-          <p className="whitespace-pre-line text-xl md:text-2xl leading-relaxed font-medium text-slate-800 tracking-tight">
-            {briefing}
-          </p>
-        </div>
+        <div 
+          className="briefing-content"
+          dangerouslySetInnerHTML={{ __html: briefing }} 
+        />
       )}
     </div>
   </div>
 );
 
-const EventRow: React.FC<{ event: CalendarEvent }> = ({ event }) => (
-  <div className="flex items-center py-4 px-2 hover:bg-white hover:shadow-lg hover:shadow-slate-100/50 rounded-2xl transition-all duration-300 cursor-pointer group -mx-2">
-    <div className="w-20 flex flex-col items-center justify-center shrink-0">
-      <span className="text-sm font-bold text-slate-900">{event.time.split(' ')[0]}</span>
-      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{event.time.split(' ')[1]}</span>
-    </div>
-    <div className="w-px h-8 bg-slate-100 mx-2" />
-    <div className="flex-1 px-4">
-      <h4 className="font-bold text-slate-800 text-[15px]">{event.title}</h4>
-      <div className="flex items-center gap-3 text-xs font-medium text-slate-400 mt-1">
-        <span className="flex items-center gap-1"><Clock size={12} /> {event.duration}</span>
-        {event.type === 'work' && <span className="text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">Work</span>}
-        {event.type === 'personal' && <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">Personal</span>}
+const EventRow: React.FC<{ event: CalendarEvent }> = ({ event }) => {
+  // Robustly handle time strings that might not have a space (e.g. "14:00" vs "2:00 PM")
+  const timeParts = event.time ? event.time.split(' ') : ['--:--', ''];
+  const mainTime = timeParts[0];
+  const period = timeParts.length > 1 ? timeParts[1] : '';
+
+  return (
+    <div className="flex items-center py-4 px-2 hover:bg-white/10 rounded-2xl transition-all duration-300 cursor-pointer group -mx-2 border border-transparent hover:border-white/5">
+      <div className="w-20 flex flex-col items-center justify-center shrink-0">
+        <span className="text-sm font-bold text-white">{mainTime}</span>
+        {period && <span className="text-xs font-bold text-stone-400 uppercase tracking-wide">{period}</span>}
+      </div>
+      <div className="w-px h-8 bg-white/10 mx-2" />
+      <div className="flex-1 px-4 min-w-0">
+        <h4 className="font-bold text-stone-100 text-sm md:text-[15px] truncate">{event.title}</h4>
+        <div className="flex items-center gap-3 text-xs font-medium text-stone-400 mt-1">
+          <span className="flex items-center gap-1"><Clock size={12} /> {event.duration}</span>
+          {event.type === 'work' && <span className="text-blue-200 bg-blue-500/20 px-2 py-0.5 rounded-full border border-blue-500/30 whitespace-nowrap">Work</span>}
+          {event.type === 'personal' && <span className="text-rose-200 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30 whitespace-nowrap">Personal</span>}
+        </div>
+      </div>
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity px-2">
+        <ChevronRight size={18} className="text-stone-400" />
       </div>
     </div>
-    <div className="opacity-0 group-hover:opacity-100 transition-opacity px-2">
-      <ChevronRight size={18} className="text-slate-300" />
-    </div>
-  </div>
-);
+  );
+};
 
 // --- MODAL FOR ADDING IMPORTANT DATES ---
 
@@ -101,7 +107,7 @@ const DateFormModal: React.FC<DateFormModalProps> = ({ isOpen, onClose, onSave }
               type="text"
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
-              className="w-full bg-slate-50 border-0 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full bg-slate-50 border-0 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500/20"
               placeholder="e.g. Mom's Birthday"
               autoFocus
             />
@@ -168,10 +174,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName, syncError,
   importantDates, onAddImportantDate, onDeleteImportantDate, weather
 }) => {
-  const date = new Date();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    // Update time every minute to ensure greeting is accurate even if tab stays open
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
-  const dateString = date.toLocaleDateString('en-US', options);
+  const dateString = currentTime.toLocaleDateString('en-US', options);
   
+  // Calculate Dynamic Greeting
+  const hour = currentTime.getHours();
+  let greeting = "Good Morning";
+  if (hour >= 12 && hour < 17) greeting = "Good Afternoon";
+  if (hour >= 17) greeting = "Good Evening";
+
   const todaysEvents = events.filter(e => {
     const eDate = new Date(e.startTime);
     const today = new Date();
@@ -184,18 +205,43 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Sort dates: closest upcoming first
   const sortedDates = [...importantDates].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+  // Weather Icon Logic
+  const getWeatherIcon = (condition: string) => {
+    switch (condition) {
+      case 'Clear': return <Sun size={16} fill="currentColor" />;
+      case 'Cloudy': return <Cloud size={16} fill="currentColor" />;
+      case 'Rain': return <CloudRain size={16} />;
+      case 'Snow': return <Snowflake size={16} />;
+      case 'Storm': return <CloudLightning size={16} />;
+      default: return <Sun size={16} />;
+    }
+  };
+
+  const getWeatherColor = (condition: string) => {
+    switch (condition) {
+      case 'Clear': return 'bg-amber-100 text-amber-600';
+      case 'Cloudy': return 'bg-slate-100 text-slate-600';
+      case 'Rain': return 'bg-blue-100 text-blue-600';
+      case 'Snow': return 'bg-cyan-100 text-cyan-600';
+      case 'Storm': return 'bg-purple-100 text-purple-600';
+      default: return 'bg-slate-100 text-slate-600';
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto pb-12">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-2">
         <div>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">Good Morning, {displayName}</h1>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">{greeting}, {displayName}</h1>
         </div>
-        <div className="flex items-center gap-4">
+        
+        <div className="flex flex-wrap items-center gap-4">
            <button 
             onClick={onRefreshBriefing}
-            className="p-3 bg-white hover:bg-slate-50 text-slate-400 hover:text-indigo-600 rounded-2xl transition-all shadow-sm border border-slate-100"
-            title="Refresh Intelligence"
+            className="p-3 bg-white hover:bg-slate-50 text-slate-400 hover:text-emerald-500 rounded-2xl transition-all shadow-sm border border-slate-100"
+            title="Refresh Plan"
            >
              <RefreshCw size={20} className={isGeneratingBriefing ? "animate-spin" : ""} />
            </button>
@@ -203,8 +249,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="bg-white/60 backdrop-blur-md p-3 px-5 rounded-[1.5rem] shadow-sm border border-white/50 flex items-center gap-3 text-slate-700 min-w-[120px]">
             {weather ? (
               <>
-                <div className={`p-1.5 rounded-full ${weather.condition === 'Clear' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-600'}`}>
-                   <Sun size={16} fill={weather.condition === 'Clear' ? "currentColor" : "none"} />
+                <div className={`p-1.5 rounded-full ${getWeatherColor(weather.condition)}`}>
+                   {getWeatherIcon(weather.condition)}
                 </div>
                 <div className="flex flex-col leading-none">
                   <span className="font-bold text-lg">{weather.temp}°F</span>
@@ -236,15 +282,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
          </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* MAIN GRID LAYOUT */}
+      <div className="flex flex-col gap-8">
+        
+        {/* ROW 1: AI BRIEFING (Full Width) */}
         <DailyBriefingWidget briefing={briefing} isGenerating={isGeneratingBriefing} />
 
-        <div className="lg:col-span-2 space-y-8">
+        {/* ROW 2: CORE FOCUS (Full Width) */}
+        <div className="space-y-6">
           <div className="flex justify-between items-end px-2">
             <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Core Focus</h3>
-            <button onClick={openAddModal} className="text-indigo-600 text-sm font-bold hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors">Add New</button>
+            <button onClick={openAddModal} className="text-emerald-500 text-sm font-bold hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors">Add New</button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {goals.map(goal => (
               <ProgressCard 
                 key={goal.id} 
@@ -257,56 +307,65 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             ))}
             <button 
               onClick={openAddModal}
-              className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-400/50 hover:bg-indigo-50/30 transition-all duration-300 group min-h-[200px]"
+              className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 hover:border-emerald-400/50 hover:bg-emerald-50/30 transition-all duration-300 group min-h-[200px]"
             >
-              <div className="w-14 h-14 rounded-full bg-slate-50 group-hover:bg-indigo-100 flex items-center justify-center mb-3 transition-colors">
-                <Plus size={24} className="group-hover:text-indigo-600" />
+              <div className="w-14 h-14 rounded-full bg-slate-50 group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
+                <Plus size={24} className="group-hover:text-emerald-500" />
               </div>
               <span className="font-bold text-sm">New Goal</span>
             </button>
           </div>
         </div>
 
-        <div className="space-y-8">
-          <div className="bg-white/60 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/60 shadow-xl shadow-slate-200/40">
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">Today's Schedule</h3>
-              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">
-                {todaysEvents.length}
+        {/* ROW 3: SCHEDULE & UPCOMING DATES (Side by Side on Large Screens) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          {/* Today's Schedule */}
+          <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-[2.5rem] p-8 text-white shadow-xl shadow-stone-900/20 relative overflow-hidden flex flex-col h-full min-h-[400px]">
+            {/* Decorative background elements to match Upcoming Dates */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-400 opacity-20 rounded-full blur-xl -ml-5 -mb-5" />
+
+            <div className="relative z-10 flex flex-col h-full">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-bold text-white tracking-tight">Today's Schedule</h3>
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-xs border border-white/5">
+                  {todaysEvents.length}
+                </div>
               </div>
+              <div className="space-y-1 flex-1">
+                {todaysEvents.length > 0 ? (
+                  todaysEvents.map(event => <EventRow key={event.id} event={event} />)
+                ) : (
+                  <div className="text-center py-12 text-stone-500 italic text-sm">No events scheduled today.</div>
+                )}
+              </div>
+              <button 
+                onClick={onViewCalendar}
+                className="w-full mt-6 py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 border border-white/5"
+              >
+                Full Calendar
+              </button>
             </div>
-            <div className="space-y-1">
-              {todaysEvents.length > 0 ? (
-                todaysEvents.map(event => <EventRow key={event.id} event={event} />)
-              ) : (
-                <div className="text-center py-6 text-slate-400 italic text-sm">No events scheduled today.</div>
-              )}
-            </div>
-            <button 
-              onClick={onViewCalendar}
-              className="w-full mt-8 py-4 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-sm transition-colors flex items-center justify-center gap-2"
-            >
-              Full Calendar
-            </button>
           </div>
 
-          {/* UPCOMING DATES WIDGET */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-8 text-white shadow-xl shadow-slate-900/20 relative overflow-hidden flex flex-col min-h-[400px]">
+          {/* Upcoming Important Dates */}
+          <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-[2.5rem] p-8 text-white shadow-xl shadow-stone-900/20 relative overflow-hidden flex flex-col min-h-[400px]">
              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10" />
-             <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500 opacity-20 rounded-full blur-xl -ml-5 -mb-5" />
+             <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-400 opacity-20 rounded-full blur-xl -ml-5 -mb-5" />
              
-             <div className="relative z-10 flex-1">
-               <div className="flex justify-between items-center mb-6 relative">
-                 <h3 className="font-bold text-lg">Upcoming</h3>
+             <div className="relative z-10 flex-1 flex flex-col">
+               <div className="flex justify-between items-start mb-6 relative">
+                 <h3 className="font-bold text-lg leading-tight max-w-[70%]">Upcoming Important Dates</h3>
                  <div className="flex gap-2">
                    <button 
                      onClick={() => setIsDateModalOpen(true)}
-                     className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10"
+                     className="text-stone-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10"
                      title="Add Date"
                    >
                      <Plus size={18} />
                    </button>
-                   <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10">
+                   <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-stone-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10">
                      <MoreHorizontal size={18} />
                    </button>
                  </div>
@@ -324,26 +383,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                  )}
                </div>
 
-               <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+               <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar flex-1">
                  {sortedDates.length > 0 ? (
                    sortedDates.map((d) => {
-                     const dateObj = new Date(d.date);
+                     // Create date object from YYYY-MM-DD using local time constructor to avoid UTC offset issues
+                     const [y, m, dNum] = d.date.split('-').map(Number);
+                     const dateObj = new Date(y, m - 1, dNum);
+                     
                      const month = dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
                      const day = dateObj.getDate();
                      
                      return (
                        <div key={d.id} className="flex items-center gap-4 group cursor-pointer relative">
                          <div className="bg-white/10 w-14 h-14 rounded-2xl flex flex-col items-center justify-center backdrop-blur-md border border-white/5 group-hover:bg-white/20 transition-colors shrink-0">
-                           <span className="text-[10px] font-bold text-indigo-300">{month}</span>
+                           <span className="text-[10px] font-bold text-emerald-300">{month}</span>
                            <span className="text-lg font-bold text-white">{day}</span>
                          </div>
                          <div className="flex-1 min-w-0">
-                           <p className="font-bold text-slate-100 truncate">{d.title}</p>
-                           <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">{d.type}</p>
+                           <p className="font-bold text-stone-100 truncate">{d.title}</p>
+                           <p className="text-xs text-stone-400 font-medium uppercase tracking-wide">{d.type}</p>
                          </div>
                          <button 
                            onClick={() => onDeleteImportantDate(d.id)}
-                           className="opacity-0 group-hover:opacity-100 absolute right-0 p-2 text-slate-400 hover:text-rose-400 transition-all bg-slate-800/80 rounded-full"
+                           className="opacity-0 group-hover:opacity-100 absolute right-0 p-2 text-stone-400 hover:text-rose-400 transition-all bg-stone-800/80 rounded-full"
                          >
                            <Trash2 size={14} />
                          </button>
@@ -351,7 +413,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                      );
                    })
                  ) : (
-                   <div className="text-center py-8 text-slate-500 italic text-sm">
+                   <div className="text-center py-12 text-stone-500 italic text-sm">
                      No important dates added. <br/>Tap + to add one.
                    </div>
                  )}
@@ -359,6 +421,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
              </div>
           </div>
         </div>
+
       </div>
       
       <DateFormModal 

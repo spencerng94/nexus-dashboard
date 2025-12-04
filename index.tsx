@@ -12,20 +12,22 @@ interface ErrorBoundaryState {
   error: any;
 }
 
-// Simple Error Boundary to catch render-time errors
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState;
+  // Fix: Explicitly declare state property to resolve "Property 'state' does not exist" error
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+  // Fix: Explicitly declare props to resolve "Property 'props' does not exist" error
+  public props: ErrorBoundaryProps;
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.props = props;
   }
 
-  static getDerivedStateFromError(error: any): ErrorBoundaryState {
+  public static getDerivedStateFromError(error: any): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
+  public componentDidCatch(error: any, errorInfo: any) {
     console.error("Uncaught error:", error, errorInfo);
   }
 

@@ -52,21 +52,21 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
        <div className="absolute top-6 right-6 flex gap-2 z-20">
          <button 
           onClick={(e) => { e.stopPropagation(); onViewHistory(habit, 'list'); }}
-          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-300"
+          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-emerald-50 hover:text-emerald-500 transition-all duration-300"
           title="List View"
         >
           <List size={16} />
         </button>
          <button 
           onClick={(e) => { e.stopPropagation(); onViewHistory(habit, 'calendar'); }}
-          className="p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+          className="p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-500 transition-colors"
           title="History Calendar"
         >
           <CalendarDays size={16} />
         </button>
          <button 
           onClick={(e) => { e.stopPropagation(); onEdit(habit); }}
-          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-300"
+          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-emerald-50 hover:text-emerald-500 transition-all duration-300"
           title="Edit Habit"
         >
           <Pencil size={16} />
@@ -86,7 +86,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
             onClick={() => onToggle(habit.id, !log, todaysDateKey)}
             className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all duration-500 shadow-lg shrink-0 ${
               log 
-                ? `${habit.color.replace('text-', 'bg-')} text-white scale-110 shadow-indigo-500/30` 
+                ? `${habit.color.replace('text-', 'bg-')} text-white scale-110 shadow-emerald-500/30` 
                 : 'bg-white text-slate-400 hover:bg-slate-50'
             }`}
           >
@@ -118,7 +118,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
               onBlur={() => onUpdateNote(habit.id, noteText)}
               onKeyDown={handleKeyDown}
               placeholder="Habit details..."
-              className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-11 pr-12 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all"
+              className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-11 pr-12 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all"
             />
             
             <div className="absolute right-2 top-2 bottom-2 flex items-center">
@@ -129,7 +129,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
               ) : (
                 <button 
                   onClick={handleSaveNote}
-                  className="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors"
+                  className="p-1.5 bg-slate-100 hover:bg-emerald-100 text-slate-400 hover:text-emerald-500 rounded-lg transition-colors"
                   title="Save Note"
                 >
                   <CornerDownLeft size={16} />
@@ -213,7 +213,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
               type="text"
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
-              className="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-800 font-semibold placeholder:text-slate-300"
+              className="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold placeholder:text-slate-300"
               placeholder="e.g. Morning Stretch"
               autoFocus
             />
@@ -386,7 +386,7 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ isOpen, on
                          dayLog 
                            ? `${habit.color.replace('text-', 'bg-')} text-white shadow-sm scale-105` 
                            : isFuture ? 'opacity-20 cursor-not-allowed' : 'bg-white text-slate-400 hover:bg-slate-200'
-                      } ${isToday && !dayLog ? 'ring-2 ring-indigo-500 ring-offset-1' : ''}`}
+                      } ${isToday && !dayLog ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}`}
                     >
                       {date.getDate()}
                     </button>
@@ -400,7 +400,7 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ isOpen, on
               <div className="text-center py-12 text-slate-400 italic">No history recorded yet.</div>
             ) : (
               historyList.map((log) => (
-                <div key={log.date} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-indigo-100 transition-colors">
+                <div key={log.date} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-100 transition-colors">
                   <div className="w-14 flex flex-col items-center justify-center text-slate-500 bg-white rounded-xl py-2 border border-slate-100 shadow-sm shrink-0">
                     <span className="text-[10px] font-bold uppercase tracking-wide">{new Date(log.date).toLocaleString('default', { month: 'short' })}</span>
                     <span className="text-xl font-bold text-slate-800">{new Date(log.date).getDate() + 1}</span>
@@ -417,10 +417,10 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ isOpen, on
                           type="text" 
                           value={editNote}
                           onChange={(e) => setEditNote(e.target.value)}
-                          className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                           autoFocus
                         />
-                        <button onClick={() => saveEdit(log)} className="p-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+                        <button onClick={() => saveEdit(log)} className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
                           <Check size={14} />
                         </button>
                         <button onClick={() => setEditingLogDate(null)} className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200">
@@ -434,7 +434,7 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ isOpen, on
                         </p>
                         <button 
                           onClick={() => startEditing(log)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 opacity-0 group-hover/note:opacity-100 transition-opacity"
+                          className="p-1.5 text-slate-400 hover:text-emerald-600 opacity-0 group-hover/note:opacity-100 transition-opacity"
                         >
                           <Pencil size={14} />
                         </button>

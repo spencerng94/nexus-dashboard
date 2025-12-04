@@ -45,7 +45,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
       >
         <div className="bg-slate-50/50 p-5 flex items-center justify-between border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-md shadow-indigo-500/20">
+            <div className="w-8 h-8 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-md shadow-emerald-500/20">
               <Bot size={16} className="text-white" />
             </div>
             <div>
@@ -63,7 +63,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] rounded-2xl px-5 py-3 text-[14px] leading-relaxed shadow-sm ${
                 msg.role === 'user' 
-                  ? 'bg-slate-900 text-white rounded-tr-sm' 
+                  ? 'bg-stone-800 text-white rounded-tr-sm' 
                   : 'bg-white border border-slate-100 text-slate-600 rounded-tl-sm'
               }`}>
                 {msg.text}
@@ -92,12 +92,12 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask anything..."
-              className="w-full bg-slate-100 hover:bg-slate-50 focus:bg-white transition-colors rounded-xl pl-5 pr-12 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-800 font-medium placeholder:text-slate-400"
+              className="w-full bg-slate-100 hover:bg-slate-50 focus:bg-white transition-colors rounded-xl pl-5 pr-12 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-medium placeholder:text-slate-400"
             />
             <button 
               onClick={handleSend}
               disabled={!input.trim()}
-              className="absolute right-2 top-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-0 disabled:scale-90 transition-all duration-200 shadow-lg shadow-indigo-500/20"
+              className="absolute right-2 top-2 p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-0 disabled:scale-90 transition-all duration-200 shadow-lg shadow-emerald-500/20"
             >
               <Send size={16} />
             </button>
@@ -108,7 +108,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={`pointer-events-auto h-16 w-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 hover:scale-105 active:scale-95 ${
-          isOpen ? 'bg-slate-900 rotate-90' : 'bg-white border border-slate-100'
+          isOpen ? 'bg-stone-900 rotate-90' : 'bg-white border border-slate-100'
         }`}
       >
         {isOpen ? <X size={28} className="text-white" /> : <MessageSquare size={28} className="text-slate-800" />}

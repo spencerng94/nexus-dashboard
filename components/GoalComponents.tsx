@@ -15,7 +15,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, o
     <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
        <button 
         onClick={(e) => { e.stopPropagation(); onEdit(goal); }}
-        className="p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+        className="p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-500 transition-colors"
         title="Edit Goal"
       >
         <Pencil size={16} />
@@ -146,7 +146,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
               type="text"
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
-              className="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-800 font-semibold placeholder:text-slate-300"
+              className="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold placeholder:text-slate-300"
               placeholder="e.g. Read 30 mins"
               autoFocus
             />
