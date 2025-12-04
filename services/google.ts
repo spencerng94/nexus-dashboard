@@ -5,6 +5,7 @@ declare const google: any;
 let tokenClient: any;
 let loginResolver: ((user: User) => void) | null = null;
 let loginRejector: ((error: any) => void) | null = null;
+let initializedClientId: string | null = null;
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
@@ -17,18 +18,35 @@ export const googleService = {
       throw new Error('Google Identity Services script not loaded');
     }
 
+    // Idempotent check: Do not re-initialize if the client ID hasn't changed.
+    // This prevents detaching active callbacks.
+    if (tokenClient && initializedClientId === clientId) {
+      console.log("Google Client already initialized.");
+      return;
+    }
+
+    console.log("Initializing Google Client...");
+
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope: SCOPES,
       callback: async (response: any) => {
+        console.log("GIS Callback received:", response);
+
         if (response.error) {
-          if (loginRejector) loginRejector(response);
+          console.error("GIS Error:", response);
+          if (loginRejector) {
+            loginRejector(new Error(`Google Auth Error: ${response.error}`));
+            loginRejector = null;
+            loginResolver = null;
+          }
           return;
         }
 
         const accessToken = response.access_token;
 
         try {
+          console.log("Fetching user profile...");
           // Fetch user profile immediately after getting token
           const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
             headers: { Authorization: `Bearer ${accessToken}` }
@@ -39,6 +57,7 @@ export const googleService = {
           }
 
           const userInfo = await userInfoResponse.json();
+          console.log("User profile fetched successfully.");
 
           const user: User = {
             uid: userInfo.sub,
@@ -48,13 +67,23 @@ export const googleService = {
             accessToken: accessToken
           };
           
-          if (loginResolver) loginResolver(user);
+          if (loginResolver) {
+            loginResolver(user);
+            loginResolver = null;
+            loginRejector = null;
+          }
         } catch (err) {
           console.error("User Info Fetch Error:", err);
-          if (loginRejector) loginRejector(err);
+          if (loginRejector) {
+            loginRejector(err);
+            loginRejector = null;
+            loginResolver = null;
+          }
         }
       },
     });
+    
+    initializedClientId = clientId;
   },
 
   /**
@@ -67,9 +96,11 @@ export const googleService = {
         return;
       }
 
+      console.log("Requesting Access Token...");
+
       // Safety timeout: Reject if no response within 60 seconds (user closed popup, etc)
       const timeoutId = setTimeout(() => {
-        const err = new Error("Login timed out. Please try again.");
+        const err = new Error("Login timed out. This often happens if the popup was closed, blocked, or if the network connection failed.");
         if (loginRejector) {
            loginRejector(err);
            // Clear handlers to prevent late resolution
@@ -78,7 +109,7 @@ export const googleService = {
         }
       }, 60000);
 
-      // Wrap resolve/reject to clear timeout
+      // Set up the single-use handlers for this specific login attempt
       loginResolver = (user) => {
         clearTimeout(timeoutId);
         resolve(user);
