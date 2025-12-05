@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell } from 'lucide-react';
+import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate } from './types';
 import { storageService } from './services/storage';
 import { googleService } from './services/google';
@@ -16,7 +16,133 @@ import AboutView from './components/AboutView';
 import PlannerView from './components/PlannerView';
 import { DashboardView } from './components/DashboardComponents';
 import { ProgressCard, GoalFormModal, GoalSuggestionCard } from './components/GoalComponents';
-import { HabitCard, HabitFormModal, HabitHistoryModal } from './components/HabitComponents';
+import { HabitCard, HabitFormModal, HabitHistoryModal, HabitSuggestionCard } from './components/HabitComponents';
+
+// --- PROFILE EDIT MODAL ---
+interface ProfileAvatarModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (avatarConfig: User['customAvatar']) => void;
+  currentUser: User;
+}
+
+const ProfileAvatarModal: React.FC<ProfileAvatarModalProps> = ({ isOpen, onClose, onSave, currentUser }) => {
+  const [activeTab, setActiveTab] = useState<'initials' | 'emoji'>('initials');
+  const [selectedColor, setSelectedColor] = useState('emerald');
+  const [selectedEmoji, setSelectedEmoji] = useState('😎');
+  
+  const colors = ['emerald', 'teal', 'blue', 'indigo', 'violet', 'rose', 'amber', 'slate'];
+  const emojis = ['😎', '🤓', '🤠', '🤖', '👽', '👻', '🐱', '🦁', '🦄', '🐸', '🌟', '🔥', '⚡', '💻', '🎨', '🚀'];
+
+  // Init state from current user if exists
+  useEffect(() => {
+    if (currentUser.customAvatar) {
+        setActiveTab(currentUser.customAvatar.type);
+        if (currentUser.customAvatar.type === 'emoji') {
+            setSelectedEmoji(currentUser.customAvatar.value);
+        } else {
+            setSelectedColor(currentUser.customAvatar.color || 'emerald');
+        }
+    }
+  }, [currentUser, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSave = () => {
+    if (activeTab === 'initials') {
+        onSave({ 
+            type: 'initials', 
+            value: currentUser.displayName?.charAt(0).toUpperCase() || 'U', 
+            color: selectedColor 
+        });
+    } else {
+        onSave({ 
+            type: 'emoji', 
+            value: selectedEmoji 
+        });
+    }
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
+      <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-slate-900">Customize Profile</h3>
+          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 rounded-full transition-colors text-slate-400 lg:hover:text-slate-600">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+            <button 
+                onClick={() => setActiveTab('initials')}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'initials' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+            >
+                <Type size={16} /> Initials
+            </button>
+            <button 
+                onClick={() => setActiveTab('emoji')}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'emoji' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+            >
+                <Smile size={16} /> Emoji
+            </button>
+        </div>
+
+        {/* Content */}
+        <div className="mb-8">
+            {activeTab === 'initials' ? (
+                <div className="space-y-4">
+                    <div className="flex justify-center mb-6">
+                        <div className={`w-24 h-24 rounded-full bg-${selectedColor}-500 flex items-center justify-center text-4xl font-bold text-white shadow-xl ring-4 ring-${selectedColor}-100 transition-colors`}>
+                            {currentUser.displayName?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-3">
+                        {colors.map(c => (
+                            <button
+                                key={c}
+                                onClick={() => setSelectedColor(c)}
+                                className={`w-10 h-10 rounded-full bg-${c}-500 flex items-center justify-center transition-transform hover:scale-110 ${selectedColor === c ? 'ring-2 ring-offset-2 ring-slate-300 scale-110' : ''}`}
+                            >
+                                {selectedColor === c && <Check size={16} className="text-white" strokeWidth={3} />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    <div className="flex justify-center mb-6">
+                        <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-5xl shadow-inner">
+                            {selectedEmoji}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-3 h-40 overflow-y-auto custom-scrollbar p-1">
+                        {emojis.map(e => (
+                            <button
+                                key={e}
+                                onClick={() => setSelectedEmoji(e)}
+                                className={`w-12 h-12 rounded-xl text-2xl flex items-center justify-center transition-all hover:bg-slate-50 ${selectedEmoji === e ? 'bg-white shadow-md ring-2 ring-emerald-500/20' : 'grayscale opacity-70 hover:grayscale-0 hover:opacity-100'}`}
+                            >
+                                {e}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+
+        <button 
+            onClick={handleSave}
+            className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition-all shadow-lg"
+        >
+            Save Changes
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -40,12 +166,20 @@ export default function App() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [goalDefaultValues, setGoalDefaultValues] = useState<{title?: string, category?: string, icon?: string} | undefined>(undefined);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [habitDefaultValues, setHabitDefaultValues] = useState<{title?: string, category?: string, icon?: string} | undefined>(undefined);
   const [viewingHabitHistory, setViewingHabitHistory] = useState<Habit | null>(null);
   const [historyViewMode, setHistoryViewMode] = useState<'calendar' | 'list'>('calendar');
+
+  // Profile Modal State
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Suggestions State
   const [suggestedGoals, setSuggestedGoals] = useState<Array<{title: string, category: string, icon: string}>>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  // Habit Suggestions State
+  const [suggestedHabits, setSuggestedHabits] = useState<Array<{title: string, category: string, icon: string}>>([]);
+  const [isLoadingHabitSuggestions, setIsLoadingHabitSuggestions] = useState(false);
 
   // Load User on Mount
   useEffect(() => {
@@ -173,6 +307,13 @@ export default function App() {
     setCalendarError(null);
   };
 
+  const handleUpdateProfile = (customAvatar: User['customAvatar']) => {
+    if (!user) return;
+    const updatedUser = { ...user, customAvatar };
+    setUser(updatedUser);
+    storageService.saveUser(updatedUser);
+  };
+
   // --- GOAL HANDLERS ---
   const handleSaveGoal = (goalData: Omit<Goal, 'id' | 'progress'>) => {
     let updatedGoals = [...goals];
@@ -245,11 +386,45 @@ export default function App() {
     storageService.saveHabits(updatedHabits);
   };
 
+  const loadHabitSuggestions = async () => {
+    setIsLoadingHabitSuggestions(true);
+    const existingTitles = habits.map(h => h.title);
+    const suggestions = await generateSuggestions('habit', existingTitles);
+    setSuggestedHabits(suggestions);
+    setIsLoadingHabitSuggestions(false);
+  };
+
+  const handleAcceptHabitSuggestion = (suggestion: {title: string, category: string, icon: string}) => {
+    setHabitDefaultValues(suggestion);
+    setEditingHabit(null);
+    setIsHabitModalOpen(true);
+  };
+
   const formatLocalYMD = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  };
+
+  const updateStreaks = (currentHabits: Habit[], currentLogs: Record<string, HabitLog>) => {
+    const updatedHabits = currentHabits.map(h => {
+        let streak = 0;
+        const d = new Date();
+        // Check backwards from today
+        while (true) {
+            const k = formatLocalYMD(d);
+            if (currentLogs[`${h.id}_${k}`]) {
+                streak++;
+                d.setDate(d.getDate() - 1);
+            } else {
+                break;
+            }
+        }
+        return { ...h, streak };
+    });
+    setHabits(updatedHabits);
+    storageService.saveHabits(updatedHabits);
   };
 
   const handleToggleHabit = (habitId: string, isCompleted: boolean, dateKey?: string) => {
@@ -271,28 +446,18 @@ export default function App() {
      
      setHabitLogs(updatedLogs);
      storageService.saveHabitLogs(updatedLogs);
+     updateStreaks(habits, updatedLogs);
+  };
 
-     // Update streak roughly (consecutive days ending today)
-     const updatedHabits = habits.map(h => {
-        if (h.id === habitId) {
-            // Recalculate streak
-            let streak = 0;
-            const d = new Date();
-            while (true) {
-                const k = formatLocalYMD(d);
-                if (updatedLogs[`${h.id}_${k}`]) {
-                    streak++;
-                    d.setDate(d.getDate() - 1);
-                } else {
-                    break;
-                }
-            }
-            return { ...h, streak };
-        }
-        return h;
-     });
-     setHabits(updatedHabits);
-     storageService.saveHabits(updatedHabits);
+  const handleDeleteHabitLog = (habitId: string, dateKey: string) => {
+     const logId = `${habitId}_${dateKey}`;
+     if (habitLogs[logId]) {
+         const updatedLogs = { ...habitLogs };
+         delete updatedLogs[logId];
+         setHabitLogs(updatedLogs);
+         storageService.saveHabitLogs(updatedLogs);
+         updateStreaks(habits, updatedLogs);
+     }
   };
 
   const handleUpdateHabitNote = (habitId: string, note: string, dateKey?: string) => {
@@ -338,8 +503,6 @@ export default function App() {
 
   // Batch Add Events (For Planner)
   const handleBatchAddEvents = async (newEvents: Omit<CalendarEvent, 'id'>[]) => {
-     // Loop through and create each one. 
-     // We do this sequentially to ensure order and avoid rate limits on local/google APIs if necessary, though parallel is often fine.
      for (const evt of newEvents) {
          await handleAddEvent(evt);
      }
@@ -403,7 +566,6 @@ export default function App() {
             onEditGoal={(goal) => { setEditingGoal(goal); setIsGoalModalOpen(true); }}
             displayName={user.displayName || 'User'}
             syncError={calendarError}
-            // New Props
             importantDates={importantDates}
             onAddImportantDate={handleAddImportantDate}
             onEditImportantDate={handleEditImportantDate}
@@ -502,7 +664,13 @@ export default function App() {
           </div>
         )}
         {activeTab === 'calendar' && (
-          <CalendarView events={events} importantDates={importantDates} onAddEvent={handleAddEvent} />
+          <CalendarView 
+            events={events} 
+            importantDates={importantDates} 
+            onAddEvent={handleAddEvent}
+            habits={habits}
+            habitLogs={habitLogs}
+          />
         )}
         {activeTab === 'habits' && (
           <div className="max-w-[1600px] mx-auto">
@@ -517,7 +685,7 @@ export default function App() {
                  </div>
                </div>
                <button 
-                onClick={() => { setEditingHabit(null); setIsHabitModalOpen(true); }}
+                onClick={() => { setEditingHabit(null); setHabitDefaultValues(undefined); setIsHabitModalOpen(true); }}
                 className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 lg:hover:scale-105 transition-all flex items-center gap-2 shrink-0 text-sm md:text-base"
                >
                  <Plus size={20} /> <span className="hidden md:inline">New Habit</span><span className="md:hidden">New</span>
@@ -539,6 +707,57 @@ export default function App() {
                   />
                 );
               })}
+              <button 
+                onClick={() => { setEditingHabit(null); setHabitDefaultValues(undefined); setIsHabitModalOpen(true); }}
+                className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 lg:hover:border-emerald-400/50 lg:hover:bg-emerald-50/30 transition-all duration-300 group min-h-[140px] md:min-h-[200px]"
+              >
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-50 lg:group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
+                  <Plus size={24} className="lg:group-hover:text-emerald-500 md:w-7 md:h-7" />
+                </div>
+                <span className="font-bold text-sm">Create New Habit</span>
+              </button>
+             </div>
+
+             {/* Habit Suggestions Section */}
+             <div className="mt-12">
+               <div className="flex items-center justify-between mb-6">
+                 <div className="flex items-center gap-3">
+                   <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
+                     <Sparkles size={20} />
+                   </div>
+                   <h2 className="text-2xl font-bold text-slate-900">Suggested for you</h2>
+                 </div>
+                 <button 
+                   onClick={loadHabitSuggestions}
+                   disabled={isLoadingHabitSuggestions}
+                   className="text-emerald-600 font-bold text-sm lg:hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+                 >
+                   <RefreshCw size={14} className={isLoadingHabitSuggestions ? "animate-spin" : ""} />
+                   Refresh Ideas
+                 </button>
+               </div>
+               
+               {isLoadingHabitSuggestions ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+                   {[1,2,3,4].map(i => (
+                     <div key={i} className="h-32 bg-slate-100 rounded-[1.5rem]" />
+                   ))}
+                 </div>
+               ) : suggestedHabits.length > 0 ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                   {suggestedHabits.map((s, idx) => (
+                     <HabitSuggestionCard 
+                       key={idx} 
+                       suggestion={s} 
+                       onAdd={() => handleAcceptHabitSuggestion(s)} 
+                     />
+                   ))}
+                 </div>
+               ) : (
+                 <div className="bg-white/50 border border-slate-100 rounded-[1.5rem] p-8 text-center">
+                   <p className="text-slate-500 font-medium">Click "Refresh Ideas" to get personalized habit suggestions.</p>
+                 </div>
+               )}
              </div>
           </div>
         )}
@@ -546,41 +765,84 @@ export default function App() {
            <AboutView />
         )}
         {activeTab === 'settings' && (
-          <div className="max-w-2xl mx-auto pt-12">
-             <h1 className="text-4xl font-bold text-slate-900 mb-8 text-center">Profile & Settings</h1>
-             <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
-                <div className="absolute top-0 w-full h-32 bg-gradient-to-r from-emerald-100 to-teal-100 opacity-50"></div>
-                
-                <div className="w-28 h-28 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-[2rem] flex items-center justify-center text-4xl font-bold text-white mb-6 shadow-xl shadow-emerald-500/20 relative z-10 p-1 border-4 border-white lg:group-hover:scale-105 transition-transform duration-300">
-                  {user.photoURL ? (
-                    <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-[1.8rem] object-cover" />
-                  ) : (
-                    <span>{user.displayName?.charAt(0) || 'U'}</span>
-                  )}
-                </div>
-                
-                <h2 className="text-2xl font-bold text-slate-900">{user.displayName}</h2>
-                <p className="text-slate-500 mb-8 font-medium bg-slate-100 px-4 py-1 rounded-full text-sm mt-2">{user.email || 'Guest User'}</p>
-                
-                <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center lg:hover:bg-white lg:hover:shadow-lg transition-all duration-300">
-                      <div className="text-3xl font-bold text-emerald-500 mb-1">{goals.length}</div>
-                      <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Goals</div>
-                   </div>
-                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center lg:hover:bg-white lg:hover:shadow-lg transition-all duration-300">
-                      <div className="text-3xl font-bold text-teal-500 mb-1">{habits.length}</div>
-                      <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Habits</div>
-                   </div>
+          <div className="max-w-[1600px] mx-auto">
+             <div className="flex items-center gap-4 mb-8">
+                 <div className="w-10 h-10 md:w-14 md:h-14 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                    <Settings className="text-white w-5 h-5 md:w-8 md:h-8" />
+                 </div>
+                 <div>
+                    <h1 className="text-2xl md:text-4xl font-bold text-slate-900 tracking-tight">Profile & Settings</h1>
+                    <p className="text-emerald-500 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Manage your account and preferences</p>
+                 </div>
+             </div>
+
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Col: Profile Identity */}
+                <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group h-full">
+                    <div className="absolute top-0 w-full h-32 bg-gradient-to-r from-emerald-100 to-teal-100 opacity-50"></div>
+                    
+                    <div className="relative z-10 mb-6 mt-4">
+                        <div className={`w-32 h-32 rounded-[2rem] flex items-center justify-center text-5xl font-bold text-white shadow-xl p-1 border-4 border-white lg:group-hover:scale-105 transition-transform duration-300 ${user.customAvatar?.type === 'emoji' ? 'bg-slate-100' : 'bg-gradient-to-tr from-emerald-400 to-teal-500'}`}>
+                            {user.customAvatar ? (
+                                user.customAvatar.type === 'emoji' ? (
+                                    <span className="text-7xl">{user.customAvatar.value}</span>
+                                ) : (
+                                    <div className={`w-full h-full rounded-[1.8rem] bg-${user.customAvatar.color || 'emerald'}-500 flex items-center justify-center`}>
+                                        {user.customAvatar.value}
+                                    </div>
+                                )
+                            ) : user.photoURL ? (
+                                <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-[1.8rem] object-cover" />
+                            ) : (
+                                <span>{user.displayName?.charAt(0) || 'U'}</span>
+                            )}
+                        </div>
+                        
+                        <button 
+                            onClick={() => setIsProfileModalOpen(true)}
+                            className="absolute -bottom-2 -right-2 bg-white text-slate-600 p-2.5 rounded-full shadow-lg border border-slate-200 lg:hover:bg-slate-50 lg:hover:text-emerald-500 transition-colors"
+                            title="Edit Profile Picture"
+                        >
+                            <Pencil size={18} />
+                        </button>
+                    </div>
+                    
+                    <h2 className="text-2xl font-bold text-slate-900 mb-1">{user.displayName}</h2>
+                    <p className="text-slate-500 font-medium bg-slate-50 px-4 py-1.5 rounded-full text-sm inline-block border border-slate-100">{user.email || 'Guest User'}</p>
                 </div>
 
-                <div className="mt-12 w-full max-w-md">
-                   <button 
-                     onClick={handleSignOut}
-                     className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold lg:hover:bg-black transition-all shadow-lg lg:hover:shadow-xl"
-                   >
-                     Sign Out
-                   </button>
-                   <p className="text-xs text-slate-400 mt-4 font-mono">Version 1.2.0 • Nexus Dashboard</p>
+                {/* Right Col: Stats & Actions */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-lg flex flex-col items-center justify-center gap-2 lg:hover:shadow-xl transition-shadow">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-2">
+                                <Target size={24} />
+                            </div>
+                            <div className="text-4xl font-bold text-slate-900">{goals.length}</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Goals</div>
+                        </div>
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-lg flex flex-col items-center justify-center gap-2 lg:hover:shadow-xl transition-shadow">
+                            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-500 flex items-center justify-center mb-2">
+                                <Dumbbell size={24} />
+                            </div>
+                            <div className="text-4xl font-bold text-slate-900">{habits.length}</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tracked Habits</div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-lg flex-1 flex flex-col justify-center items-center gap-6">
+                        <div className="text-center max-w-md">
+                            <h3 className="font-bold text-slate-900 text-lg mb-2">Account Management</h3>
+                            <p className="text-slate-500 text-sm">Sign out to switch accounts or clear your local session.</p>
+                        </div>
+                        <button 
+                            onClick={handleSignOut}
+                            className="w-full max-w-sm py-4 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-2xl font-bold lg:hover:from-red-600 lg:hover:to-rose-700 transition-all shadow-lg shadow-red-500/20 lg:hover:shadow-xl lg:hover:shadow-red-500/30 flex items-center justify-center gap-2"
+                        >
+                            Sign Out
+                        </button>
+                        <p className="text-xs text-slate-300 font-mono">v1.2.0 • Nexus Dashboard</p>
+                    </div>
                 </div>
              </div>
           </div>
@@ -606,6 +868,7 @@ export default function App() {
         onClose={() => setIsHabitModalOpen(false)}
         onSave={handleSaveHabit}
         editingHabit={editingHabit}
+        defaultValues={habitDefaultValues}
       />
 
       <HabitHistoryModal
@@ -616,7 +879,17 @@ export default function App() {
         onToggleHabit={handleToggleHabit}
         initialView={historyViewMode}
         onUpdateNote={handleUpdateHabitNote}
+        onDeleteLog={handleDeleteHabitLog}
       />
+
+      {user && (
+        <ProfileAvatarModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+            onSave={handleUpdateProfile}
+            currentUser={user}
+        />
+      )}
     </div>
   );
 }

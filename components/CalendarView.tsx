@@ -1,12 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { CalendarEvent, ImportantDate } from '../types';
-import { Plus, X, Clock, Save, Calendar as CalendarIcon, Briefcase, User, ChevronLeft, ChevronRight, AlignJustify, Grid, Star } from 'lucide-react';
+import { CalendarEvent, ImportantDate, Habit, HabitLog } from '../types';
+import { Plus, X, Clock, Save, Calendar as CalendarIcon, Briefcase, User, ChevronLeft, ChevronRight, AlignJustify, Grid, Star, Dumbbell } from 'lucide-react';
 
 interface CalendarViewProps {
   events: CalendarEvent[];
   importantDates: ImportantDate[];
   onAddEvent: (event: Omit<CalendarEvent, 'id'>) => void;
+  // New props for Habits
+  habits?: Habit[];
+  habitLogs?: Record<string, HabitLog>;
 }
 
 interface EventFormModalProps {
@@ -190,10 +193,13 @@ const CurrentTimeLine: React.FC<{ startHour: number, rowHeight: number }> = ({ s
   );
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onAddEvent }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onAddEvent, habits = [], habitLogs = {} }) => {
   const [view, setView] = useState<'month'|'week'|'day'>('month'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Toggle for showing habits
+  const [showHabits, setShowHabits] = useState(false);
 
   const navigateDate = (direction: number) => {
     const newDate = new Date(currentDate);
@@ -201,6 +207,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
     if (view === 'week') newDate.setDate(newDate.getDate() + (direction * 7));
     if (view === 'day') newDate.setDate(newDate.getDate() + direction);
     setCurrentDate(newDate);
+  };
+
+  const resetToToday = () => {
+    setCurrentDate(new Date());
   };
 
   const getWeekRangeString = (date: Date) => {
@@ -245,6 +255,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
              return eDate.getDate() === day && eDate.getMonth() === month && eDate.getFullYear() === year;
            });
 
+           // Get completed habits for this day
+           const completedHabits = showHabits ? habits.filter(h => !!habitLogs[`${h.id}_${dateString}`]) : [];
+
            // Dynamic Styles for Cell
            let cellClasses = "bg-white border-slate-100 lg:hover:border-emerald-200 lg:hover:shadow-lg";
            let textClasses = "text-slate-600";
@@ -269,10 +282,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
            return (
              <div 
                key={day} 
-               className={`rounded-xl md:rounded-2xl p-1 md:p-2 relative group transition-all duration-300 border overflow-hidden flex flex-col ${cellClasses}`}
+               className={`rounded-xl md:rounded-2xl p-1 md:p-2 relative group transition-all duration-300 border flex flex-col ${cellClasses}`}
                title={importantDate?.title}
              >
-               <div className="flex justify-between items-start">
+               <div className="flex justify-between items-start shrink-0">
                   <span className={`text-[10px] md:text-sm font-bold ${textClasses}`}>{day}</span>
                   {isImportant && (
                     <div className="hidden md:block">
@@ -286,25 +299,45 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                  <div className="md:hidden absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-400"></div>
                )}
                
-               <div className="mt-1 space-y-0.5 md:space-y-1 overflow-hidden flex-1">
-                 {/* Show Important Date Title at top if important */}
-                 {isImportant && (
-                    <div className="hidden md:block text-[9px] font-bold text-amber-300 truncate mb-1">
-                        {importantDate?.title}
+               {/* Cell Content Area - Set min-height 0 to allow flex item to shrink and scroll */}
+               <div className="mt-1 flex-1 min-h-0 relative">
+                 {showHabits ? (
+                    // --- HABIT VIEW ---
+                    // Added overflow-y-auto and no-scrollbar to allow scrolling if too many habits
+                    <div className="flex flex-wrap content-start gap-0.5 md:gap-1 mt-1 h-full overflow-y-auto custom-scrollbar pb-2">
+                       {completedHabits.length > 0 ? completedHabits.map(h => (
+                           <span key={h.id} className="text-[10px] md:text-sm leading-none select-none hover:scale-125 transition-transform cursor-help shrink-0" title={h.title}>
+                               {h.icon}
+                           </span>
+                       )) : (
+                           <div className="w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                               <span className="text-[10px] text-slate-300 select-none">-</span>
+                           </div>
+                       )}
                     </div>
-                 )}
+                 ) : (
+                    // --- EVENT VIEW ---
+                    <div className="flex flex-col h-full space-y-0.5 md:space-y-1 overflow-hidden">
+                        {/* Show Important Date Title at top if important */}
+                        {isImportant && (
+                            <div className="hidden md:block text-[9px] font-bold text-amber-300 truncate mb-1 shrink-0">
+                                {importantDate?.title}
+                            </div>
+                        )}
 
-                 {dayEvents.slice(0, isImportant ? 2 : 3).map(e => (
-                   <div key={e.id} className={`h-1.5 md:h-auto w-full md:w-auto rounded-full md:rounded-md ${
-                     e.type === 'work' ? 'bg-blue-400 md:bg-blue-50 md:text-blue-600' : 'bg-rose-400 md:bg-rose-50 md:text-rose-600'
-                   }`}>
-                     <div className="hidden md:block text-[10px] px-1 truncate font-medium">
-                       {e.time} {e.title}
-                     </div>
-                   </div>
-                 ))}
-                 {dayEvents.length > (isImportant ? 2 : 3) && (
-                   <div className={`hidden md:block text-[9px] font-bold px-1 ${isImportant ? 'text-stone-400' : 'text-slate-400'}`}>+{dayEvents.length - (isImportant ? 2 : 3)} more</div>
+                        {dayEvents.slice(0, isImportant ? 2 : 4).map(e => (
+                        <div key={e.id} className={`h-1.5 md:h-auto w-full md:w-auto rounded-full md:rounded-md shrink-0 ${
+                            e.type === 'work' ? 'bg-blue-400 md:bg-blue-50 md:text-blue-600' : 'bg-rose-400 md:bg-rose-50 md:text-rose-600'
+                        }`}>
+                            <div className="hidden md:block text-[10px] px-1 truncate font-medium">
+                            {e.time} {e.title}
+                            </div>
+                        </div>
+                        ))}
+                        {dayEvents.length > (isImportant ? 2 : 4) && (
+                        <div className={`hidden md:block text-[9px] font-bold px-1 shrink-0 ${isImportant ? 'text-stone-400' : 'text-slate-400'}`}>+{dayEvents.length - (isImportant ? 2 : 4)} more</div>
+                        )}
+                    </div>
                  )}
                </div>
              </div>
@@ -488,6 +521,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
         {/* Controls Toolbar */}
         <div className="flex flex-wrap items-center gap-2 md:gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 w-full">
            <div className="flex items-center gap-1 md:gap-2 px-1 md:px-2 flex-1 justify-between md:justify-start">
+             <button onClick={resetToToday} className="px-3 py-1.5 bg-slate-100 lg:hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition-colors">Today</button>
              <button onClick={() => navigateDate(-1)} className="p-2 lg:hover:bg-slate-100 rounded-xl transition-colors text-slate-500"><ChevronLeft size={20} /></button>
              <span className="font-bold text-slate-800 text-xs md:text-base text-center select-none truncate">
                {view === 'month' && currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
@@ -497,6 +531,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
              <button onClick={() => navigateDate(1)} className="p-2 lg:hover:bg-slate-100 rounded-xl transition-colors text-slate-500"><ChevronRight size={20} /></button>
            </div>
            
+           <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block" />
+           
+           {/* Habits Toggle */}
+           <button
+             onClick={() => setShowHabits(!showHabits)}
+             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+               showHabits 
+                ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm' 
+                : 'bg-white text-slate-500 border-transparent lg:hover:bg-slate-50'
+             }`}
+           >
+             <Dumbbell size={14} />
+             <span className="hidden md:inline">Habits</span>
+           </button>
+
            <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block" />
 
            <div className="flex bg-slate-100 rounded-xl p-1 shrink-0 w-full md:w-auto mt-2 md:mt-0">
@@ -528,6 +577,27 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
            </button>
         </div>
       </div>
+      
+      {/* Habit Legend Key - Only visible when habits are shown */}
+      {showHabits && habits.length > 0 && (
+         <div className="mb-6 flex gap-3 overflow-x-auto pb-2 custom-scrollbar animate-in fade-in slide-in-from-top-2">
+            <div className="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center shrink-0">
+               Habit Key:
+            </div>
+            {habits.map(h => {
+               // Extract color class name like "text-emerald-500" -> "emerald"
+               const colorMatch = h.color.match(/text-(\w+)-500/);
+               const colorName = colorMatch ? colorMatch[1] : 'slate';
+               
+               return (
+                  <div key={h.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border shrink-0 bg-${colorName}-50 border-${colorName}-100 text-${colorName}-700`}>
+                     <span className="text-base leading-none">{h.icon}</span>
+                     <span className="text-xs font-bold">{h.title}</span>
+                  </div>
+               );
+            })}
+         </div>
+      )}
 
       <div className="bg-white/50 backdrop-blur-md rounded-[2rem] md:rounded-[2.5rem] p-2 md:p-8 border border-white/60 shadow-xl shadow-slate-200/40 overflow-hidden">
          <div className="w-full">

@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { NotebookPen, Sparkles, Clock, Briefcase, User, Trash2, Check, Loader2, Calendar as CalendarIcon, Edit3, Eye } from 'lucide-react';
+import { NotebookPen, Sparkles, Clock, Briefcase, User, Trash2, Check, Loader2, Calendar as CalendarIcon, Edit3, Eye, Wand2 } from 'lucide-react';
 import { CalendarEvent, ProposedEvent } from '../types';
-import { generateSchedulePlan } from '../services/gemini';
+import { generateSchedulePlan, refineSchedulePlan } from '../services/gemini';
 
 interface PlannerViewProps {
   existingEvents: CalendarEvent[];
@@ -34,7 +34,7 @@ const VisualSchedulePreview: React.FC<VisualSchedulePreviewProps> = ({ targetDat
                 <div className="relative" style={{ height: hours.length * rowHeight }}>
                     {hours.map(h => (
                         <div key={h} className="group flex border-b border-slate-50 h-[60px]">
-                            <div className="w-14 border-r border-slate-50 text-[10px] font-bold text-slate-400 flex items-center justify-center bg-slate-50/30">
+                            <div className="w-24 border-r border-slate-50 text-[10px] font-bold text-slate-400 flex items-center justify-center bg-slate-50/30">
                                 {h > 12 ? `${h-12} PM` : h === 12 ? '12 PM' : `${h} AM`}
                             </div>
                             <div className="flex-1 relative">
@@ -79,7 +79,7 @@ const VisualSchedulePreview: React.FC<VisualSchedulePreviewProps> = ({ targetDat
                         return (
                             <div 
                                 key={e.id}
-                                className={`absolute left-1 right-1 md:left-2 md:right-2 rounded-lg border-l-4 p-2 text-xs leading-tight overflow-hidden transition-all ${bgClass} ${borderClass} ${textClass} ${isProposed ? 'z-20 shadow-lg' : 'z-10 opacity-70 grayscale-[0.3]'}`}
+                                className={`absolute left-[105px] right-1 rounded-lg border-l-4 p-2 text-xs leading-tight overflow-hidden transition-all ${bgClass} ${borderClass} ${textClass} ${isProposed ? 'z-20 shadow-lg' : 'z-10 opacity-70 grayscale-[0.3]'}`}
                                 style={{ top: `${top}px`, height: `${height}px` }}
                             >
                                 <div className="flex justify-between items-start">
@@ -103,6 +103,10 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // Refinement State
+  const [refinementPrompt, setRefinementPrompt] = useState('');
+  const [isRefining, setIsRefining] = useState(false);
   
   // Mobile View State
   const [mobileTab, setMobileTab] = useState<'editor' | 'preview'>('editor');
@@ -170,6 +174,16 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
     setIsGenerating(false);
   };
 
+  const handleRefine = async () => {
+    if (!refinementPrompt.trim()) return;
+    setIsRefining(true);
+    
+    const updatedPlan = await refineSchedulePlan(proposedEvents, refinementPrompt, dateContext);
+    setProposedEvents(updatedPlan);
+    setRefinementPrompt('');
+    setIsRefining(false);
+  };
+
   const handleSaveAll = async () => {
     setIsSaving(true);
     
@@ -195,6 +209,7 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
     setIsSaving(false);
     setProposedEvents([]);
     setPrompt('');
+    setRefinementPrompt('');
     setSuccessMessage(`Successfully added ${eventsToSave.length} events to your calendar.`);
     setTimeout(() => setSuccessMessage(null), 4000);
   };
@@ -217,7 +232,7 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
         </div>
         <div>
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">AI Planner</h1>
-            <p className="text-emerald-500 font-bold text-sm mt-1 uppercase tracking-wider">Design your ideal schedule</p>
+            <p className="text-emerald-500 font-bold text-sm mt-1 uppercase tracking-wider">Intelligent scheduling, synced to your calendar</p>
         </div>
       </div>
 
@@ -346,10 +361,32 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
                         ))}
                     </div>
 
+                    {/* REFINEMENT SECTION */}
+                    <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50 mt-4">
+                       <label className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-2 block">Refine this plan</label>
+                       <div className="flex gap-2">
+                         <input 
+                           type="text"
+                           value={refinementPrompt}
+                           onChange={(e) => setRefinementPrompt(e.target.value)}
+                           onKeyDown={(e) => e.key === 'Enter' && handleRefine()}
+                           placeholder="e.g. Move dinner 30 mins later"
+                           className="flex-1 bg-white border border-emerald-100 rounded-xl px-4 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                         />
+                         <button 
+                           onClick={handleRefine}
+                           disabled={!refinementPrompt.trim() || isRefining}
+                           className="bg-emerald-500 text-white p-2.5 rounded-xl lg:hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                         >
+                           {isRefining ? <Loader2 size={18} className="animate-spin" /> : <Wand2 size={18} />}
+                         </button>
+                       </div>
+                    </div>
+
                     <button
                         onClick={handleSaveAll}
-                        disabled={isSaving}
-                        className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl lg:hover:bg-black transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-slate-900/20"
+                        disabled={isSaving || isRefining}
+                        className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl lg:hover:bg-black transition-all flex items-center justify-center gap-2 mt-2 shadow-lg shadow-slate-900/20"
                     >
                          {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Check size={20} />}
                          Approve & Sync

@@ -251,12 +251,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const getWeatherColor = (condition: string) => {
     switch (condition) {
-      case 'Clear': return 'bg-amber-100 text-amber-600';
-      case 'Cloudy': return 'bg-slate-100 text-slate-600';
-      case 'Rain': return 'bg-blue-100 text-blue-600';
-      case 'Snow': return 'bg-cyan-100 text-cyan-600';
-      case 'Storm': return 'bg-purple-100 text-purple-600';
-      default: return 'bg-slate-100 text-slate-600';
+      case 'Clear': return 'text-amber-500';
+      case 'Cloudy': return 'text-slate-500';
+      case 'Rain': return 'text-blue-500';
+      case 'Snow': return 'text-cyan-500';
+      case 'Storm': return 'text-purple-500';
+      default: return 'text-slate-500';
     }
   };
 
@@ -293,7 +293,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
              <LayoutDashboard className="text-white w-6 h-6 md:w-8 md:h-8" />
           </div>
           <div>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">{greeting}, {displayName}</h1>
             <p className="text-emerald-500 font-bold text-sm mt-2 uppercase tracking-wider">Focus on what matters most</p>
           </div>
@@ -307,16 +306,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div className="text-4xl md:text-5xl font-bold text-slate-800 tracking-tight leading-none lg:group-hover:text-emerald-500 transition-colors">
                      {currentTime.toLocaleTimeString([], { hour12: !is24Hour, hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                     {is24Hour ? '24-Hour' : '12-Hour'}
-                  </div>
               </div>
+
+              {/* Date below Time */}
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
               
-              {/* Weather Below Time */}
-              <div className="flex items-center gap-2 text-slate-600 bg-white/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/50 shadow-sm">
+              {/* Weather Below Date */}
+              <div className="flex items-center gap-2 text-slate-600">
                 {weather ? (
                   <>
-                    <div className={`p-1 rounded-full ${getWeatherColor(weather.condition)}`}>
+                    <div className={`${getWeatherColor(weather.condition)}`}>
                       {getWeatherIcon(weather.condition)}
                     </div>
                     <span className="font-bold text-lg leading-none">{weather.temp}°F</span>
@@ -394,7 +393,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             <div className="relative z-10 flex flex-col h-full">
               <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-bold text-white tracking-tight">Today's Schedule</h3>
+                <div>
+                    <h3 className="text-xl font-bold text-white tracking-tight">Today's Schedule</h3>
+                    <p className="text-stone-400 text-sm font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
+                </div>
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-xs border border-white/5">
                   {todaysEvents.length}
                 </div>
@@ -422,7 +424,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
              
              <div className="relative z-10 flex-1 flex flex-col">
                <div className="flex justify-between items-start mb-6 relative">
-                 <h3 className="font-bold text-lg leading-tight max-w-[70%]">Upcoming Important Dates</h3>
+                 <div>
+                    <h3 className="font-bold text-lg leading-tight">Upcoming Important Dates</h3>
+                    <p className="text-stone-400 text-sm font-medium">{sortedDates.length} Upcoming</p>
+                 </div>
                  <div className="flex gap-2 items-center">
                    <button 
                      onClick={() => { setEditingDate(null); setIsDateModalOpen(true); }}

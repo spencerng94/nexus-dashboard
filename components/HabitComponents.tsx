@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2, Check, AlignLeft, List, CalendarDays, X, Save, CornerDownLeft, Sparkles, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, Check, AlignLeft, List, CalendarDays, X, Save, CornerDownLeft, Sparkles, Loader2, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Habit, HabitLog } from '../types';
 import { generateSuggestions } from '../services/gemini';
 
@@ -144,6 +145,33 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
   );
 };
 
+// --- HABIT SUGGESTION CARD ---
+
+interface HabitSuggestionCardProps {
+  suggestion: { title: string; category: string; icon: string };
+  onAdd: () => void;
+}
+
+export const HabitSuggestionCard: React.FC<HabitSuggestionCardProps> = ({ suggestion, onAdd }) => {
+  return (
+    <button 
+      onClick={onAdd}
+      className="bg-white p-5 rounded-[1.5rem] border border-slate-100 lg:hover:border-emerald-200 lg:hover:shadow-lg lg:hover:shadow-emerald-500/10 transition-all duration-300 text-left group flex flex-col h-full"
+    >
+      <div className="flex justify-between items-start mb-3">
+        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-xl">
+          {suggestion.icon}
+        </div>
+        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 lg:group-hover:bg-emerald-500 lg:group-hover:text-white transition-colors">
+          <Plus size={16} />
+        </div>
+      </div>
+      <h4 className="font-bold text-slate-800 text-sm mb-1">{suggestion.title}</h4>
+      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide">{suggestion.category}</span>
+    </button>
+  );
+};
+
 // --- HABIT MODAL ---
 
 interface HabitFormModalProps {
@@ -152,9 +180,10 @@ interface HabitFormModalProps {
   onSave: (data: Omit<Habit, 'id' | 'streak'>) => void;
   editingHabit: Habit | null;
   existingHabits?: Habit[];
+  defaultValues?: { title?: string, category?: string, icon?: string };
 }
 
-export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose, onSave, editingHabit, existingHabits = [] }) => {
+export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose, onSave, editingHabit, existingHabits = [], defaultValues }) => {
   const [formData, setFormData] = useState({
     title: '',
     category: 'Health',
@@ -172,11 +201,18 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
         color: editingHabit.color,
         icon: editingHabit.icon || '💪'
       });
+    } else if (defaultValues) {
+      setFormData({
+        title: defaultValues.title || '',
+        category: defaultValues.category || 'Health',
+        color: 'text-blue-500 bg-blue-500',
+        icon: defaultValues.icon || '💪'
+      });
     } else {
       setFormData({ title: '', category: 'Health', color: 'text-blue-500 bg-blue-500', icon: '💪' });
     }
     setSuggestions([]);
-  }, [editingHabit, isOpen]);
+  }, [editingHabit, isOpen, defaultValues]);
 
   const fetchSuggestions = async () => {
     setLoadingSuggestions(true);
@@ -342,13 +378,18 @@ interface HabitHistoryModalProps {
   onToggleHabit: (habitId: string, completed: boolean, dateKey: string) => void;
   initialView?: 'calendar' | 'list';
   onUpdateNote: (habitId: string, note: string, dateKey: string) => void;
+  onDeleteLog: (habitId: string, dateKey: string) => void;
 }
 
 export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({ 
-  isOpen, onClose, habit, habitLogs, onToggleHabit, initialView = 'calendar', onUpdateNote
+  isOpen, onClose, habit, habitLogs, onToggleHabit, initialView = 'calendar', onUpdateNote, onDeleteLog
 }) => {
   const [view, setView] = useState<'calendar' | 'list'>(initialView);
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Editing state for list view
+  const [editingLogDate, setEditingLogDate] = useState<string | null>(null);
+  const [editNoteText, setEditNoteText] = useState("");
 
   useEffect(() => {
     setView(initialView);
@@ -360,6 +401,16 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({
     return (Object.values(habitLogs) as HabitLog[])
       .filter(log => log.habitId === habit.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const startEditingLog = (log: HabitLog) => {
+    setEditingLogDate(log.date);
+    setEditNoteText(log.note || "");
+  };
+
+  const saveEditedLog = (log: HabitLog) => {
+    onUpdateNote(habit.id, editNoteText, log.date);
+    setEditingLogDate(null);
   };
 
   const renderCalendar = () => {
@@ -439,7 +490,7 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({
     return (
       <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar animate-in fade-in slide-in-from-bottom-2">
          {logs.length > 0 ? logs.map(log => (
-            <div key={log.date} className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex gap-4">
+            <div key={log.date} className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex gap-4 group">
                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                   <Check size={20} />
                </div>
@@ -448,13 +499,62 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({
                      <span className="font-bold text-slate-800">
                         {new Date(log.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                      </span>
+                     <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                        {editingLogDate === log.date ? (
+                           <>
+                             <button 
+                                onClick={() => saveEditedLog(log)}
+                                className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600"
+                                title="Save"
+                             >
+                                <Check size={14} />
+                             </button>
+                             <button 
+                                onClick={() => setEditingLogDate(null)}
+                                className="p-1.5 rounded-lg bg-slate-200 text-slate-500"
+                                title="Cancel"
+                             >
+                                <X size={14} />
+                             </button>
+                           </>
+                        ) : (
+                           <>
+                             <button 
+                                onClick={() => startEditingLog(log)}
+                                className="p-1.5 rounded-lg bg-white text-slate-400 border border-slate-200 lg:hover:text-emerald-500 lg:hover:border-emerald-200 transition-colors"
+                                title="Edit Note"
+                             >
+                                <Pencil size={14} />
+                             </button>
+                             <button 
+                                onClick={() => onDeleteLog(habit.id, log.date)}
+                                className="p-1.5 rounded-lg bg-white text-slate-400 border border-slate-200 lg:hover:text-red-500 lg:hover:border-red-200 transition-colors"
+                                title="Delete Entry"
+                             >
+                                <Trash2 size={14} />
+                             </button>
+                           </>
+                        )}
+                     </div>
                   </div>
-                  {log.note ? (
-                    <p className="text-sm text-slate-600 bg-white p-2 rounded-lg border border-slate-100 inline-block">
-                      {log.note}
-                    </p>
+                  
+                  {editingLogDate === log.date ? (
+                     <input 
+                        type="text"
+                        value={editNoteText}
+                        onChange={(e) => setEditNoteText(e.target.value)}
+                        className="w-full text-sm p-2 rounded-lg border border-slate-300 focus:outline-none focus:border-emerald-500"
+                        autoFocus
+                        onKeyDown={(e) => e.key === 'Enter' && saveEditedLog(log)}
+                     />
                   ) : (
-                    <p className="text-xs text-slate-400 italic">No notes added.</p>
+                     log.note ? (
+                       <p className="text-sm text-slate-600 bg-white p-2 rounded-lg border border-slate-100 inline-block">
+                         {log.note}
+                       </p>
+                     ) : (
+                       <p className="text-xs text-slate-400 italic">No notes added.</p>
+                     )
                   )}
                </div>
             </div>

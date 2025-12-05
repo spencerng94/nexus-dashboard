@@ -350,3 +350,54 @@ export const generateSchedulePlan = async (
     return [];
   }
 };
+
+export const refineSchedulePlan = async (
+  currentProposed: ProposedEvent[],
+  refinementPrompt: string,
+  dateContext: 'today' | 'tomorrow'
+): Promise<ProposedEvent[]> => {
+  const ai = getAIClient();
+  if (!ai) return currentProposed;
+
+  try {
+    const systemPrompt = `
+      You are an expert scheduler. Your task is to MODIFY an existing list of proposed calendar events based on user feedback.
+      
+      Context:
+      - Planning For: ${dateContext}
+      - Current Proposed Events (JSON): ${JSON.stringify(currentProposed)}
+      
+      User Feedback: "${refinementPrompt}"
+      
+      Instructions:
+      1. Apply the user's feedback to the current events list (e.g., "move dinner later", "add a meeting", "remove gym").
+      2. Keep unchanged events exactly as they are.
+      3. Return the COMPLETE updated list in the same JSON format.
+      4. Ensure "startTime" stays in 24-Hour HH:MM format.
+      
+      Output:
+      - Strictly a JSON Array of objects (keys: title, startTime, duration, type).
+      - NO Markdown.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: "Update the schedule.",
+      config: { systemInstruction: systemPrompt }
+    });
+
+    const text = response.text || "[]";
+    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanText);
+
+    // Re-map to ensure IDs (preserve if possible, otherwise gen new)
+    return parsed.map((e: any, idx: number) => ({
+      ...e,
+      id: e.id || (Date.now() + idx).toString()
+    }));
+
+  } catch (error) {
+    console.error("Refine Planner Error:", error);
+    return currentProposed;
+  }
+};

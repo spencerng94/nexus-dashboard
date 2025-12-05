@@ -58,6 +58,11 @@ export interface User {
   email?: string | null;
   accessToken?: string;
   isGuest?: boolean;
+  customAvatar?: {
+    type: 'emoji' | 'initials';
+    value: string; // The emoji char OR the initial char
+    color?: string; // Tailwind color name (e.g. 'emerald', 'blue') for initials background
+  };
 }
 
 export interface DashboardState {
