@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, Settings, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 
@@ -25,9 +26,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
       } else {
         // 2. Try Environment Variable (Safely)
         try {
+          // Check for process existence before accessing env
           // @ts-ignore
-          const envId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-          if (envId) setClientId(envId);
+          if (typeof process !== 'undefined' && process.env) {
+            // @ts-ignore
+            const envId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+            if (envId) setClientId(envId);
+          }
         } catch (e) {
           // ignore
         }
@@ -81,8 +86,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
       <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-teal-100/40 rounded-full blur-[100px]" />
 
       <div className="bg-white/80 backdrop-blur-2xl rounded-[2.5rem] p-12 max-w-md w-full shadow-2xl border border-white/50 relative z-10 text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl mx-auto flex items-center justify-center mb-8 shadow-lg shadow-emerald-500/20">
-          <span className="text-4xl font-bold text-white tracking-tight">N</span>
+        <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-3xl mx-auto flex items-center justify-center mb-8 shadow-lg shadow-emerald-500/20">
+            <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* N: Top Left (4,4 to 16,16) */}
+              <path d="M4 16V4L16 16V4" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+              {/* X: Bottom Right (16,16 to 28,28) - Touching at 16,16 */}
+              <path d="M16 16L28 28M28 16L16 28" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
         </div>
         <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">Nexus</h1>
         <p className="text-slate-500 mb-8 text-lg leading-relaxed">
@@ -101,7 +111,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
         <button 
           onClick={handleGoogleClick}
           disabled={isLoading}
-          className="group w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-medium text-lg py-4 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:scale-[1.02] mb-4 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+          className="group w-full bg-gradient-to-r from-emerald-500 to-teal-500 lg:hover:from-emerald-600 lg:hover:to-teal-600 text-white font-medium text-lg py-4 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 shadow-xl shadow-emerald-500/30 lg:hover:shadow-2xl lg:hover:scale-[1.02] mb-4 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isLoading ? (
             <Loader2 className="animate-spin w-6 h-6 text-white" />
@@ -118,7 +128,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
         <button 
           onClick={onGuestLogin}
           disabled={isLoading}
-          className="w-full bg-white hover:bg-slate-50 text-slate-600 font-bold text-sm py-4 rounded-2xl transition-all border border-slate-200 mb-8 disabled:opacity-50"
+          className="w-full bg-white lg:hover:bg-slate-50 text-slate-600 font-bold text-sm py-4 rounded-2xl transition-all border border-slate-200 mb-8 disabled:opacity-50"
         >
           Continue as Guest
         </button>
@@ -126,7 +136,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
         <div className="border-t border-slate-100 pt-6">
           <button 
             onClick={() => setShowConfig(!showConfig)}
-            className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 hover:text-emerald-500 transition-colors mx-auto uppercase tracking-wider"
+            className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 lg:hover:text-emerald-500 transition-colors mx-auto uppercase tracking-wider"
           >
              <Settings size={14} />
              Configure Client ID
@@ -155,7 +165,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
                  </p>
                  <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-600 break-all select-all flex justify-between items-center group">
                    {origin}
-                   <span className="text-[10px] text-slate-400 italic opacity-0 group-hover:opacity-100 transition-opacity">copy</span>
+                   <span className="text-[10px] text-slate-400 italic opacity-0 lg:group-hover:opacity-100 transition-opacity">copy</span>
                  </div>
                  <p className="text-[10px] text-amber-600 mt-2 leading-tight">
                    ⚠ <strong>DO NOT</strong> use "Authorized Redirect URIs". <br/>

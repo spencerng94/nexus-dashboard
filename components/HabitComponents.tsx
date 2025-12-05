@@ -49,32 +49,32 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
   };
 
   return (
-    <div className="bg-white/60 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-xl shadow-slate-200/40 hover:shadow-2xl transition-all duration-300 group relative overflow-hidden flex flex-col">
+    <div className="bg-white/60 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-xl shadow-slate-200/40 lg:hover:shadow-2xl transition-all duration-300 group relative overflow-hidden flex flex-col">
        <div className="absolute top-6 right-6 flex gap-2 z-20">
          <button 
           onClick={(e) => { e.stopPropagation(); onViewHistory(habit, 'list'); }}
-          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-emerald-50 hover:text-emerald-500 transition-all duration-300"
+          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:hover:bg-emerald-50 lg:hover:text-emerald-500 transition-all duration-300"
           title="List View"
         >
           <List size={16} />
         </button>
          <button 
           onClick={(e) => { e.stopPropagation(); onViewHistory(habit, 'calendar'); }}
-          className="p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-500 transition-colors"
+          className="p-2 rounded-full bg-slate-100 text-slate-400 lg:hover:bg-emerald-50 lg:hover:text-emerald-500 transition-colors"
           title="History Calendar"
         >
           <CalendarDays size={16} />
         </button>
          <button 
           onClick={(e) => { e.stopPropagation(); onEdit(habit); }}
-          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-emerald-50 hover:text-emerald-500 transition-all duration-300"
+          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:hover:bg-emerald-50 lg:hover:text-emerald-500 transition-all duration-300"
           title="Edit Habit"
         >
           <Pencil size={16} />
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); onDelete(habit.id); }}
-          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all duration-300"
+          className="p-2 rounded-full bg-slate-100 text-slate-400 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:hover:bg-red-50 lg:hover:text-red-500 transition-all duration-300"
           title="Delete Habit"
         >
           <Trash2 size={16} />
@@ -88,7 +88,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
             className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all duration-500 shadow-lg shrink-0 ${
               log 
                 ? `${habit.color.replace('text-', 'bg-')} text-white scale-110 shadow-emerald-500/30` 
-                : 'bg-white text-slate-400 hover:bg-slate-50'
+                : 'bg-white text-slate-400 lg:hover:bg-slate-50'
             }`}
           >
             {log ? <Check size={32} strokeWidth={4} /> : habit.icon}
@@ -130,7 +130,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
               ) : (
                 <button 
                   onClick={handleSaveNote}
-                  className="p-1.5 bg-slate-100 hover:bg-emerald-100 text-slate-400 hover:text-emerald-500 rounded-lg transition-colors"
+                  className="p-1.5 bg-slate-100 lg:hover:bg-emerald-100 text-slate-400 lg:hover:text-emerald-500 rounded-lg transition-colors"
                   title="Save Note"
                 >
                   <CornerDownLeft size={16} />
@@ -161,7 +161,6 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
     color: 'text-blue-500 bg-blue-500',
     icon: '💪'
   });
-
   const [suggestions, setSuggestions] = useState<Array<{title: string, category: string, icon: string}>>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
@@ -219,7 +218,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
             <h3 className="text-2xl font-bold text-slate-900">{editingHabit ? 'Edit Habit' : 'New Habit'}</h3>
             <p className="text-slate-500 text-sm">{editingHabit ? 'Modify routine details' : 'Build a new routine'}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 rounded-full transition-colors text-slate-400 lg:hover:text-slate-600">
             <X size={24} />
           </button>
         </div>
@@ -233,7 +232,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
                     type="button" 
                     onClick={fetchSuggestions}
                     disabled={loadingSuggestions}
-                    className="text-xs font-bold text-emerald-500 flex items-center gap-1 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors"
+                    className="text-xs font-bold text-emerald-500 flex items-center gap-1 lg:hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors"
                   >
                     {loadingSuggestions ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                     AI Ideas
@@ -248,7 +247,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
                      key={idx}
                      type="button"
                      onClick={() => applySuggestion(s)}
-                     className="text-left bg-emerald-50/50 hover:bg-emerald-100 border border-emerald-100 p-2 rounded-xl text-xs flex items-center gap-2 transition-colors"
+                     className="text-left bg-emerald-50/50 lg:hover:bg-emerald-100 border border-emerald-100 p-2 rounded-xl text-xs flex items-center gap-2 transition-colors"
                    >
                      <span className="text-lg">{s.icon}</span>
                      <div>
@@ -282,7 +281,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${
                      formData.icon === emoji 
                        ? 'bg-slate-900 text-white shadow-lg scale-110' 
-                       : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                       : 'bg-slate-50 text-slate-700 lg:hover:bg-slate-100'
                    }`}
                  >
                    {emoji}
@@ -313,7 +312,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
                   className={`w-10 h-10 rounded-full ${c.value.split(' ')[1]} transition-all duration-200 ${
                     formData.color === c.value 
                       ? 'ring-4 ring-offset-2 ring-slate-200 scale-110 shadow-lg' 
-                      : 'hover:scale-110 hover:opacity-80'
+                      : 'lg:hover:scale-110 lg:hover:opacity-80'
                   }`}
                 />
               ))}
@@ -322,7 +321,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({ isOpen, onClose,
 
           <button 
             type="submit" 
-            className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl mt-4 hover:bg-black hover:scale-[1.02] transition-all shadow-xl shadow-slate-900/20 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg py-4 rounded-2xl mt-4 lg:hover:shadow-lg lg:hover:shadow-emerald-500/20 lg:hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
           >
             <Save size={20} />
             {editingHabit ? 'Update Habit' : 'Create Habit'}
@@ -379,14 +378,14 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({
          <div className="flex justify-between items-center mb-6">
             <button 
               onClick={() => setCurrentDate(new Date(year, month - 1))}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500"
+              className="p-2 lg:hover:bg-slate-100 rounded-xl transition-colors text-slate-500"
             >
               <ChevronLeft size={20} />
             </button>
             <span className="font-bold text-slate-800 text-lg">{monthName} {year}</span>
             <button 
               onClick={() => setCurrentDate(new Date(year, month + 1))}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500"
+              className="p-2 lg:hover:bg-slate-100 rounded-xl transition-colors text-slate-500"
             >
               <ChevronRight size={20} />
             </button>
@@ -415,7 +414,7 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({
                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-105' 
                         : isToday 
                            ? 'bg-slate-100 text-slate-900 border-2 border-slate-300' 
-                           : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}
+                           : 'bg-slate-50 text-slate-400 lg:hover:bg-slate-100'}
                    `}
                  >
                    {day}
@@ -460,7 +459,9 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({
                </div>
             </div>
          )) : (
-            <div className="text-center py-10 text-slate-400 italic">No history yet. Start today!</div>
+            <div className="text-center py-12 text-slate-400 italic">
+               No history available for this habit.
+            </div>
          )}
       </div>
     );
@@ -468,42 +469,33 @@ export const HabitHistoryModal: React.FC<HabitHistoryModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
-         <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${habit.color.replace('text-','bg-')} text-white`}>
-                 {habit.icon}
-               </div>
-               <div>
-                 <h3 className="font-bold text-slate-900 text-xl">{habit.title}</h3>
-                 <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">{habit.category}</p>
-               </div>
-            </div>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
-              <X size={24} />
-            </button>
-         </div>
+      <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="text-2xl font-bold text-slate-900">Habit History</h3>
+            <p className="text-slate-500 text-sm">Track your consistency</p>
+          </div>
+          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 rounded-full transition-colors text-slate-400 lg:hover:text-slate-600">
+            <X size={24} />
+          </button>
+        </div>
 
-         <div className="bg-slate-100 p-1 rounded-xl flex mb-6">
-            <button 
-              onClick={() => setView('calendar')}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                view === 'calendar' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <CalendarDays size={16} /> Calendar
-            </button>
-            <button 
-              onClick={() => setView('list')}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                view === 'list' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <List size={16} /> List
-            </button>
-         </div>
+        <div className="bg-slate-100 p-1 rounded-xl flex mb-6">
+          <button 
+            onClick={() => setView('calendar')}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${view === 'calendar' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 lg:hover:text-slate-600'}`}
+          >
+            Calendar
+          </button>
+          <button 
+            onClick={() => setView('list')}
+            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${view === 'list' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 lg:hover:text-slate-600'}`}
+          >
+            List
+          </button>
+        </div>
 
-         {view === 'calendar' ? renderCalendar() : renderList()}
+        {view === 'calendar' ? renderCalendar() : renderList()}
       </div>
     </div>
   );

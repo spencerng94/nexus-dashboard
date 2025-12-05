@@ -1,17 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, X, Send, MessageSquare } from 'lucide-react';
-import { DashboardState } from '../types';
+import { DashboardState, User } from '../types';
 import { chatWithAssistant } from '../services/gemini';
 
 interface ChatWidgetProps {
   dashboardState: DashboardState;
+  user: User | null;
+  onEventChange?: () => void;
 }
 
-const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
+const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState, user, onEventChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
-    { role: 'assistant', text: "Ready to assist. How can I help clarify your day?" }
+    { role: 'assistant', text: "Ready to assist. I can manage your calendar events now." }
   ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +28,12 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
     setIsLoading(true);
     
     try {
-      const responseText = await chatWithAssistant(userMessage, dashboardState);
+      const responseText = await chatWithAssistant(
+          userMessage, 
+          dashboardState, 
+          user?.accessToken,
+          onEventChange
+      );
       setMessages(p => [...p, { role: 'assistant', text: responseText }]);
     } catch (e) {
       setMessages(p => [...p, { role: 'assistant', text: "Connection unavailable." }]);
@@ -36,9 +43,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
   };
 
   return (
-    <div className={`fixed bottom-8 right-8 z-50 flex flex-col items-end pointer-events-none ${isOpen ? 'pointer-events-auto' : ''}`}>
+    <div className={`fixed bottom-28 right-4 md:bottom-8 md:right-8 z-50 flex flex-col items-end pointer-events-none ${isOpen ? 'pointer-events-auto' : ''}`}>
       <div 
-        className={`bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-2xl mb-6 w-[380px] border border-white/50 overflow-hidden transition-all duration-500 origin-bottom-right ${
+        className={`bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-2xl mb-6 w-[85vw] md:w-[380px] border border-white/50 overflow-hidden transition-all duration-500 origin-bottom-right ${
           isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-90 opacity-0 translate-y-10 pointer-events-none'
         }`}
         style={{ height: '500px', display: isOpen ? 'flex' : 'none', flexDirection: 'column' }}
@@ -53,7 +60,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
               <p className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">Online</p>
             </div>
           </div>
-          <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200/50 transition-colors">
+          <button onClick={() => setIsOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full lg:hover:bg-slate-200/50 transition-colors">
             <X size={18} className="text-slate-500" />
           </button>
         </div>
@@ -91,13 +98,13 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask anything..."
-              className="w-full bg-slate-100 hover:bg-slate-50 focus:bg-white transition-colors rounded-xl pl-5 pr-12 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-medium placeholder:text-slate-400"
+              placeholder="Ask or schedule something..."
+              className="w-full bg-slate-100 lg:hover:bg-slate-50 focus:bg-white transition-colors rounded-xl pl-5 pr-12 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-medium placeholder:text-slate-400"
             />
             <button 
               onClick={handleSend}
               disabled={!input.trim()}
-              className="absolute right-2 top-2 p-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-0 disabled:scale-90 transition-all duration-200 shadow-lg shadow-emerald-500/20"
+              className="absolute right-2 top-2 p-1.5 bg-emerald-500 text-white rounded-lg lg:hover:bg-emerald-600 disabled:opacity-0 disabled:scale-90 transition-all duration-200 shadow-lg shadow-emerald-500/20 lg:hover:shadow-xl lg:hover:scale-105"
             >
               <Send size={16} />
             </button>
@@ -107,7 +114,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState }) => {
 
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`pointer-events-auto h-16 w-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 hover:scale-105 active:scale-95 ${
+        className={`pointer-events-auto h-16 w-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 lg:hover:scale-105 active:scale-95 ${
           isOpen ? 'bg-stone-900 rotate-90' : 'bg-white border border-slate-100'
         }`}
       >

@@ -1,5 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, FunctionDeclaration, Type, Tool } from "@google/genai";
 import { Goal, CalendarEvent, Habit, DashboardState } from '../types';
+import { googleService } from './google';
 
 // Lazy initialization of the AI client
 let aiClient: GoogleGenAI | null = null;
@@ -21,6 +22,53 @@ const getAIClient = () => {
     return null;
   }
 };
+
+// --- TOOL DEFINITIONS ---
+
+const calendarTools: Tool[] = [
+  {
+    functionDeclarations: [
+      {
+        name: "create_calendar_event",
+        description: "Creates a new event in the user's Google Calendar. Requires title and start time.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING, description: "Title of the event" },
+            startTime: { type: Type.STRING, description: "ISO 8601 string for start time (e.g. 2023-12-25T14:00:00)" },
+            durationMinutes: { type: Type.NUMBER, description: "Duration in minutes. Default is 60." },
+            description: { type: Type.STRING, description: "Optional description" }
+          },
+          required: ["title", "startTime"]
+        }
+      },
+      {
+        name: "delete_calendar_event",
+        description: "Deletes an event from the calendar. Requires the exact Event ID. If you don't have the ID, ask the user to list events first.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            eventId: { type: Type.STRING, description: "The unique ID of the event to delete" }
+          },
+          required: ["eventId"]
+        }
+      },
+      {
+        name: "update_calendar_event",
+        description: "Updates an existing event. Requires Event ID.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            eventId: { type: Type.STRING, description: "The unique ID of the event" },
+            newTitle: { type: Type.STRING, description: "New title (optional)" },
+            newStartTime: { type: Type.STRING, description: "New start ISO time (optional)" }
+          },
+          required: ["eventId"]
+        }
+      }
+    ]
+  }
+];
 
 export const generateDailyBriefing = async (
   goals: Goal[],
@@ -81,7 +129,9 @@ export const generateDailyBriefing = async (
 
 export const chatWithAssistant = async (
   message: string,
-  context: DashboardState
+  context: DashboardState,
+  accessToken?: string,
+  onEventUpdate?: () => void
 ): Promise<string> => {
   const ai = getAIClient();
 
@@ -90,28 +140,130 @@ export const chatWithAssistant = async (
   }
 
   try {
-    const prompt = `
-      You are Nexus, a personal productivity assistant.
+    const now = new Date();
+    
+    // System Instruction to ground the AI in time and capabilities
+    const systemPrompt = `
+      You are Nexus, a smart personal assistant.
+      Current Date/Time: ${now.toString()} (ISO: ${now.toISOString()}).
       
-      Current User Context:
+      You have access to the user's Google Calendar via tools.
+      - If the user asks to add/schedule/create an event, USE the create_calendar_event tool.
+      - If the user asks to delete/remove, USE delete_calendar_event (you need the ID, see Context below).
+      - If the user asks to update/change/move, USE update_calendar_event.
+      
+      User Context:
+      - Events (IDs included, useful for deletion/updates): ${JSON.stringify(context.events)}
       - Goals: ${JSON.stringify(context.goals.map(g => g.title))}
       - Habits: ${JSON.stringify(context.habits.map(h => h.title))}
-      - Events: ${JSON.stringify(context.events.length)} scheduled items
       
-      User Message: "${message}"
-      
-      Respond concisely and helpfully. Do not use markdown formatting.
+      Respond naturally. If you perform an action, confirm it.
     `;
 
+    // 1. First API Call: Send user message + tools
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
+      contents: message,
+      config: {
+        systemInstruction: systemPrompt,
+        tools: calendarTools
+      },
     });
 
-    return response.text || "I'm focusing on your tasks right now.";
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) return "I didn't catch that.";
+    
+    const firstCand = candidates[0];
+    const parts = firstCand.content.parts;
+    
+    // 2. Check for Function Calls
+    const functionCalls = parts.filter(p => p.functionCall);
+    
+    if (functionCalls.length > 0) {
+      // Execute Tools
+      if (!accessToken) return "I can't access your calendar because you aren't signed in or I don't have permission.";
+      
+      const functionResponses = [];
+
+      for (const call of functionCalls) {
+        const fc = call.functionCall;
+        if (!fc) continue;
+        
+        console.log(`Executing Tool: ${fc.name}`, fc.args);
+        
+        let result = { success: false, message: "Unknown error" };
+        
+        try {
+            if (fc.name === 'create_calendar_event') {
+                const { title, startTime, durationMinutes, description } = fc.args as any;
+                // Construct event object matching internal types
+                await googleService.createEvent(accessToken, {
+                    title,
+                    startTime: new Date(startTime).getTime(),
+                    time: "TBD", // Auto-calculated later
+                    type: 'work',
+                    duration: (durationMinutes || 60) + 'm'
+                });
+                result = { success: true, message: "Event created successfully." };
+            } 
+            else if (fc.name === 'delete_calendar_event') {
+                const { eventId } = fc.args as any;
+                await googleService.deleteEvent(accessToken, eventId);
+                result = { success: true, message: "Event deleted successfully." };
+            }
+            else if (fc.name === 'update_calendar_event') {
+                 const { eventId, newTitle, newStartTime } = fc.args as any;
+                 const updates: any = {};
+                 if (newTitle) updates.summary = newTitle;
+                 if (newStartTime) {
+                    updates.start = { dateTime: newStartTime };
+                    // Default 1 hour duration if moving, unless we fetch original (simplified)
+                    const end = new Date(new Date(newStartTime).getTime() + 3600000); 
+                    updates.end = { dateTime: end.toISOString() };
+                 }
+                 await googleService.updateEvent(accessToken, eventId, updates);
+                 result = { success: true, message: "Event updated successfully." };
+            }
+        } catch (e: any) {
+            console.error(`Tool Execution Error (${fc.name}):`, e);
+            result = { success: false, message: `Error: ${e.message}` };
+        }
+
+        // Prepare response for the model
+        functionResponses.push({
+            functionResponse: {
+                name: fc.name,
+                response: { result: result } 
+            }
+        });
+      }
+
+      // 3. Trigger Dashboard Refresh
+      if (onEventUpdate) {
+          // Delay slightly to ensure API propagation
+          setTimeout(() => onEventUpdate(), 1000);
+      }
+
+      // 4. Second API Call: Send Tool Results back to Model to get final natural language response
+      const secondResponse = await ai.models.generateContent({
+         model: 'gemini-2.5-flash',
+         contents: [
+            { role: 'user', parts: [{ text: message }] },
+            { role: 'model', parts: parts }, // The model's original tool call
+            { role: 'user', parts: functionResponses as any } // The result of the tool
+         ],
+         config: { systemInstruction: systemPrompt }
+      });
+      
+      return secondResponse.text || "Action completed.";
+    }
+
+    // No function call, just return text
+    return response.text || "I'm listening.";
+
   } catch (error) {
     console.error("Gemini Chat Error:", error);
-    return "I'm having trouble connecting right now. Please try again later.";
+    return "I encountered an error connecting to the assistant services. Please try again.";
   }
 };
 

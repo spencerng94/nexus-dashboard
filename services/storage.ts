@@ -36,12 +36,21 @@ export const INITIAL_IMPORTANT_DATES: ImportantDate[] = [
 
 // Helpers
 const get = <T>(key: string, defaultVal: T): T => {
-  const stored = localStorage.getItem(key);
-  return stored ? JSON.parse(stored) : defaultVal;
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultVal;
+  } catch (e) {
+    console.error(`Error parsing key ${key}:`, e);
+    return defaultVal;
+  }
 };
 
 const set = <T>(key: string, val: T) => {
-  localStorage.setItem(key, JSON.stringify(val));
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) {
+    console.error(`Error saving key ${key}:`, e);
+  }
 };
 
 export const storageService = {
@@ -61,10 +70,15 @@ export const storageService = {
   saveImportantDates: (dates: ImportantDate[]) => set(KEYS.IMPORTANT_DATES, dates),
   
   getUser: () => {
-    const userStr = localStorage.getItem(KEYS.USER);
-    return userStr ? JSON.parse(userStr) : null;
+    try {
+      const userStr = localStorage.getItem(KEYS.USER);
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      console.error("Failed to parse user from storage", e);
+      return null;
+    }
   },
   
-  saveUser: (user: any) => localStorage.setItem(KEYS.USER, JSON.stringify(user)),
+  saveUser: (user: any) => set(KEYS.USER, user),
   clearUser: () => localStorage.removeItem(KEYS.USER)
 };

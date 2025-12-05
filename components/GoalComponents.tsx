@@ -11,19 +11,28 @@ interface ProgressCardProps {
   onEdit: (goal: Goal) => void;
 }
 
+// Helper to generate a subtle gradient based on the goal's base color
+const getProgressBarGradient = (colorClass: string) => {
+  // Extracts 'blue', 'emerald', etc. from "text-blue-500 bg-blue-500"
+  const match = colorClass.match(/bg-(\w+)-500/);
+  const color = match ? match[1] : 'slate';
+  // Creates a gradient from the base color (500) to a slightly lighter shade (400)
+  return `bg-gradient-to-r from-${color}-500 to-${color}-400`;
+};
+
 export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, onDecrement, onDelete, onEdit }) => (
-  <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300 group relative">
-    <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+  <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-xl shadow-slate-200/40 lg:hover:shadow-2xl lg:hover:shadow-slate-200/50 lg:hover:-translate-y-1 transition-all duration-300 group relative">
+    <div className="absolute top-6 right-6 flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300">
        <button 
         onClick={(e) => { e.stopPropagation(); onEdit(goal); }}
-        className="p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-500 transition-colors"
+        className="p-2 rounded-full bg-slate-100 text-slate-400 lg:hover:bg-emerald-50 lg:hover:text-emerald-500 transition-colors"
         title="Edit Goal"
       >
         <Pencil size={16} />
       </button>
       <button 
         onClick={(e) => { e.stopPropagation(); onDelete(goal.id); }}
-        className="p-2 rounded-full bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+        className="p-2 rounded-full bg-slate-100 text-slate-400 lg:hover:bg-red-50 lg:hover:text-red-500 transition-colors"
         title="Delete Goal"
       >
         <Trash2 size={16} />
@@ -50,7 +59,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, o
         <div className="flex items-center gap-3 bg-white/50 p-1 pr-1.5 rounded-full border border-white/50">
            <button 
             onClick={() => onDecrement(goal.id)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 lg:hover:bg-slate-100 lg:hover:text-slate-600 transition-colors"
            >
              <Minus size={16} />
            </button>
@@ -59,7 +68,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, o
            </span>
            <button 
             onClick={() => onIncrement(goal.id)}
-            className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white hover:bg-black transition-colors shadow-lg shadow-slate-900/20"
+            className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white lg:hover:bg-black transition-colors shadow-lg shadow-slate-900/20"
            >
              <Plus size={16} />
            </button>
@@ -67,7 +76,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, o
       </div>
       <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-[2px]">
         <div 
-          className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.color.split(' ')[1]}`} 
+          className={`h-full rounded-full transition-all duration-1000 ease-out ${getProgressBarGradient(goal.color)} shadow-sm`} 
           style={{ width: `${Math.min((goal.progress / goal.target) * 100, 100)}%` }}
         />
       </div>
@@ -84,13 +93,13 @@ export const GoalSuggestionCard: React.FC<GoalSuggestionCardProps> = ({ suggesti
   return (
     <button 
       onClick={onAdd}
-      className="bg-white p-5 rounded-[1.5rem] border border-slate-100 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 text-left group flex flex-col h-full"
+      className="bg-white p-5 rounded-[1.5rem] border border-slate-100 lg:hover:border-emerald-200 lg:hover:shadow-lg lg:hover:shadow-emerald-500/10 transition-all duration-300 text-left group flex flex-col h-full"
     >
       <div className="flex justify-between items-start mb-3">
         <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-xl">
           {suggestion.icon}
         </div>
-        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 lg:group-hover:bg-emerald-500 lg:group-hover:text-white transition-colors">
           <Plus size={16} />
         </div>
       </div>
@@ -187,7 +196,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
             <h3 className="text-2xl font-bold text-slate-900">{editingGoal ? 'Edit Goal' : 'New Goal'}</h3>
             <p className="text-slate-500 text-sm">{editingGoal ? 'Update your target' : 'Set a new target for yourself'}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 rounded-full transition-colors text-slate-400 lg:hover:text-slate-600">
             <X size={24} />
           </button>
         </div>
@@ -201,7 +210,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
                    type="button" 
                    onClick={fetchSuggestions}
                    disabled={loadingSuggestions}
-                   className="text-xs font-bold text-emerald-500 flex items-center gap-1 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors"
+                   className="text-xs font-bold text-emerald-500 flex items-center gap-1 lg:hover:bg-emerald-50 px-2 py-1 rounded-lg transition-colors"
                  >
                    {loadingSuggestions ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                    AI Ideas
@@ -216,7 +225,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
                     key={idx}
                     type="button"
                     onClick={() => applySuggestion(s)}
-                    className="text-left bg-emerald-50/50 hover:bg-emerald-100 border border-emerald-100 p-2 rounded-xl text-xs flex items-center gap-2 transition-colors"
+                    className="text-left bg-emerald-50/50 lg:hover:bg-emerald-100 border border-emerald-100 p-2 rounded-xl text-xs flex items-center gap-2 transition-colors"
                   >
                     <span className="text-lg">{s.icon}</span>
                     <div>
@@ -250,7 +259,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${
                      formData.icon === emoji 
                        ? 'bg-slate-900 text-white shadow-lg scale-110' 
-                       : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                       : 'bg-slate-50 text-slate-700 lg:hover:bg-slate-100'
                    }`}
                  >
                    {emoji}
@@ -295,7 +304,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
                   className={`w-10 h-10 rounded-full ${c.value.split(' ')[1]} transition-all duration-200 ${
                     formData.color === c.value 
                       ? 'ring-4 ring-offset-2 ring-slate-200 scale-110 shadow-lg' 
-                      : 'hover:scale-110 hover:opacity-80'
+                      : 'lg:hover:scale-110 lg:hover:opacity-80'
                   }`}
                 />
               ))}
@@ -304,7 +313,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
 
           <button 
             type="submit" 
-            className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl mt-4 hover:bg-black hover:scale-[1.02] transition-all shadow-xl shadow-slate-900/20 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg py-4 rounded-2xl mt-4 lg:hover:shadow-lg lg:hover:shadow-emerald-500/20 lg:hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
           >
             <Save size={20} />
             {editingGoal ? 'Update Goal' : 'Create Goal'}

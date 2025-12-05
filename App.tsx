@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Loader2, Sparkles, RefreshCw } from 'lucide-react';
+import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate } from './types';
 import { storageService } from './services/storage';
 import { googleService } from './services/google';
@@ -11,7 +11,7 @@ import Sidebar from './components/Sidebar';
 import LoginScreen from './components/LoginScreen';
 import ChatWidget from './components/ChatWidget';
 import CalendarView from './components/CalendarView';
-import AboutView from './components/AboutView'; // New Import
+import AboutView from './components/AboutView'; 
 import { DashboardView } from './components/DashboardComponents';
 import { ProgressCard, GoalFormModal, GoalSuggestionCard } from './components/GoalComponents';
 import { HabitCard, HabitFormModal, HabitHistoryModal } from './components/HabitComponents';
@@ -47,12 +47,51 @@ export default function App() {
 
   // Load User on Mount
   useEffect(() => {
-    const loadedUser = storageService.getUser();
-    if (loadedUser) {
-      setUser(loadedUser);
+    try {
+      const loadedUser = storageService.getUser();
+      if (loadedUser) {
+        setUser(loadedUser);
+      }
+    } catch (e) {
+      console.error("Initialization error:", e);
+    } finally {
+      // Wrap in try-finally in case something throws, ensuring we don't get stuck on loader
+      try {
+        setIsLoadingAuth(false);
+      } catch (e) {}
     }
-    setIsLoadingAuth(false);
   }, []);
+
+  // Event Sync Logic - extracted for re-use
+  const syncEvents = async () => {
+    if (!user) return;
+    let currentEvents: CalendarEvent[] = [];
+    
+    if (user.accessToken && !user.isGuest) {
+        try {
+            setCalendarError(null);
+            const googleEvents = await googleService.listEvents(user.accessToken);
+            currentEvents = googleEvents;
+            setEvents(googleEvents);
+        } catch (e: any) {
+            console.error("Failed to sync Google Calendar", e);
+            setCalendarError(e.message || "Failed to sync Calendar");
+            // Fallback to local
+            const localEvents = storageService.getEvents();
+            currentEvents = localEvents;
+            setEvents(localEvents);
+        }
+    } else {
+        const localEvents = storageService.getEvents();
+        currentEvents = localEvents;
+        setEvents(localEvents);
+    }
+
+    // Refresh briefing if it hasn't been generated yet
+    if (!briefing && goals.length > 0) {
+        generateBriefingHelper(goals, currentEvents, habits);
+    }
+  };
 
   // Load Data when User loads
   useEffect(() => {
@@ -73,36 +112,6 @@ export default function App() {
     weatherService.getCurrentWeather().then(data => {
       if (data) setWeather(data);
     });
-
-    // Event Sync Logic
-    const syncEvents = async () => {
-        let currentEvents: CalendarEvent[] = [];
-        
-        if (user.accessToken && !user.isGuest) {
-            try {
-                setCalendarError(null);
-                const googleEvents = await googleService.listEvents(user.accessToken);
-                currentEvents = googleEvents;
-                setEvents(googleEvents);
-            } catch (e: any) {
-                console.error("Failed to sync Google Calendar", e);
-                setCalendarError(e.message || "Failed to sync Calendar");
-                // Fallback to local
-                const localEvents = storageService.getEvents();
-                currentEvents = localEvents;
-                setEvents(localEvents);
-            }
-        } else {
-            const localEvents = storageService.getEvents();
-            currentEvents = localEvents;
-            setEvents(localEvents);
-        }
-
-        // Generate briefing using the FRESH data, not the state variables (which might be stale in closure)
-        if (!briefing) {
-            generateBriefingHelper(localGoals, currentEvents, localHabits);
-        }
-    };
 
     syncEvents();
 
@@ -127,7 +136,10 @@ export default function App() {
         if (!finalClientId) {
           try {
              // @ts-ignore
-             finalClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+             if (typeof process !== 'undefined' && process.env) {
+               // @ts-ignore
+               finalClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+             }
           } catch(e) {}
         }
         
@@ -384,12 +396,20 @@ export default function App() {
         {activeTab === 'goals' && (
           <div className="max-w-[1600px] mx-auto">
              <div className="flex justify-between items-center mb-8">
-               <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Goals & Focus</h1>
+               <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 md:w-14 md:h-14 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                    <Target className="text-white w-5 h-5 md:w-8 md:h-8" />
+                 </div>
+                 <div>
+                    <h1 className="text-2xl md:text-4xl font-bold text-slate-900 tracking-tight">Goals & Focus</h1>
+                    <p className="text-emerald-500 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Set targets and visualize your progress</p>
+                 </div>
+               </div>
                <button 
                 onClick={() => { setEditingGoal(null); setGoalDefaultValues(undefined); setIsGoalModalOpen(true); }}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all flex items-center gap-2"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 lg:hover:scale-105 transition-all flex items-center gap-2 shrink-0 text-sm md:text-base"
                >
-                 <Plus size={20} /> New Goal
+                 <Plus size={20} /> <span className="hidden md:inline">New Goal</span><span className="md:hidden">New</span>
                </button>
              </div>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -405,10 +425,10 @@ export default function App() {
               ))}
               <button 
                 onClick={() => { setEditingGoal(null); setGoalDefaultValues(undefined); setIsGoalModalOpen(true); }}
-                className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 hover:border-emerald-400/50 hover:bg-emerald-50/30 transition-all duration-300 group min-h-[200px]"
+                className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 lg:hover:border-emerald-400/50 lg:hover:bg-emerald-50/30 transition-all duration-300 group min-h-[140px] md:min-h-[200px]"
               >
-                <div className="w-16 h-16 rounded-full bg-slate-50 group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
-                  <Plus size={28} className="group-hover:text-emerald-500" />
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-50 lg:group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
+                  <Plus size={24} className="lg:group-hover:text-emerald-500 md:w-7 md:h-7" />
                 </div>
                 <span className="font-bold text-sm">Create New Goal</span>
               </button>
@@ -426,7 +446,7 @@ export default function App() {
                  <button 
                    onClick={loadGoalSuggestions}
                    disabled={isLoadingSuggestions}
-                   className="text-emerald-600 font-bold text-sm hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
+                   className="text-emerald-600 font-bold text-sm lg:hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
                  >
                    <RefreshCw size={14} className={isLoadingSuggestions ? "animate-spin" : ""} />
                    Refresh Ideas
@@ -463,15 +483,20 @@ export default function App() {
         {activeTab === 'habits' && (
           <div className="max-w-[1600px] mx-auto">
              <div className="flex justify-between items-center mb-8">
-               <div>
-                 <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Habit Tracker</h1>
-                 <p className="text-slate-500 font-medium mt-1">Build consistency one day at a time</p>
+               <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 md:w-14 md:h-14 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                    <Dumbbell className="text-white w-5 h-5 md:w-8 md:h-8" />
+                 </div>
+                 <div>
+                   <h1 className="text-2xl md:text-4xl font-bold text-slate-900 tracking-tight">Habit Tracker</h1>
+                   <p className="text-emerald-500 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Build consistency one day at a time</p>
+                 </div>
                </div>
                <button 
                 onClick={() => { setEditingHabit(null); setIsHabitModalOpen(true); }}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 hover:scale-105 transition-all flex items-center gap-2"
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 lg:hover:scale-105 transition-all flex items-center gap-2 shrink-0 text-sm md:text-base"
                >
-                 <Plus size={20} /> New Habit
+                 <Plus size={20} /> <span className="hidden md:inline">New Habit</span><span className="md:hidden">New</span>
                </button>
              </div>
              
@@ -499,10 +524,10 @@ export default function App() {
         {activeTab === 'settings' && (
           <div className="max-w-2xl mx-auto pt-12">
              <h1 className="text-4xl font-bold text-slate-900 mb-8 text-center">Profile & Settings</h1>
-             <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden">
+             <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
                 <div className="absolute top-0 w-full h-32 bg-gradient-to-r from-emerald-100 to-teal-100 opacity-50"></div>
                 
-                <div className="w-28 h-28 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-[2rem] flex items-center justify-center text-4xl font-bold text-white mb-6 shadow-xl shadow-emerald-500/20 relative z-10 p-1 border-4 border-white">
+                <div className="w-28 h-28 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-[2rem] flex items-center justify-center text-4xl font-bold text-white mb-6 shadow-xl shadow-emerald-500/20 relative z-10 p-1 border-4 border-white lg:group-hover:scale-105 transition-transform duration-300">
                   {user.photoURL ? (
                     <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-[1.8rem] object-cover" />
                   ) : (
@@ -514,11 +539,11 @@ export default function App() {
                 <p className="text-slate-500 mb-8 font-medium bg-slate-100 px-4 py-1 rounded-full text-sm mt-2">{user.email || 'Guest User'}</p>
                 
                 <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center hover:bg-white hover:shadow-lg transition-all duration-300">
+                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center lg:hover:bg-white lg:hover:shadow-lg transition-all duration-300">
                       <div className="text-3xl font-bold text-emerald-500 mb-1">{goals.length}</div>
                       <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Goals</div>
                    </div>
-                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center hover:bg-white hover:shadow-lg transition-all duration-300">
+                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex flex-col items-center lg:hover:bg-white lg:hover:shadow-lg transition-all duration-300">
                       <div className="text-3xl font-bold text-teal-500 mb-1">{habits.length}</div>
                       <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Habits</div>
                    </div>
@@ -527,7 +552,7 @@ export default function App() {
                 <div className="mt-12 w-full max-w-md">
                    <button 
                      onClick={handleSignOut}
-                     className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-lg hover:shadow-xl"
+                     className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold lg:hover:bg-black transition-all shadow-lg lg:hover:shadow-xl"
                    >
                      Sign Out
                    </button>
@@ -538,7 +563,11 @@ export default function App() {
         )}
       </main>
 
-      <ChatWidget dashboardState={dashboardState} />
+      <ChatWidget 
+        dashboardState={dashboardState} 
+        user={user} 
+        onEventChange={syncEvents}
+      />
       
       <GoalFormModal 
         isOpen={isGoalModalOpen} 

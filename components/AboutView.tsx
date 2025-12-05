@@ -2,7 +2,7 @@ import React from 'react';
 import { LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, Shield, ArrowRight, Info } from 'lucide-react';
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
-  <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-lg shadow-emerald-100/20 hover:shadow-xl hover:shadow-emerald-100/40 transition-all duration-300 hover:-translate-y-1">
+  <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-lg shadow-emerald-100/20 lg:hover:shadow-xl lg:hover:shadow-emerald-100/40 transition-all duration-300 lg:hover:-translate-y-1">
     <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 mb-4">
       {icon}
     </div>
@@ -27,12 +27,12 @@ const AboutView: React.FC = () => {
   return (
     <div className="max-w-[1600px] mx-auto pb-12 animate-in fade-in zoom-in-95 duration-500">
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <Info size={32} className="text-white" />
+        <div className="w-10 h-10 md:w-14 md:h-14 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+            <Info className="text-white w-5 h-5 md:w-8 md:h-8" />
         </div>
         <div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">About Nexus</h1>
-            <p className="text-slate-500 font-medium">Philosophy & Guide</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">About Nexus</h1>
+            <p className="text-emerald-500 font-bold text-sm mt-1 uppercase tracking-wider">Philosophy & Guide</p>
         </div>
       </div>
 

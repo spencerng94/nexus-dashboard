@@ -225,7 +225,7 @@ export const googleService = {
           title: item.summary || "Untitled",
           time: start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           startTime: start.getTime(),
-          type: 'work',
+          type: 'work', // Default, logic can be added to infer type from colorId
           duration: durationStr.trim()
         };
       });
@@ -291,5 +291,49 @@ export const googleService = {
       console.error("Create Event Error", e);
       throw e;
     }
+  },
+
+  /**
+   * Delete an event
+   */
+  async deleteEvent(token: string, eventId: string): Promise<boolean> {
+      try {
+          const response = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
+              {
+                  method: 'DELETE',
+                  headers: { Authorization: `Bearer ${token}` }
+              }
+          );
+          if (!response.ok) throw new Error("Failed to delete event");
+          return true;
+      } catch (e) {
+          console.error("Delete Event Error:", e);
+          throw e;
+      }
+  },
+
+  /**
+   * Update an event (Patch)
+   */
+  async updateEvent(token: string, eventId: string, updates: any): Promise<boolean> {
+      try {
+          const response = await fetch(
+              `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
+              {
+                  method: 'PATCH',
+                  headers: { 
+                      Authorization: `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(updates)
+              }
+          );
+          if (!response.ok) throw new Error("Failed to update event");
+          return true;
+      } catch (e) {
+          console.error("Update Event Error:", e);
+          throw e;
+      }
   }
 };

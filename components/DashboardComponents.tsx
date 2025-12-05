@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin } from 'lucide-react';
+import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin, LayoutDashboard } from 'lucide-react';
 import { Goal, CalendarEvent, ImportantDate } from '../types';
 import { ProgressCard } from './GoalComponents';
 
 export const DailyBriefingWidget: React.FC<{ briefing: string, isGenerating: boolean }> = ({ briefing, isGenerating }) => (
   <div className="w-full bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 shadow-xl shadow-emerald-100/40 relative overflow-hidden group">
-    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-emerald-100/40 to-teal-100/40 rounded-full blur-3xl opacity-50 -mr-20 -mt-20 group-hover:scale-110 transition-transform duration-1000" />
+    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-emerald-100/40 to-teal-100/40 rounded-full blur-3xl opacity-50 -mr-20 -mt-20 lg:group-hover:scale-110 transition-transform duration-1000" />
     <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-stone-100/40 to-green-100/40 rounded-full blur-3xl opacity-50 -ml-20 -mb-20" />
     
     <div className="relative z-10 max-w-4xl">
@@ -44,9 +44,9 @@ const EventRow: React.FC<{ event: CalendarEvent }> = ({ event }) => {
   const period = timeParts.length > 1 ? timeParts[1] : '';
 
   return (
-    <div className="flex items-center py-4 px-2 hover:bg-white/10 rounded-2xl transition-all duration-300 cursor-pointer group -mx-2 border border-transparent hover:border-white/5">
+    <div className="flex items-center py-4 px-2 lg:hover:bg-white/10 rounded-2xl transition-all duration-300 cursor-pointer group -mx-2 border border-transparent lg:hover:border-white/5">
       <div className="w-20 flex flex-col items-center justify-center shrink-0">
-        <span className="text-sm font-bold text-white">{mainTime}</span>
+        <span className="text-sm font-bold text-blue-200">{mainTime}</span>
         {period && <span className="text-xs font-bold text-stone-400 uppercase tracking-wide">{period}</span>}
       </div>
       <div className="w-px h-8 bg-white/10 mx-2" />
@@ -58,7 +58,7 @@ const EventRow: React.FC<{ event: CalendarEvent }> = ({ event }) => {
           {event.type === 'personal' && <span className="text-rose-200 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30 whitespace-nowrap">Personal</span>}
         </div>
       </div>
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity px-2">
+      <div className="opacity-0 lg:group-hover:opacity-100 transition-opacity px-2">
         <ChevronRight size={18} className="text-stone-400" />
       </div>
     </div>
@@ -94,7 +94,7 @@ const DateFormModal: React.FC<DateFormModalProps> = ({ isOpen, onClose, onSave }
       <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-slate-900">Add Date</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 rounded-full transition-colors text-slate-400 lg:hover:text-slate-600">
             <X size={20} />
           </button>
         </div>
@@ -175,12 +175,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   importantDates, onAddImportantDate, onDeleteImportantDate, weather
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [is24Hour, setIs24Hour] = useState(false);
 
   useEffect(() => {
-    // Update time every minute to ensure greeting is accurate even if tab stays open
+    // Update time every second for smooth clock
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000);
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -208,12 +209,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Weather Icon Logic
   const getWeatherIcon = (condition: string) => {
     switch (condition) {
-      case 'Clear': return <Sun size={16} fill="currentColor" />;
-      case 'Cloudy': return <Cloud size={16} fill="currentColor" />;
-      case 'Rain': return <CloudRain size={16} />;
-      case 'Snow': return <Snowflake size={16} />;
-      case 'Storm': return <CloudLightning size={16} />;
-      default: return <Sun size={16} />;
+      case 'Clear': return <Sun size={14} fill="currentColor" />;
+      case 'Cloudy': return <Cloud size={14} fill="currentColor" />;
+      case 'Rain': return <CloudRain size={14} />;
+      case 'Snow': return <Snowflake size={14} />;
+      case 'Storm': return <CloudLightning size={14} />;
+      default: return <Sun size={14} />;
     }
   };
 
@@ -228,42 +229,75 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   };
 
+  const calculateDaysLeft = (dateStr: string) => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const target = new Date(y, m - 1, d);
+    const diffTime = target.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return { label: 'Today', color: 'text-emerald-400 bg-emerald-400/10' };
+    if (diffDays === 1) return { label: 'Tomorrow', color: 'text-amber-400 bg-amber-400/10' };
+    if (diffDays < 0) return { label: `${Math.abs(diffDays)}d ago`, color: 'text-slate-500 bg-slate-500/10' };
+    return { label: `In ${diffDays} days`, color: 'text-blue-300 bg-blue-500/10' };
+  };
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto pb-12">
       {/* HEADER SECTION */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-2">
-        <div>
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">{greeting}, {displayName}</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-6 px-2">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+             <LayoutDashboard className="text-white w-6 h-6 md:w-8 md:h-8" />
+          </div>
+          <div>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">{greeting}, {displayName}</h1>
+            <p className="text-emerald-500 font-bold text-sm mt-2 uppercase tracking-wider">Focus on what matters most</p>
+          </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4">
+        {/* Right Header Controls: Refresh, Clock, Weather */}
+        <div className="flex items-start gap-4 self-end md:self-auto">
+           {/* Refresh Button */}
            <button 
             onClick={onRefreshBriefing}
-            className="p-3 bg-white hover:bg-slate-50 text-slate-400 hover:text-emerald-500 rounded-2xl transition-all shadow-sm border border-slate-100"
+            className="mt-1.5 p-3 bg-white lg:hover:bg-slate-50 text-slate-400 lg:hover:text-emerald-500 rounded-2xl transition-all shadow-sm border border-slate-100"
             title="Refresh Plan"
            >
              <RefreshCw size={20} className={isGeneratingBriefing ? "animate-spin" : ""} />
            </button>
-          
-          <div className="bg-white/60 backdrop-blur-md p-3 px-5 rounded-[1.5rem] shadow-sm border border-white/50 flex items-center gap-3 text-slate-700 min-w-[120px]">
-            {weather ? (
-              <>
-                <div className={`p-1.5 rounded-full ${getWeatherColor(weather.condition)}`}>
-                   {getWeatherIcon(weather.condition)}
-                </div>
-                <div className="flex flex-col leading-none">
-                  <span className="font-bold text-lg">{weather.temp}°F</span>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{weather.condition}</span>
-                </div>
-              </>
-            ) : (
-               <>
-                 <MapPin size={16} className="text-slate-400 animate-pulse" />
-                 <span className="text-xs font-bold text-slate-400">Locating...</span>
-               </>
-            )}
-          </div>
+
+           <div className="flex flex-col items-end">
+              {/* Clock Widget */}
+              <div className="flex flex-col items-end select-none cursor-pointer group mb-1" onClick={() => setIs24Hour(!is24Hour)} title="Toggle 12h/24h">
+                  <div className="text-4xl md:text-5xl font-bold text-slate-800 tracking-tight leading-none lg:group-hover:text-emerald-500 transition-colors">
+                     {currentTime.toLocaleTimeString([], { hour12: !is24Hour, hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                     {is24Hour ? '24-Hour' : '12-Hour'}
+                  </div>
+              </div>
+              
+              {/* Weather Below Time */}
+              <div className="flex items-center gap-2 text-slate-600 bg-white/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/50 shadow-sm">
+                {weather ? (
+                  <>
+                    <div className={`p-1 rounded-full ${getWeatherColor(weather.condition)}`}>
+                      {getWeatherIcon(weather.condition)}
+                    </div>
+                    <span className="font-bold text-lg leading-none">{weather.temp}°F</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-none">{weather.condition}</span>
+                  </>
+                ) : (
+                   <div className="flex items-center gap-1.5">
+                     <MapPin size={14} className="text-slate-400 animate-pulse" />
+                     <span className="text-xs font-bold text-slate-400">Locating...</span>
+                   </div>
+                )}
+              </div>
+           </div>
         </div>
       </div>
 
@@ -292,7 +326,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="space-y-6">
           <div className="flex justify-between items-end px-2">
             <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Goals</h3>
-            <button onClick={openAddModal} className="text-emerald-500 text-sm font-bold hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors">Add New</button>
+            <button onClick={openAddModal} className="text-emerald-500 text-sm font-bold lg:hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors">Add New</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {goals.map(goal => (
@@ -307,10 +341,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             ))}
             <button 
               onClick={openAddModal}
-              className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 hover:border-emerald-400/50 hover:bg-emerald-50/30 transition-all duration-300 group min-h-[200px]"
+              className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 lg:hover:border-emerald-400/50 lg:hover:bg-emerald-50/30 transition-all duration-300 group min-h-[140px] md:min-h-[200px]"
             >
-              <div className="w-14 h-14 rounded-full bg-slate-50 group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
-                <Plus size={24} className="group-hover:text-emerald-500" />
+              <div className="w-14 h-14 rounded-full bg-slate-50 lg:group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
+                <Plus size={24} className="lg:group-hover:text-emerald-500" />
               </div>
               <span className="font-bold text-sm">New Goal</span>
             </button>
@@ -342,7 +376,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <button 
                 onClick={onViewCalendar}
-                className="w-full mt-6 py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 border border-white/5"
+                className="w-full mt-6 py-4 rounded-2xl bg-white/10 lg:hover:bg-white/20 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 border border-white/5"
               >
                 Full Calendar
               </button>
@@ -357,15 +391,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
              <div className="relative z-10 flex-1 flex flex-col">
                <div className="flex justify-between items-start mb-6 relative">
                  <h3 className="font-bold text-lg leading-tight max-w-[70%]">Upcoming Important Dates</h3>
-                 <div className="flex gap-2">
+                 <div className="flex gap-2 items-center">
                    <button 
                      onClick={() => setIsDateModalOpen(true)}
-                     className="text-stone-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10"
+                     className="text-stone-400 lg:hover:text-white transition-colors p-1.5 rounded-full lg:hover:bg-white/10"
                      title="Add Date"
                    >
                      <Plus size={18} />
                    </button>
-                   <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-stone-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10">
+                   <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-stone-400 lg:hover:text-white transition-colors p-1.5 rounded-full lg:hover:bg-white/10">
                      <MoreHorizontal size={18} />
                    </button>
                  </div>
@@ -374,7 +408,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                    <div className="absolute right-0 top-10 bg-white text-slate-900 rounded-xl shadow-xl py-1 w-40 z-20 animate-in fade-in zoom-in-95 duration-200">
                      <button 
                        onClick={() => { setIsMenuOpen(false); onViewCalendar(); }}
-                       className="w-full text-left px-4 py-2 text-sm font-medium hover:bg-slate-50 flex items-center gap-2"
+                       className="w-full text-left px-4 py-2 text-sm font-medium lg:hover:bg-slate-50 flex items-center gap-2"
                      >
                        <CalendarDays size={16} />
                        View Calendar
@@ -392,23 +426,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                      
                      const month = dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
                      const day = dateObj.getDate();
+                     const timeLeft = calculateDaysLeft(d.date);
                      
                      return (
-                       <div key={d.id} className="flex items-center gap-4 group cursor-pointer relative">
-                         <div className="bg-white/10 w-14 h-14 rounded-2xl flex flex-col items-center justify-center backdrop-blur-md border border-white/5 group-hover:bg-white/20 transition-colors shrink-0">
-                           <span className="text-[10px] font-bold text-emerald-300">{month}</span>
-                           <span className="text-lg font-bold text-white">{day}</span>
+                       <div key={d.id} className="flex flex-col gap-2 group cursor-pointer relative">
+                         <div className="flex flex-row items-center gap-4">
+                            <div className="bg-white/10 w-14 h-14 rounded-2xl flex flex-col items-center justify-center backdrop-blur-md border border-white/5 lg:group-hover:bg-white/20 transition-colors shrink-0">
+                               <span className="text-[10px] font-bold text-emerald-300">{month}</span>
+                               <span className="text-lg font-bold text-white">{day}</span>
+                            </div>
+                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                               <div className="flex flex-row items-center justify-between">
+                                  <p className="font-bold text-stone-100 truncate pr-2">{d.title}</p>
+                                  <div className="flex flex-row items-center gap-2 shrink-0">
+                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${timeLeft.color}`}>
+                                          {timeLeft.label}
+                                      </span>
+                                      {/* Opacity toggles on hover only for desktop, visible on mobile due to earlier global changes */}
+                                      <button 
+                                          onClick={(e) => { e.stopPropagation(); onDeleteImportantDate(d.id); }}
+                                          className="p-1.5 text-stone-400 lg:hover:text-rose-400 transition-all bg-stone-800/80 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                                      >
+                                          <Trash2 size={12} />
+                                      </button>
+                                  </div>
+                               </div>
+                               <p className="text-xs text-stone-400 font-medium uppercase tracking-wide">{d.type}</p>
+                            </div>
                          </div>
-                         <div className="flex-1 min-w-0">
-                           <p className="font-bold text-stone-100 truncate">{d.title}</p>
-                           <p className="text-xs text-stone-400 font-medium uppercase tracking-wide">{d.type}</p>
-                         </div>
-                         <button 
-                           onClick={() => onDeleteImportantDate(d.id)}
-                           className="opacity-0 group-hover:opacity-100 absolute right-0 p-2 text-stone-400 hover:text-rose-400 transition-all bg-stone-800/80 rounded-full"
-                         >
-                           <Trash2 size={14} />
-                         </button>
                        </div>
                      );
                    })
