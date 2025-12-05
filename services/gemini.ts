@@ -304,19 +304,30 @@ export const generateSchedulePlan = async (
   if (!ai) return [];
 
   try {
+    const now = new Date();
     const systemPrompt = `
-      You are an expert scheduler.
-      Based on the user's request and existing schedule, create a list of NEW events to add.
+      You are an expert scheduler and calendar assistant.
+      Your task is to parse the user's natural language request and extract EVERY single distinct event mentioned to create a schedule.
       
+      CRITICAL INSTRUCTIONS:
+      1. Identify ALL distinct activities. Do not skip any.
+      2. If a sequence is described ("then X, then Y"), ensure all steps are included.
+      3. Convert all times to 24-Hour format (HH:MM). E.g., "7:30pm" -> "19:30".
+      4. Estimate reasonable durations if not specified (e.g., Gym=1h, Meds=30m, Dinner=1h).
+      5. "Work" or "Personal" type classification.
+
       Context:
-      - Planning for: ${dateContext}
-      - Existing Events: ${JSON.stringify(existingEvents)}
-      
-      Constraints:
-      - Do NOT overlap with existing events unless explicitly asked.
-      - Return a JSON Array of objects.
-      - Keys: "title", "startTime" (HH:MM 24h format), "duration" (e.g. "1h", "30m"), "type" ("work" or "personal").
-      - NO markdown formatting. Just the raw JSON array.
+      - Current Time: ${now.toLocaleTimeString()}
+      - Planning For: ${dateContext}
+      - Existing Schedule: ${JSON.stringify(existingEvents.map(e => ({time: e.time, title: e.title})))}
+
+      Output Format:
+      - Strictly a JSON Array of objects.
+      - Keys: "title", "startTime" (HH:MM), "duration" (e.g. "1h", "30m"), "type" ("work"|"personal").
+      - NO Markdown. NO explanations. Just the JSON.
+
+      Example Input: "I need to pick up meds at 7:30pm, then gym at 8:30pm, then dinner."
+      Example Output: [{"title": "Pick up Meds", "startTime": "19:30", "duration": "30m", "type": "personal"}, {"title": "Gym", "startTime": "20:30", "duration": "1h", "type": "personal"}, {"title": "Dinner", "startTime": "21:45", "duration": "1h", "type": "personal"}]
     `;
 
     const response = await ai.models.generateContent({
