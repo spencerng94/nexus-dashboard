@@ -265,7 +265,8 @@ export const chatWithAssistant = async (
 
 export const generateSuggestions = async (
   type: 'goal' | 'habit',
-  existingItems: string[]
+  existingItems: string[],
+  topic?: string
 ): Promise<Array<{ title: string; category: string; icon: string }>> => {
   const ai = getAIClient();
   if (!ai) return [];
@@ -273,6 +274,7 @@ export const generateSuggestions = async (
   try {
     const prompt = `
       Generate 4 unique, high-quality, actionable ideas for a new ${type}.
+      ${topic ? `Focus specifically on the topic: "${topic}".` : ''}
       The user already has these: ${existingItems.join(', ')}.
       
       Output strictly valid JSON array of objects with keys: "title", "category", "icon" (single emoji).

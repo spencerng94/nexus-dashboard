@@ -17,6 +17,7 @@ export interface Habit {
   icon: string;
   color: string;
   streak: number;
+  linkedGoalIds?: string[];
 }
 
 export interface HabitLog {

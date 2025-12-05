@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin, LayoutDashboard, Pencil } from 'lucide-react';
-import { Goal, CalendarEvent, ImportantDate } from '../types';
+import { Goal, CalendarEvent, ImportantDate, Habit } from '../types';
 import { ProgressCard } from './GoalComponents';
 
 export const DailyBriefingWidget: React.FC<{ briefing: string, isGenerating: boolean, onRefresh: () => void }> = ({ briefing, isGenerating, onRefresh }) => (
@@ -179,6 +179,7 @@ const DateFormModal: React.FC<DateFormModalProps> = ({ isOpen, onClose, onSave, 
 
 interface DashboardViewProps {
   goals: Goal[];
+  habits: Habit[];
   events: CalendarEvent[];
   briefing: string;
   isGeneratingBriefing: boolean;
@@ -200,7 +201,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ 
-  goals, events, briefing, isGeneratingBriefing, onRefreshBriefing, openAddModal, onViewCalendar,
+  goals, habits, events, briefing, isGeneratingBriefing, onRefreshBriefing, openAddModal, onViewCalendar,
   onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName, syncError,
   importantDates, onAddImportantDate, onEditImportantDate, onDeleteImportantDate, weather
 }) => {
@@ -364,6 +365,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <ProgressCard 
                 key={goal.id} 
                 goal={goal} 
+                linkedHabits={habits.filter(h => h.linkedGoalIds?.includes(goal.id))}
                 onIncrement={onGoalIncrement} 
                 onDecrement={onGoalDecrement}
                 onDelete={onDeleteGoal}
@@ -426,7 +428,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                <div className="flex justify-between items-start mb-6 relative">
                  <div>
                     <h3 className="font-bold text-lg leading-tight">Upcoming Important Dates</h3>
-                    <p className="text-stone-400 text-sm font-medium">{sortedDates.length} Upcoming</p>
+                    <p className="text-stone-400 text-sm font-medium mt-1">{sortedDates.length} important events scheduled</p>
                  </div>
                  <div className="flex gap-2 items-center">
                    <button 

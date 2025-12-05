@@ -79,7 +79,7 @@ const VisualSchedulePreview: React.FC<VisualSchedulePreviewProps> = ({ targetDat
                         return (
                             <div 
                                 key={e.id}
-                                className={`absolute left-[105px] right-1 rounded-lg border-l-4 p-2 text-xs leading-tight overflow-hidden transition-all ${bgClass} ${borderClass} ${textClass} ${isProposed ? 'z-20 shadow-lg' : 'z-10 opacity-70 grayscale-[0.3]'}`}
+                                className={`absolute left-[110px] right-2 rounded-lg border-l-4 p-2 text-xs leading-tight overflow-hidden transition-all ${bgClass} ${borderClass} ${textClass} ${isProposed ? 'z-20 shadow-lg' : 'z-10 opacity-70 grayscale-[0.3]'}`}
                                 style={{ top: `${top}px`, height: `${height}px` }}
                             >
                                 <div className="flex justify-between items-start">

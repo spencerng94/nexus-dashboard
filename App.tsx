@@ -15,8 +15,8 @@ import CalendarView from './components/CalendarView';
 import AboutView from './components/AboutView'; 
 import PlannerView from './components/PlannerView';
 import { DashboardView } from './components/DashboardComponents';
-import { ProgressCard, GoalFormModal, GoalSuggestionCard } from './components/GoalComponents';
-import { HabitCard, HabitFormModal, HabitHistoryModal, HabitSuggestionCard } from './components/HabitComponents';
+import { ProgressCard, GoalFormModal, GoalSuggestionCard, SuggestionControl as GoalSuggestionControl } from './components/GoalComponents';
+import { HabitCard, HabitFormModal, HabitHistoryModal, HabitSuggestionCard, SuggestionControl as HabitSuggestionControl } from './components/HabitComponents';
 
 // --- PROFILE EDIT MODAL ---
 interface ProfileAvatarModalProps {
@@ -354,10 +354,10 @@ export default function App() {
     storageService.saveGoals(updatedGoals);
   };
 
-  const loadGoalSuggestions = async () => {
+  const loadGoalSuggestions = async (topic?: string) => {
     setIsLoadingSuggestions(true);
     const existingTitles = goals.map(g => g.title);
-    const suggestions = await generateSuggestions('goal', existingTitles);
+    const suggestions = await generateSuggestions('goal', existingTitles, topic);
     setSuggestedGoals(suggestions);
     setIsLoadingSuggestions(false);
   };
@@ -386,10 +386,10 @@ export default function App() {
     storageService.saveHabits(updatedHabits);
   };
 
-  const loadHabitSuggestions = async () => {
+  const loadHabitSuggestions = async (topic?: string) => {
     setIsLoadingHabitSuggestions(true);
     const existingTitles = habits.map(h => h.title);
-    const suggestions = await generateSuggestions('habit', existingTitles);
+    const suggestions = await generateSuggestions('habit', existingTitles, topic);
     setSuggestedHabits(suggestions);
     setIsLoadingHabitSuggestions(false);
   };
@@ -447,6 +447,38 @@ export default function App() {
      setHabitLogs(updatedLogs);
      storageService.saveHabitLogs(updatedLogs);
      updateStreaks(habits, updatedLogs);
+
+     // --- LINKED GOALS LOGIC ---
+     const habit = habits.find(h => h.id === habitId);
+     if (habit && habit.linkedGoalIds && habit.linkedGoalIds.length > 0) {
+        // Iterate through all linked goals
+        // If Habit is marked completed -> Increment Goal Progress
+        // If Habit is un-marked -> Decrement Goal Progress
+        // Note: We use the existing increment/decrement handlers which update state and storage.
+        // We need to call them in a way that respects the latest state. 
+        // Since setState is async, we shouldn't rely on 'goals' state inside loop immediately if multiple updates occur.
+        // However, handleGoalIncrement does full immutable update based on 'goals'.
+        
+        let currentGoalsSnapshot = [...goals];
+
+        habit.linkedGoalIds.forEach(goalId => {
+            const goalIndex = currentGoalsSnapshot.findIndex(g => g.id === goalId);
+            if (goalIndex !== -1) {
+                const g = currentGoalsSnapshot[goalIndex];
+                let newProgress = g.progress;
+                if (isCompleted) {
+                    newProgress = Math.min(g.progress + 1, g.target);
+                } else {
+                    newProgress = Math.max(g.progress - 1, 0);
+                }
+                currentGoalsSnapshot[goalIndex] = { ...g, progress: newProgress };
+            }
+        });
+
+        // Batch update to prevent multiple re-renders
+        setGoals(currentGoalsSnapshot);
+        storageService.saveGoals(currentGoalsSnapshot);
+     }
   };
 
   const handleDeleteHabitLog = (habitId: string, dateKey: string) => {
@@ -457,6 +489,23 @@ export default function App() {
          setHabitLogs(updatedLogs);
          storageService.saveHabitLogs(updatedLogs);
          updateStreaks(habits, updatedLogs);
+         
+         // Note: Deleting a log via history modal (past date) ideally should decrement the linked goal too.
+         // Re-using the toggle logic or replicating it:
+         const habit = habits.find(h => h.id === habitId);
+         if (habit && habit.linkedGoalIds && habit.linkedGoalIds.length > 0) {
+             let currentGoalsSnapshot = [...goals];
+             habit.linkedGoalIds.forEach(goalId => {
+                 const goalIndex = currentGoalsSnapshot.findIndex(g => g.id === goalId);
+                 if (goalIndex !== -1) {
+                     const g = currentGoalsSnapshot[goalIndex];
+                     const newProgress = Math.max(g.progress - 1, 0);
+                     currentGoalsSnapshot[goalIndex] = { ...g, progress: newProgress };
+                 }
+             });
+             setGoals(currentGoalsSnapshot);
+             storageService.saveGoals(currentGoalsSnapshot);
+         }
      }
   };
 
@@ -554,6 +603,7 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <DashboardView 
             goals={goals} 
+            habits={habits}
             events={events}
             briefing={briefing}
             isGeneratingBriefing={isGeneratingBriefing}
@@ -603,6 +653,7 @@ export default function App() {
                 <ProgressCard 
                   key={goal.id} 
                   goal={goal} 
+                  linkedHabits={habits.filter(h => h.linkedGoalIds?.includes(goal.id))}
                   onIncrement={handleGoalIncrement} 
                   onDecrement={handleGoalDecrement}
                   onDelete={handleDeleteGoal}
@@ -622,22 +673,18 @@ export default function App() {
 
              {/* Goal Suggestions Section */}
              <div className="mt-12">
-               <div className="flex items-center justify-between mb-6">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
-                     <Sparkles size={20} />
-                   </div>
-                   <h2 className="text-2xl font-bold text-slate-900">Suggested for you</h2>
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
+                   <Sparkles size={20} />
                  </div>
-                 <button 
-                   onClick={loadGoalSuggestions}
-                   disabled={isLoadingSuggestions}
-                   className="text-emerald-600 font-bold text-sm lg:hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
-                 >
-                   <RefreshCw size={14} className={isLoadingSuggestions ? "animate-spin" : ""} />
-                   Refresh Ideas
-                 </button>
+                 <h2 className="text-2xl font-bold text-slate-900">Suggested for you</h2>
                </div>
+
+               <GoalSuggestionControl 
+                 onGenerate={loadGoalSuggestions} 
+                 isLoading={isLoadingSuggestions}
+                 categories={['Health', 'Career', 'Learning', 'Finance', 'Mindfulness', 'Fitness']}
+               />
                
                {isLoadingSuggestions ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
@@ -646,7 +693,7 @@ export default function App() {
                    ))}
                  </div>
                ) : suggestedGoals.length > 0 ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4">
                    {suggestedGoals.map((s, idx) => (
                      <GoalSuggestionCard 
                        key={idx} 
@@ -657,7 +704,7 @@ export default function App() {
                  </div>
                ) : (
                  <div className="bg-white/50 border border-slate-100 rounded-[1.5rem] p-8 text-center">
-                   <p className="text-slate-500 font-medium">Click "Refresh Ideas" to get personalized goal suggestions based on your current focus.</p>
+                   <p className="text-slate-500 font-medium">Select a topic or type your own to get personalized goal suggestions.</p>
                  </div>
                )}
              </div>
@@ -720,23 +767,19 @@ export default function App() {
 
              {/* Habit Suggestions Section */}
              <div className="mt-12">
-               <div className="flex items-center justify-between mb-6">
-                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
-                     <Sparkles size={20} />
-                   </div>
-                   <h2 className="text-2xl font-bold text-slate-900">Suggested for you</h2>
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
+                   <Sparkles size={20} />
                  </div>
-                 <button 
-                   onClick={loadHabitSuggestions}
-                   disabled={isLoadingHabitSuggestions}
-                   className="text-emerald-600 font-bold text-sm lg:hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2"
-                 >
-                   <RefreshCw size={14} className={isLoadingHabitSuggestions ? "animate-spin" : ""} />
-                   Refresh Ideas
-                 </button>
+                 <h2 className="text-2xl font-bold text-slate-900">Suggested for you</h2>
                </div>
                
+               <HabitSuggestionControl 
+                  onGenerate={loadHabitSuggestions}
+                  isLoading={isLoadingHabitSuggestions}
+                  categories={['Morning Routine', 'Health', 'Mental Wellness', 'Productivity', 'Learning', 'Night Routine']}
+               />
+
                {isLoadingHabitSuggestions ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
                    {[1,2,3,4].map(i => (
@@ -744,7 +787,7 @@ export default function App() {
                    ))}
                  </div>
                ) : suggestedHabits.length > 0 ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4">
                    {suggestedHabits.map((s, idx) => (
                      <HabitSuggestionCard 
                        key={idx} 
@@ -755,7 +798,7 @@ export default function App() {
                  </div>
                ) : (
                  <div className="bg-white/50 border border-slate-100 rounded-[1.5rem] p-8 text-center">
-                   <p className="text-slate-500 font-medium">Click "Refresh Ideas" to get personalized habit suggestions.</p>
+                   <p className="text-slate-500 font-medium">Select a topic or type your own to get personalized habit suggestions.</p>
                  </div>
                )}
              </div>
@@ -869,6 +912,7 @@ export default function App() {
         onSave={handleSaveHabit}
         editingHabit={editingHabit}
         defaultValues={habitDefaultValues}
+        existingGoals={goals}
       />
 
       <HabitHistoryModal

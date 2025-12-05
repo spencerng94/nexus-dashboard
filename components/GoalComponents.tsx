@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2, Plus, Minus, X, Save, Sparkles, Loader2, ArrowRight } from 'lucide-react';
-import { Goal } from '../types';
+import { Pencil, Trash2, Plus, Minus, X, Save, Sparkles, Loader2, ArrowRight, Search, Link as LinkIcon, Flame } from 'lucide-react';
+import { Goal, Habit } from '../types';
 import { generateSuggestions } from '../services/gemini';
 
 interface ProgressCardProps {
   goal: Goal;
+  linkedHabits?: Habit[];
   onIncrement: (id: string) => void;
   onDecrement: (id: string) => void;
   onDelete: (id: string) => void;
@@ -27,69 +29,101 @@ const getIconStyles = (colorClass: string) => {
   return `bg-${color}-100 text-${color}-600`;
 };
 
-export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, onDecrement, onDelete, onEdit }) => (
-  <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-xl shadow-slate-200/40 lg:hover:shadow-2xl lg:hover:shadow-slate-200/50 lg:hover:-translate-y-1 transition-all duration-300 group relative">
-    <div className="absolute top-6 right-6 flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300">
-       <button 
-        onClick={(e) => { e.stopPropagation(); onEdit(goal); }}
-        className="p-2 rounded-full bg-slate-100 text-slate-400 lg:hover:bg-emerald-50 lg:hover:text-emerald-500 transition-colors"
-        title="Edit Goal"
-      >
-        <Pencil size={16} />
-      </button>
-      <button 
-        onClick={(e) => { e.stopPropagation(); onDelete(goal.id); }}
-        className="p-2 rounded-full bg-slate-100 text-slate-400 lg:hover:bg-red-50 lg:hover:text-red-500 transition-colors"
-        title="Delete Goal"
-      >
-        <Trash2 size={16} />
-      </button>
-    </div>
+export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, linkedHabits, onIncrement, onDecrement, onDelete, onEdit }) => {
+  const [showLinkedHabits, setShowLinkedHabits] = useState(false);
 
-    <div className="flex justify-between items-start mb-6 pr-20">
-      <div className="flex gap-4 items-center">
-        <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-2xl ${getIconStyles(goal.color)}`}>
-          {goal.icon || '🎯'}
-        </div>
-        <div>
-          <h3 className="font-bold text-slate-800 text-lg leading-tight">{goal.title}</h3>
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{goal.category}</span>
+  return (
+    <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-xl shadow-slate-200/40 lg:hover:shadow-2xl lg:hover:shadow-slate-200/50 lg:hover:-translate-y-1 transition-all duration-300 group relative">
+      <div className="absolute top-6 right-6 flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300">
+         {linkedHabits && linkedHabits.length > 0 && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowLinkedHabits(!showLinkedHabits); }}
+              className={`p-2 rounded-full transition-colors ${showLinkedHabits ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400 lg:hover:bg-emerald-50 lg:hover:text-emerald-500'}`}
+              title="Linked Habits"
+            >
+              <LinkIcon size={16} />
+            </button>
+         )}
+         <button 
+          onClick={(e) => { e.stopPropagation(); onEdit(goal); }}
+          className="p-2 rounded-full bg-slate-100 text-slate-400 lg:hover:bg-emerald-50 lg:hover:text-emerald-500 transition-colors"
+          title="Edit Goal"
+        >
+          <Pencil size={16} />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); onDelete(goal.id); }}
+          className="p-2 rounded-full bg-slate-100 text-slate-400 lg:hover:bg-red-50 lg:hover:text-red-500 transition-colors"
+          title="Delete Goal"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+  
+      <div className="flex justify-between items-start mb-6 pr-24">
+        <div className="flex gap-4 items-center">
+          <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-2xl ${getIconStyles(goal.color)}`}>
+            {goal.icon || '🎯'}
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800 text-lg leading-tight">{goal.title}</h3>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{goal.category}</span>
+          </div>
         </div>
       </div>
+      
+      <div className="space-y-4">
+        <div className="flex justify-between items-end">
+          <span className="text-3xl font-bold text-slate-900 tracking-tight">
+            {Math.round((goal.progress / goal.target) * 100)}<span className="text-lg text-slate-400 font-medium ml-0.5">%</span>
+          </span>
+          <div className="flex items-center gap-3 bg-white/50 p-1 pr-1.5 rounded-full border border-white/50">
+             <button 
+              onClick={() => onDecrement(goal.id)}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 lg:hover:bg-slate-100 lg:hover:text-slate-600 transition-colors"
+             >
+               <Minus size={16} />
+             </button>
+             <span className="text-sm font-bold text-slate-600 min-w-[40px] text-center">
+               {goal.progress}
+             </span>
+             <button 
+              onClick={() => onIncrement(goal.id)}
+              className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white lg:hover:bg-black transition-colors shadow-lg shadow-slate-900/20"
+             >
+               <Plus size={16} />
+             </button>
+          </div>
+        </div>
+        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-[2px]">
+          <div 
+            className={`h-full rounded-full transition-all duration-1000 ease-out ${getProgressBarGradient(goal.color)} shadow-sm`} 
+            style={{ width: `${Math.min((goal.progress / goal.target) * 100, 100)}%` }}
+          />
+        </div>
+      </div>
+
+      {showLinkedHabits && linkedHabits && (
+        <div className="mt-4 pt-4 border-t border-slate-100/60 animate-in fade-in slide-in-from-top-1">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-3 flex items-center gap-1">
+                <LinkIcon size={10} /> Linked Habits
+            </h4>
+            <div className="space-y-2">
+                {linkedHabits.map(h => (
+                    <div key={h.id} className="flex items-center gap-3 bg-white/50 p-2 rounded-xl border border-white/50">
+                        <span className="text-lg">{h.icon}</span>
+                        <span className="text-sm font-bold text-slate-700 flex-1">{h.title}</span>
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-white px-2 py-1 rounded-lg shadow-sm">
+                            <Flame size={12} fill="currentColor" /> {h.streak}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+      )}
     </div>
-    
-    <div className="space-y-4">
-      <div className="flex justify-between items-end">
-        <span className="text-3xl font-bold text-slate-900 tracking-tight">
-          {Math.round((goal.progress / goal.target) * 100)}<span className="text-lg text-slate-400 font-medium ml-0.5">%</span>
-        </span>
-        <div className="flex items-center gap-3 bg-white/50 p-1 pr-1.5 rounded-full border border-white/50">
-           <button 
-            onClick={() => onDecrement(goal.id)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 lg:hover:bg-slate-100 lg:hover:text-slate-600 transition-colors"
-           >
-             <Minus size={16} />
-           </button>
-           <span className="text-sm font-bold text-slate-600 min-w-[40px] text-center">
-             {goal.progress}
-           </span>
-           <button 
-            onClick={() => onIncrement(goal.id)}
-            className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white lg:hover:bg-black transition-colors shadow-lg shadow-slate-900/20"
-           >
-             <Plus size={16} />
-           </button>
-        </div>
-      </div>
-      <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-[2px]">
-        <div 
-          className={`h-full rounded-full transition-all duration-1000 ease-out ${getProgressBarGradient(goal.color)} shadow-sm`} 
-          style={{ width: `${Math.min((goal.progress / goal.target) * 100, 100)}%` }}
-        />
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 interface GoalSuggestionCardProps {
   suggestion: { title: string; category: string; icon: string };
@@ -115,6 +149,57 @@ export const GoalSuggestionCard: React.FC<GoalSuggestionCardProps> = ({ suggesti
     </button>
   );
 };
+
+// --- SUGGESTION CONTROL ---
+interface SuggestionControlProps {
+    onGenerate: (topic?: string) => void;
+    isLoading: boolean;
+    categories: string[];
+}
+
+export const SuggestionControl: React.FC<SuggestionControlProps> = ({ onGenerate, isLoading, categories }) => {
+    const [customTopic, setCustomTopic] = useState("");
+
+    return (
+        <div className="flex flex-col gap-4 mb-6">
+            <div className="flex flex-wrap gap-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wide py-1.5 mr-2">Topics:</span>
+                {categories.map(cat => (
+                    <button
+                        key={cat}
+                        onClick={() => onGenerate(cat)}
+                        disabled={isLoading}
+                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-full text-xs font-bold hover:border-emerald-500 hover:text-emerald-500 transition-colors disabled:opacity-50"
+                    >
+                        {cat}
+                    </button>
+                ))}
+            </div>
+            
+            <div className="flex items-center gap-2 max-w-md">
+                <div className="relative flex-1">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input 
+                        type="text" 
+                        value={customTopic}
+                        onChange={(e) => setCustomTopic(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && onGenerate(customTopic)}
+                        placeholder="Or type a custom topic..."
+                        className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                    />
+                </div>
+                <button 
+                    onClick={() => onGenerate(customTopic)}
+                    disabled={isLoading}
+                    className="bg-emerald-500 text-white p-2 rounded-xl hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                >
+                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                </button>
+            </div>
+        </div>
+    );
+};
+
 
 interface GoalFormModalProps {
   isOpen: boolean;
