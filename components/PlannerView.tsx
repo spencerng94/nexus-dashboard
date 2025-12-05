@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { NotebookPen, Sparkles, Clock, Briefcase, User, Trash2, Check, Loader2, Calendar as CalendarIcon, ChevronRight, ChevronLeft, ArrowRight, Eye, Edit3 } from 'lucide-react';
+import { NotebookPen, Sparkles, Clock, Briefcase, User, Trash2, Check, Loader2, Calendar as CalendarIcon, Edit3, Eye } from 'lucide-react';
 import { CalendarEvent, ProposedEvent } from '../types';
 import { generateSchedulePlan } from '../services/gemini';
 
@@ -8,6 +8,93 @@ interface PlannerViewProps {
   existingEvents: CalendarEvent[];
   onAddEvents: (events: Omit<CalendarEvent, 'id'>[]) => Promise<void>;
 }
+
+interface VisualSchedulePreviewProps {
+  targetDate: Date;
+  events: any[];
+}
+
+const VisualSchedulePreview: React.FC<VisualSchedulePreviewProps> = ({ targetDate, events }) => {
+    const startHour = 6;
+    const endHour = 23;
+    const hours = Array.from({ length: endHour - startHour }, (_, i) => i + startHour);
+    const rowHeight = 60; // Compact height
+
+    return (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <CalendarIcon size={18} className="text-emerald-500" />
+                    {targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric'})}
+                </h3>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Preview</span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
+                <div className="relative" style={{ height: hours.length * rowHeight }}>
+                    {hours.map(h => (
+                        <div key={h} className="group flex border-b border-slate-50 h-[60px]">
+                            <div className="w-14 border-r border-slate-50 text-[10px] font-bold text-slate-400 flex items-center justify-center bg-slate-50/30">
+                                {h > 12 ? `${h-12} PM` : h === 12 ? '12 PM' : `${h} AM`}
+                            </div>
+                            <div className="flex-1 relative">
+                                {/* Hour Lines */}
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Events Overlay */}
+                    {events.map((e: any) => {
+                        const eDate = new Date(e.startTime);
+                        const hour = eDate.getHours();
+                        const min = eDate.getMinutes();
+                        
+                        if (hour < startHour || hour >= endHour) return null;
+
+                        // Calculate Position
+                        const top = ((hour - startHour) * 60 + min) * (rowHeight / 60);
+                        
+                        // Parse duration for height
+                        let durationMins = 60;
+                        if (e.duration.includes('h')) durationMins = parseInt(e.duration) * 60;
+                        else if (e.duration.includes('m')) durationMins = parseInt(e.duration);
+                        else if (e.duration === 'All Day') durationMins = 60; // fallback
+
+                        const height = Math.max(durationMins * (rowHeight / 60), 30); // min 30px height
+
+                        // Style based on type and status (Proposed vs Existing)
+                        const isProposed = e.isProposed;
+                        const isWork = e.type === 'work';
+
+                        const bgClass = isProposed 
+                            ? (isWork ? 'bg-blue-50' : 'bg-rose-50') 
+                            : (isWork ? 'bg-blue-100' : 'bg-rose-100');
+                        
+                        const borderClass = isProposed
+                            ? (isWork ? 'border-blue-400 border-dashed' : 'border-rose-400 border-dashed')
+                            : (isWork ? 'border-blue-500' : 'border-rose-500');
+
+                        const textClass = isWork ? 'text-blue-900' : 'text-rose-900';
+
+                        return (
+                            <div 
+                                key={e.id}
+                                className={`absolute left-1 right-1 md:left-2 md:right-2 rounded-lg border-l-4 p-2 text-xs leading-tight overflow-hidden transition-all ${bgClass} ${borderClass} ${textClass} ${isProposed ? 'z-20 shadow-lg' : 'z-10 opacity-70 grayscale-[0.3]'}`}
+                                style={{ top: `${top}px`, height: `${height}px` }}
+                            >
+                                <div className="flex justify-between items-start">
+                                    <span className="font-bold truncate">{e.time}</span>
+                                    {isProposed && <span className="text-[8px] font-black uppercase tracking-wider bg-white/50 px-1 rounded">New</span>}
+                                </div>
+                                <div className="font-semibold truncate">{e.title}</div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }) => {
   const [dateContext, setDateContext] = useState<'today' | 'tomorrow'>('today');
@@ -81,9 +168,6 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
     const result = await generateSchedulePlan(prompt, dateContext, relevantEvents);
     setProposedEvents(result);
     setIsGenerating(false);
-    
-    // Auto-switch to preview on mobile if results found? 
-    // Maybe better to let user choose, but we'll leave as editor to edit first.
   };
 
   const handleSaveAll = async () => {
@@ -121,89 +205,6 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
 
   const handleUpdateProposed = (id: string, field: keyof ProposedEvent, value: string) => {
     setProposedEvents(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
-  };
-
-  // --- Visual Preview Component ---
-  const DayPreview = () => {
-    const startHour = 6;
-    const endHour = 23;
-    const hours = Array.from({ length: endHour - startHour }, (_, i) => i + startHour);
-    const rowHeight = 60; // Compact height
-
-    return (
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full">
-            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <CalendarIcon size={18} className="text-emerald-500" />
-                    {targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric'})}
-                </h3>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Preview</span>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
-                <div className="relative" style={{ height: hours.length * rowHeight }}>
-                    {hours.map(h => (
-                        <div key={h} className="group flex border-b border-slate-50 h-[60px]">
-                            <div className="w-14 border-r border-slate-50 text-[10px] font-bold text-slate-400 flex items-center justify-center bg-slate-50/30">
-                                {h > 12 ? `${h-12} PM` : h === 12 ? '12 PM' : `${h} AM`}
-                            </div>
-                            <div className="flex-1 relative">
-                                {/* Hour Lines */}
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Events Overlay */}
-                    {previewEvents.map((e: any) => {
-                        const eDate = new Date(e.startTime);
-                        const hour = eDate.getHours();
-                        const min = eDate.getMinutes();
-                        
-                        if (hour < startHour || hour >= endHour) return null;
-
-                        // Calculate Position
-                        const top = ((hour - startHour) * 60 + min) * (rowHeight / 60);
-                        
-                        // Parse duration for height
-                        let durationMins = 60;
-                        if (e.duration.includes('h')) durationMins = parseInt(e.duration) * 60;
-                        else if (e.duration.includes('m')) durationMins = parseInt(e.duration);
-                        else if (e.duration === 'All Day') durationMins = 60; // fallback
-
-                        const height = Math.max(durationMins * (rowHeight / 60), 30); // min 30px height
-
-                        // Style based on type and status (Proposed vs Existing)
-                        const isProposed = e.isProposed;
-                        const isWork = e.type === 'work';
-
-                        const bgClass = isProposed 
-                            ? (isWork ? 'bg-blue-50' : 'bg-rose-50') 
-                            : (isWork ? 'bg-blue-100' : 'bg-rose-100');
-                        
-                        const borderClass = isProposed
-                            ? (isWork ? 'border-blue-400 border-dashed' : 'border-rose-400 border-dashed')
-                            : (isWork ? 'border-blue-500' : 'border-rose-500');
-
-                        const textClass = isWork ? 'text-blue-900' : 'text-rose-900';
-
-                        return (
-                            <div 
-                                key={e.id}
-                                className={`absolute left-1 right-1 md:left-2 md:right-2 rounded-lg border-l-4 p-2 text-xs leading-tight overflow-hidden transition-all ${bgClass} ${borderClass} ${textClass} ${isProposed ? 'z-20 shadow-lg' : 'z-10 opacity-70 grayscale-[0.3]'}`}
-                                style={{ top: `${top}px`, height: `${height}px` }}
-                            >
-                                <div className="flex justify-between items-start">
-                                    <span className="font-bold truncate">{e.time}</span>
-                                    {isProposed && <span className="text-[8px] font-black uppercase tracking-wider bg-white/50 px-1 rounded">New</span>}
-                                </div>
-                                <div className="font-semibold truncate">{e.title}</div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
-    );
   };
 
   return (
@@ -276,6 +277,10 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
                     {isGenerating ? <Loader2 size={24} className="animate-spin" /> : <Sparkles size={24} />}
                     Generate Plan
                 </button>
+                
+                <p className="text-center text-xs text-slate-400 font-medium mt-4 px-2 leading-relaxed">
+                   Describe your plans naturally. Review the generated timeline, make adjustments, and sync directly to your calendar.
+                </p>
             </div>
 
             {/* Results List */}
@@ -367,7 +372,7 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
 
         {/* RIGHT COLUMN: VISUAL PREVIEW (Visible on Tablet+ OR Mobile Preview Tab) */}
         <div className={`flex-1 min-w-0 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200 p-2 md:p-6 overflow-hidden flex-col ${mobileTab === 'editor' ? 'hidden md:flex' : 'flex'}`}>
-             <DayPreview />
+             <VisualSchedulePreview targetDate={targetDate} events={previewEvents} />
              <p className="text-center text-xs text-slate-400 font-medium mt-4">
                {proposedEvents.length > 0 
                   ? "Visualizing proposed schedule changes" 

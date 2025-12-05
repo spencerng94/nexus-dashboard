@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, X, Send, MessageSquare } from 'lucide-react';
 import { DashboardState, User } from '../types';
@@ -112,14 +113,22 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ dashboardState, user, onEventCh
         </div>
       </div>
 
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`pointer-events-auto h-16 w-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 lg:hover:scale-105 active:scale-95 ${
-          isOpen ? 'bg-stone-900 rotate-90' : 'bg-white border border-slate-100'
-        }`}
-      >
-        {isOpen ? <X size={28} className="text-white" /> : <MessageSquare size={28} className="text-slate-800" />}
-      </button>
+      <div className="relative group pointer-events-auto">
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className={`h-16 w-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 lg:group-hover:scale-105 active:scale-95 ${
+            isOpen ? 'bg-stone-900 rotate-90' : 'bg-white border border-slate-100'
+          }`}
+        >
+          {isOpen ? <X size={28} className="text-white" /> : <MessageSquare size={28} className="text-slate-800" />}
+        </button>
+        
+        {/* Tooltip: Removed 'lg:' prefix from group-hover opacity to ensure visibility on all devices that support hover */}
+        <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-800 text-white text-xs font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+           Chat with Nexus
+           <div className="absolute top-1/2 -translate-y-1/2 -right-1 border-4 border-transparent border-l-slate-800"></div>
+        </div>
+      </div>
     </div>
   );
 };

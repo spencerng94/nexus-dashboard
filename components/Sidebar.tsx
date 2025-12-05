@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
                 <span className={`ml-4 font-semibold text-[15px] hidden lg:block ${isActive ? 'text-white' : ''}`}>{item.label}</span>
                 
                 {/* Desktop Tooltip (Tablet only) */}
-                <div className="hidden md:block lg:hidden absolute left-full ml-4 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-xl opacity-0 lg:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+                <div className="hidden md:block lg:hidden absolute left-full ml-6 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
                   {item.label}
                   <div className="absolute top-1/2 -translate-y-1/2 -left-1 border-4 border-transparent border-r-slate-800"></div>
                 </div>
@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
       </div>
 
       {/* Bottom Section: User & Logout */}
-      <div className="flex flex-row md:flex-col items-center gap-1 md:gap-2 md:w-full md:border-t border-l md:border-l-0 border-slate-200 pl-1 md:pl-0 md:pt-6 ml-1 md:ml-0 shrink-0">
+      <div className="flex flex-row md:flex-col items-center md:items-stretch gap-1 md:gap-2 md:w-full md:border-t border-l md:border-l-0 border-slate-200 pl-1 md:pl-0 md:pt-6 ml-1 md:ml-0 shrink-0">
         <button 
           onClick={onProfileClick}
           className="relative flex items-center justify-center lg:justify-start p-2.5 lg:px-5 lg:py-4 rounded-xl md:rounded-2xl text-slate-500 lg:hover:bg-slate-50 lg:hover:text-emerald-500 transition-all duration-200 group shrink-0"
@@ -89,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
            <span className="ml-4 font-semibold text-[15px] hidden lg:block truncate max-w-[120px]">{displayName}</span>
            
            {/* Desktop Tooltip (Tablet only) */}
-           <div className="hidden md:block lg:hidden absolute left-full ml-4 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-xl opacity-0 lg:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+           <div className="hidden md:block lg:hidden absolute left-full ml-6 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
               Profile
               <div className="absolute top-1/2 -translate-y-1/2 -left-1 border-4 border-transparent border-r-slate-800"></div>
            </div>
@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
           <span className="ml-4 font-semibold text-[15px] hidden lg:block">Sign Out</span>
 
            {/* Desktop Tooltip (Tablet only) */}
-           <div className="hidden md:block lg:hidden absolute left-full ml-4 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-xl opacity-0 lg:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
+           <div className="hidden md:block lg:hidden absolute left-full ml-6 px-3 py-1.5 bg-slate-800 text-white text-xs font-semibold rounded-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-xl">
               Sign Out
               <div className="absolute top-1/2 -translate-y-1/2 -left-1 border-4 border-transparent border-r-slate-800"></div>
            </div>

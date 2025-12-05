@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin, LayoutDashboard } from 'lucide-react';
+import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin, LayoutDashboard, Pencil } from 'lucide-react';
 import { Goal, CalendarEvent, ImportantDate } from '../types';
 import { ProgressCard } from './GoalComponents';
 
@@ -82,14 +83,31 @@ interface DateFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: Omit<ImportantDate, 'id'>) => void;
+  editingDate?: ImportantDate | null;
 }
 
-const DateFormModal: React.FC<DateFormModalProps> = ({ isOpen, onClose, onSave }) => {
+const DateFormModal: React.FC<DateFormModalProps> = ({ isOpen, onClose, onSave, editingDate }) => {
   const [formData, setFormData] = useState({
     title: '',
     date: new Date().toISOString().split('T')[0],
     type: 'Personal'
   });
+
+  useEffect(() => {
+    if (editingDate) {
+      setFormData({
+        title: editingDate.title,
+        date: editingDate.date,
+        type: editingDate.type
+      });
+    } else {
+      setFormData({
+        title: '',
+        date: new Date().toISOString().split('T')[0],
+        type: 'Personal'
+      });
+    }
+  }, [editingDate, isOpen]);
 
   if (!isOpen) return null;
 
@@ -104,7 +122,7 @@ const DateFormModal: React.FC<DateFormModalProps> = ({ isOpen, onClose, onSave }
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
       <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-slate-900">Add Date</h3>
+          <h3 className="text-xl font-bold text-slate-900">{editingDate ? 'Edit Date' : 'Add Date'}</h3>
           <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 rounded-full transition-colors text-slate-400 lg:hover:text-slate-600">
             <X size={20} />
           </button>
@@ -148,7 +166,7 @@ const DateFormModal: React.FC<DateFormModalProps> = ({ isOpen, onClose, onSave }
             </select>
           </div>
           <button type="submit" className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl mt-2 flex items-center justify-center gap-2">
-            <Save size={18} /> Save Date
+            <Save size={18} /> {editingDate ? 'Update Date' : 'Save Date'}
           </button>
         </form>
       </div>
@@ -176,6 +194,7 @@ interface DashboardViewProps {
   // New Props
   importantDates: ImportantDate[];
   onAddImportantDate: (d: Omit<ImportantDate, 'id'>) => void;
+  onEditImportantDate: (d: ImportantDate) => void;
   onDeleteImportantDate: (id: string) => void;
   weather: { temp: number, condition: string } | null;
 }
@@ -183,7 +202,7 @@ interface DashboardViewProps {
 export const DashboardView: React.FC<DashboardViewProps> = ({ 
   goals, events, briefing, isGeneratingBriefing, onRefreshBriefing, openAddModal, onViewCalendar,
   onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName, syncError,
-  importantDates, onAddImportantDate, onDeleteImportantDate, weather
+  importantDates, onAddImportantDate, onEditImportantDate, onDeleteImportantDate, weather
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [is24Hour, setIs24Hour] = useState(false);
@@ -213,6 +232,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [editingDate, setEditingDate] = useState<ImportantDate | null>(null);
 
   // Sort dates: closest upcoming first
   const sortedDates = [...importantDates].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -254,6 +274,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return { label: `In ${diffDays} days`, color: 'text-blue-300 bg-blue-500/10' };
   };
 
+  const handleSaveDate = (data: Omit<ImportantDate, 'id'>) => {
+    if (editingDate) {
+      onEditImportantDate({ ...data, id: editingDate.id });
+    } else {
+      onAddImportantDate(data);
+    }
+    setIsDateModalOpen(false);
+    setEditingDate(null);
+  };
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto pb-12">
       {/* HEADER SECTION */}
@@ -263,7 +293,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
              <LayoutDashboard className="text-white w-6 h-6 md:w-8 md:h-8" />
           </div>
           <div>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2 text-emerald-500">{dateString}</p>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">{greeting}, {displayName}</h1>
             <p className="text-emerald-500 font-bold text-sm mt-2 uppercase tracking-wider">Focus on what matters most</p>
           </div>
@@ -330,7 +360,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Goals</h3>
             <button onClick={openAddModal} className="text-emerald-500 text-sm font-bold lg:hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors">Add New</button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {goals.map(goal => (
               <ProgressCard 
                 key={goal.id} 
@@ -395,7 +425,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                  <h3 className="font-bold text-lg leading-tight max-w-[70%]">Upcoming Important Dates</h3>
                  <div className="flex gap-2 items-center">
                    <button 
-                     onClick={() => setIsDateModalOpen(true)}
+                     onClick={() => { setEditingDate(null); setIsDateModalOpen(true); }}
                      className="text-stone-400 lg:hover:text-white transition-colors p-1.5 rounded-full lg:hover:bg-white/10"
                      title="Add Date"
                    >
@@ -444,13 +474,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${timeLeft.color}`}>
                                           {timeLeft.label}
                                       </span>
-                                      {/* Opacity toggles on hover only for desktop, visible on mobile due to earlier global changes */}
-                                      <button 
-                                          onClick={(e) => { e.stopPropagation(); onDeleteImportantDate(d.id); }}
-                                          className="p-1.5 text-stone-400 lg:hover:text-rose-400 transition-all bg-stone-800/80 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
-                                      >
-                                          <Trash2 size={12} />
-                                      </button>
+                                      
+                                      {/* Action Buttons: Visible on mobile, hover only on desktop */}
+                                      <div className="flex items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity gap-1">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setEditingDate(d); setIsDateModalOpen(true); }}
+                                            className="p-1.5 text-stone-400 lg:hover:text-emerald-400 transition-all bg-stone-800/80 rounded-full"
+                                            title="Edit"
+                                        >
+                                            <Pencil size={12} />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); onDeleteImportantDate(d.id); }}
+                                            className="p-1.5 text-stone-400 lg:hover:text-rose-400 transition-all bg-stone-800/80 rounded-full"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                      </div>
                                   </div>
                                </div>
                                <p className="text-xs text-stone-400 font-medium uppercase tracking-wide">{d.type}</p>
@@ -473,8 +514,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       
       <DateFormModal 
         isOpen={isDateModalOpen} 
-        onClose={() => setIsDateModalOpen(false)} 
-        onSave={onAddImportantDate} 
+        onClose={() => { setIsDateModalOpen(false); setEditingDate(null); }} 
+        onSave={handleSaveDate} 
+        editingDate={editingDate}
       />
     </div>
   );

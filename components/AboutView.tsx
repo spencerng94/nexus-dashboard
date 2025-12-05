@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, Shield, ArrowRight, Info } from 'lucide-react';
+import { LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, Shield, ArrowRight, Info, NotebookPen } from 'lucide-react';
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
   <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-lg shadow-emerald-100/20 lg:hover:shadow-xl lg:hover:shadow-emerald-100/40 transition-all duration-300 lg:hover:-translate-y-1">
@@ -64,6 +65,11 @@ const AboutView: React.FC = () => {
               description="Start every morning with an AI-generated briefing that analyzes your schedule and priorities to create a clear plan of attack."
             />
             <FeatureCard 
+              icon={<NotebookPen size={24} />}
+              title="AI Planner"
+              description="Simply type your plans naturally (e.g. 'Gym at 5, then Dinner'), and let Nexus build a conflict-free schedule for you."
+            />
+            <FeatureCard 
               icon={<Target size={24} />}
               title="Goal Tracking"
               description="Set numeric targets (e.g., 'Read 5 Books') and track progress visually. Use AI to brainstorm actionable goals based on your interests."
@@ -80,13 +86,8 @@ const AboutView: React.FC = () => {
             />
             <FeatureCard 
               icon={<Sparkles size={24} />}
-              title="Gemini Assistant"
-              description="A context-aware AI chatbot that knows your schedule and goals, ready to answer questions or help you brainstorm."
-            />
-            <FeatureCard 
-              icon={<Shield size={24} />}
-              title="Privacy First"
-              description="Your data (Goals, Habits, Notes) is stored locally on your device via LocalStorage. We prioritize your privacy."
+              title="Nexus Assistant"
+              description="A context-aware AI chatbot that can manage your calendar (add, edit, delete events) and answer questions about your day."
             />
           </div>
 
@@ -111,8 +112,8 @@ const AboutView: React.FC = () => {
                 />
                 <StepCard 
                   number="3"
-                  title="Review"
-                  text="Check your 'Plan for Today' every morning. It highlights your key focus areas and schedule."
+                  title="Plan"
+                  text="Use the AI Planner to instantly structure your day or tomorrow from a simple text prompt."
                 />
                 <StepCard 
                   number="4"

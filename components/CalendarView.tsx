@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
-import { CalendarEvent } from '../types';
-import { Plus, X, Clock, Save, Calendar as CalendarIcon, Briefcase, User, ChevronLeft, ChevronRight, AlignJustify, Grid } from 'lucide-react';
+import { CalendarEvent, ImportantDate } from '../types';
+import { Plus, X, Clock, Save, Calendar as CalendarIcon, Briefcase, User, ChevronLeft, ChevronRight, AlignJustify, Grid, Star } from 'lucide-react';
 
 interface CalendarViewProps {
   events: CalendarEvent[];
+  importantDates: ImportantDate[];
   onAddEvent: (event: Omit<CalendarEvent, 'id'>) => void;
 }
 
@@ -188,7 +190,7 @@ const CurrentTimeLine: React.FC<{ startHour: number, rowHeight: number }> = ({ s
   );
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onAddEvent }) => {
   const [view, setView] = useState<'month'|'week'|'day'>('month'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -233,18 +235,66 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent }) => {
          {days.map((day) => {
            const dateToCheck = new Date(year, month, day);
            const isToday = dateToCheck.toDateString() === new Date().toDateString();
+           const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
            
+           const importantDate = importantDates.find(d => d.date === dateString);
+           const isImportant = !!importantDate;
+
            const dayEvents = events.filter(e => {
              const eDate = new Date(e.startTime);
              return eDate.getDate() === day && eDate.getMonth() === month && eDate.getFullYear() === year;
            });
 
+           // Dynamic Styles for Cell
+           let cellClasses = "bg-white border-slate-100 lg:hover:border-emerald-200 lg:hover:shadow-lg";
+           let textClasses = "text-slate-600";
+           
+           if (isImportant) {
+             cellClasses = "bg-gradient-to-br from-stone-800 to-stone-700 border-stone-600 shadow-md";
+             textClasses = "text-white";
+           }
+           
+           if (isToday) {
+             if (isImportant) {
+               // Today AND Important: Dark bg + Emerald Border
+               cellClasses = "bg-gradient-to-br from-stone-800 to-stone-700 border-emerald-400 ring-1 ring-emerald-400 shadow-lg";
+               textClasses = "text-emerald-400";
+             } else {
+               // Just Today
+               cellClasses = "bg-emerald-50 border-emerald-200";
+               textClasses = "text-emerald-600";
+             }
+           }
+
            return (
-             <div key={day} className={`rounded-xl md:rounded-2xl p-1 md:p-2 relative group transition-all duration-300 border overflow-hidden ${isToday ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-100 lg:hover:border-emerald-200 lg:hover:shadow-lg'}`}>
-               <span className={`text-[10px] md:text-sm font-bold ${isToday ? 'text-emerald-600' : 'text-slate-600'}`}>{day}</span>
+             <div 
+               key={day} 
+               className={`rounded-xl md:rounded-2xl p-1 md:p-2 relative group transition-all duration-300 border overflow-hidden flex flex-col ${cellClasses}`}
+               title={importantDate?.title}
+             >
+               <div className="flex justify-between items-start">
+                  <span className={`text-[10px] md:text-sm font-bold ${textClasses}`}>{day}</span>
+                  {isImportant && (
+                    <div className="hidden md:block">
+                        <Star size={10} className="text-amber-400 fill-amber-400" />
+                    </div>
+                  )}
+               </div>
+
+               {/* Mobile Dot for Important Date */}
+               {isImportant && (
+                 <div className="md:hidden absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-400"></div>
+               )}
                
-               <div className="mt-1 space-y-0.5 md:space-y-1 overflow-hidden">
-                 {dayEvents.slice(0, 3).map(e => (
+               <div className="mt-1 space-y-0.5 md:space-y-1 overflow-hidden flex-1">
+                 {/* Show Important Date Title at top if important */}
+                 {isImportant && (
+                    <div className="hidden md:block text-[9px] font-bold text-amber-300 truncate mb-1">
+                        {importantDate?.title}
+                    </div>
+                 )}
+
+                 {dayEvents.slice(0, isImportant ? 2 : 3).map(e => (
                    <div key={e.id} className={`h-1.5 md:h-auto w-full md:w-auto rounded-full md:rounded-md ${
                      e.type === 'work' ? 'bg-blue-400 md:bg-blue-50 md:text-blue-600' : 'bg-rose-400 md:bg-rose-50 md:text-rose-600'
                    }`}>
@@ -253,8 +303,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, onAddEvent }) => {
                      </div>
                    </div>
                  ))}
-                 {dayEvents.length > 3 && (
-                   <div className="hidden md:block text-[9px] text-slate-400 font-bold px-1">+{dayEvents.length - 3} more</div>
+                 {dayEvents.length > (isImportant ? 2 : 3) && (
+                   <div className={`hidden md:block text-[9px] font-bold px-1 ${isImportant ? 'text-stone-400' : 'text-slate-400'}`}>+{dayEvents.length - (isImportant ? 2 : 3)} more</div>
                  )}
                </div>
              </div>

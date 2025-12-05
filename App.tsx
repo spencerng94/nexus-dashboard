@@ -352,6 +352,12 @@ export default function App() {
     storageService.saveImportantDates(updated);
   };
 
+  const handleEditImportantDate = (date: ImportantDate) => {
+    const updated = importantDates.map(d => d.id === date.id ? date : d);
+    setImportantDates(updated);
+    storageService.saveImportantDates(updated);
+  };
+
   const handleDeleteImportantDate = (id: string) => {
     const updated = importantDates.filter(d => d.id !== id);
     setImportantDates(updated);
@@ -400,6 +406,7 @@ export default function App() {
             // New Props
             importantDates={importantDates}
             onAddImportantDate={handleAddImportantDate}
+            onEditImportantDate={handleEditImportantDate}
             onDeleteImportantDate={handleDeleteImportantDate}
             weather={weather}
           />
@@ -495,7 +502,7 @@ export default function App() {
           </div>
         )}
         {activeTab === 'calendar' && (
-          <CalendarView events={events} onAddEvent={handleAddEvent} />
+          <CalendarView events={events} importantDates={importantDates} onAddEvent={handleAddEvent} />
         )}
         {activeTab === 'habits' && (
           <div className="max-w-[1600px] mx-auto">
