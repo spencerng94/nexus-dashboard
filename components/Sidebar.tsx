@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { LayoutDashboard, Calendar as CalendarIcon, Target, Dumbbell, User as UserIcon, LogOut, Info } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Target, Dumbbell, User as UserIcon, LogOut, Info, NotebookPen } from 'lucide-react';
 import { User } from '../types';
 
 interface SidebarProps {
@@ -13,6 +14,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSignOut, onProfileClick }) => {
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Overview' },
+    { id: 'planner', icon: NotebookPen, label: 'Planner' },
     { id: 'calendar', icon: CalendarIcon, label: 'Calendar' },
     { id: 'goals', icon: Target, label: 'Goals' },
     { id: 'habits', icon: Dumbbell, label: 'Habits' },

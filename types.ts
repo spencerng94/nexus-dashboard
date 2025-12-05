@@ -1,3 +1,4 @@
+
 export interface Goal {
   id: string;
   title: string;
@@ -32,6 +33,15 @@ export interface CalendarEvent {
   startTime: number | Date;
   type: string;
   duration: string;
+}
+
+export interface ProposedEvent {
+  id: string;
+  title: string;
+  startTime: string; // HH:MM format (24h)
+  duration: string;
+  type: 'work' | 'personal';
+  description?: string;
 }
 
 export interface ImportantDate {

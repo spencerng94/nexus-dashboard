@@ -20,6 +20,13 @@ const getProgressBarGradient = (colorClass: string) => {
   return `bg-gradient-to-r from-${color}-500 to-${color}-400`;
 };
 
+// Helper to generate consistent icon styles (Light background, darker text)
+const getIconStyles = (colorClass: string) => {
+  const match = colorClass.match(/bg-(\w+)-500/);
+  const color = match ? match[1] : 'slate';
+  return `bg-${color}-100 text-${color}-600`;
+};
+
 export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, onDecrement, onDelete, onEdit }) => (
   <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-xl shadow-slate-200/40 lg:hover:shadow-2xl lg:hover:shadow-slate-200/50 lg:hover:-translate-y-1 transition-all duration-300 group relative">
     <div className="absolute top-6 right-6 flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300">
@@ -41,7 +48,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({ goal, onIncrement, o
 
     <div className="flex justify-between items-start mb-6 pr-20">
       <div className="flex gap-4 items-center">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${goal.color.replace('text-', 'bg-').replace('bg-', 'bg-opacity-10 ')}`}>
+        <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-2xl ${getIconStyles(goal.color)}`}>
           {goal.icon || '🎯'}
         </div>
         <div>

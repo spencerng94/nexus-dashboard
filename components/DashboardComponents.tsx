@@ -3,17 +3,28 @@ import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, 
 import { Goal, CalendarEvent, ImportantDate } from '../types';
 import { ProgressCard } from './GoalComponents';
 
-export const DailyBriefingWidget: React.FC<{ briefing: string, isGenerating: boolean }> = ({ briefing, isGenerating }) => (
+export const DailyBriefingWidget: React.FC<{ briefing: string, isGenerating: boolean, onRefresh: () => void }> = ({ briefing, isGenerating, onRefresh }) => (
   <div className="w-full bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 shadow-xl shadow-emerald-100/40 relative overflow-hidden group">
     <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-emerald-100/40 to-teal-100/40 rounded-full blur-3xl opacity-50 -mr-20 -mt-20 lg:group-hover:scale-110 transition-transform duration-1000" />
     <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-stone-100/40 to-green-100/40 rounded-full blur-3xl opacity-50 -ml-20 -mb-20" />
     
     <div className="relative z-10 max-w-4xl">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
-          <Sparkles size={20} />
+      <div className="flex justify-between items-start mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
+            <Sparkles size={20} />
+          </div>
+          <span className="text-sm font-bold text-emerald-900 tracking-wider uppercase opacity-60">Plan for Today</span>
         </div>
-        <span className="text-sm font-bold text-emerald-900 tracking-wider uppercase opacity-60">Plan for Today</span>
+        
+        <button 
+          onClick={onRefresh}
+          disabled={isGenerating}
+          className="p-2 bg-white/50 lg:hover:bg-white text-emerald-600 rounded-xl transition-all shadow-sm border border-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Refresh Plan"
+        >
+          <RefreshCw size={18} className={isGenerating ? "animate-spin" : ""} />
+        </button>
       </div>
       
       {isGenerating ? (
@@ -258,17 +269,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
         
-        {/* Right Header Controls: Refresh, Clock, Weather */}
+        {/* Right Header Controls: Clock, Weather */}
         <div className="flex items-start gap-4 self-end md:self-auto">
-           {/* Refresh Button */}
-           <button 
-            onClick={onRefreshBriefing}
-            className="mt-1.5 p-3 bg-white lg:hover:bg-slate-50 text-slate-400 lg:hover:text-emerald-500 rounded-2xl transition-all shadow-sm border border-slate-100"
-            title="Refresh Plan"
-           >
-             <RefreshCw size={20} className={isGeneratingBriefing ? "animate-spin" : ""} />
-           </button>
-
            <div className="flex flex-col items-end">
               {/* Clock Widget */}
               <div className="flex flex-col items-end select-none cursor-pointer group mb-1" onClick={() => setIs24Hour(!is24Hour)} title="Toggle 12h/24h">
@@ -320,7 +322,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="flex flex-col gap-8">
         
         {/* ROW 1: AI BRIEFING (Full Width) */}
-        <DailyBriefingWidget briefing={briefing} isGenerating={isGeneratingBriefing} />
+        <DailyBriefingWidget briefing={briefing} isGenerating={isGeneratingBriefing} onRefresh={onRefreshBriefing} />
 
         {/* ROW 2: GOALS (Full Width) */}
         <div className="space-y-6">

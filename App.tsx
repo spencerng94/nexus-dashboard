@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate } from './types';
@@ -12,6 +13,7 @@ import LoginScreen from './components/LoginScreen';
 import ChatWidget from './components/ChatWidget';
 import CalendarView from './components/CalendarView';
 import AboutView from './components/AboutView'; 
+import PlannerView from './components/PlannerView';
 import { DashboardView } from './components/DashboardComponents';
 import { ProgressCard, GoalFormModal, GoalSuggestionCard } from './components/GoalComponents';
 import { HabitCard, HabitFormModal, HabitHistoryModal } from './components/HabitComponents';
@@ -334,6 +336,15 @@ export default function App() {
     }
   };
 
+  // Batch Add Events (For Planner)
+  const handleBatchAddEvents = async (newEvents: Omit<CalendarEvent, 'id'>[]) => {
+     // Loop through and create each one. 
+     // We do this sequentially to ensure order and avoid rate limits on local/google APIs if necessary, though parallel is often fine.
+     for (const evt of newEvents) {
+         await handleAddEvent(evt);
+     }
+  };
+
   // --- IMPORTANT DATES HANDLERS ---
   const handleAddImportantDate = (newDate: Omit<ImportantDate, 'id'>) => {
     const updated = [...importantDates, { ...newDate, id: Date.now().toString() }];
@@ -392,6 +403,12 @@ export default function App() {
             onDeleteImportantDate={handleDeleteImportantDate}
             weather={weather}
           />
+        )}
+        {activeTab === 'planner' && (
+            <PlannerView 
+                existingEvents={events} 
+                onAddEvents={handleBatchAddEvents} 
+            />
         )}
         {activeTab === 'goals' && (
           <div className="max-w-[1600px] mx-auto">

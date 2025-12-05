@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, FunctionDeclaration, Type, Tool } from "@google/genai";
-import { Goal, CalendarEvent, Habit, DashboardState } from '../types';
+import { Goal, CalendarEvent, Habit, DashboardState, ProposedEvent } from '../types';
 import { googleService } from './google';
 
 // Lazy initialization of the AI client
@@ -91,28 +92,23 @@ export const generateDailyBriefing = async (
     });
 
     const prompt = `
-      Act as a high-end personal concierge. Create a "Plan for Today" for me.
-      
-      Today's Schedule: ${JSON.stringify(todaysEvents)}
-      Current Goals: ${JSON.stringify(goals.map(g => ({ title: g.title, progress: g.progress, target: g.target })))}
-      Habits to maintain: ${JSON.stringify(habits.map(h => h.title))}
-      
-      Output format: HTML string (no markdown code blocks, just raw HTML tags).
-      
-      Styling Rules (Apply these classes exactly):
-      1. Wrap ALL times (e.g. "10:00 AM", "Morning"), dates, time-references, AND specific event names/titles in this span:
-         <span class="text-emerald-600 font-semibold">...</span>
-      
-      2. Do NOT use background colors, pills, or underlines. Just colored text.
+      Act as an elite productivity strategist and personal chief of staff. Analyze my schedule, goals, and habits to generate a high-impact "Plan for Today".
 
-      Structure:
-      - Start with a <p class="mb-4 text-xl md:text-2xl leading-relaxed text-slate-700"> containing a short, elegant greeting.
-      - Follow with a <ul class="list-disc pl-6 space-y-2 mb-4 marker:text-emerald-400"> containing 2-3 clear, actionable focus points for the day.
-      - Each <li> should have class="text-base md:text-lg text-slate-600 pl-1 leading-relaxed".
-      - Do NOT use emojis (like ✅) at the start of list items. Use the standard bullet point.
-      - End with a <p class="text-slate-500 italic"> containing a thoughtful closing.
-      
-      Keep it concise, encouraging, and professional.
+      CONTEXT:
+      - Today's Schedule: ${JSON.stringify(todaysEvents)}
+      - Active Goals: ${JSON.stringify(goals.map(g => ({ title: g.title, category: g.category, progress: g.progress, target: g.target })))}
+      - Habits: ${JSON.stringify(habits.map(h => ({ title: h.title, category: h.category })))}
+
+      INSTRUCTIONS:
+      1. Output raw HTML only. No Markdown block markers.
+      2. Structure the content into clear, productivity-focused categories (e.g., "⚡ WORK FOCUS", "💪 HEALTH & ROUTINE", "🎯 PERSONAL GROWTH"). Derive these based on the category data provided.
+      3. Opening: A concise, motivating 1-sentence summary of the day's potential (<p class="text-xl md:text-2xl font-medium text-slate-800 mb-6 leading-tight">).
+      4. Categories:
+         - Header: <h4 class="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3 mt-6 border-b border-emerald-100 pb-1">CATEGORY NAME</h4>
+         - List: <ul class="space-y-3">
+         - Items: <li class="text-sm md:text-base text-slate-600 flex items-start gap-2"><span class="text-emerald-400 mt-1.5 text-[10px] scale-75">●</span> <span>Content here...</span></li>
+      5. Highlights: Wrap specific times, event titles, and key numbers in <span class="text-emerald-700 font-bold">...</span>.
+      6. Content Style: Be specific and actionable. Connect habits to goals. Identify the "one big thing" if possible.
     `;
 
     const response = await ai.models.generateContent({
@@ -295,6 +291,51 @@ export const generateSuggestions = async (
     return JSON.parse(cleanText);
   } catch (error) {
     console.error("Suggestion Error:", error);
+    return [];
+  }
+};
+
+export const generateSchedulePlan = async (
+  prompt: string,
+  dateContext: 'today' | 'tomorrow',
+  existingEvents: CalendarEvent[]
+): Promise<ProposedEvent[]> => {
+  const ai = getAIClient();
+  if (!ai) return [];
+
+  try {
+    const systemPrompt = `
+      You are an expert scheduler.
+      Based on the user's request and existing schedule, create a list of NEW events to add.
+      
+      Context:
+      - Planning for: ${dateContext}
+      - Existing Events: ${JSON.stringify(existingEvents)}
+      
+      Constraints:
+      - Do NOT overlap with existing events unless explicitly asked.
+      - Return a JSON Array of objects.
+      - Keys: "title", "startTime" (HH:MM 24h format), "duration" (e.g. "1h", "30m"), "type" ("work" or "personal").
+      - NO markdown formatting. Just the raw JSON array.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { systemInstruction: systemPrompt }
+    });
+
+    const text = response.text || "[]";
+    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanText);
+    
+    // Client-side mapping to ensure ID is present
+    return parsed.map((e: any) => ({
+      ...e,
+      id: Date.now().toString() + Math.random().toString()
+    }));
+  } catch (error) {
+    console.error("Planner Error:", error);
     return [];
   }
 };
