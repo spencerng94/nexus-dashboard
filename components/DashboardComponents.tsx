@@ -8,7 +8,7 @@ export const DailyBriefingWidget: React.FC<{ briefing: string, isGenerating: boo
     <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-emerald-100/40 to-teal-100/40 rounded-full blur-3xl opacity-50 -mr-20 -mt-20 lg:group-hover:scale-110 transition-transform duration-1000" />
     <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-stone-100/40 to-green-100/40 rounded-full blur-3xl opacity-50 -ml-20 -mb-20" />
     
-    <div className="relative z-10 max-w-4xl">
+    <div className="relative z-10 w-full">
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
@@ -263,7 +263,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
              <LayoutDashboard className="text-white w-6 h-6 md:w-8 md:h-8" />
           </div>
           <div>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-2 text-emerald-500">{dateString}</p>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">{greeting}, {displayName}</h1>
             <p className="text-emerald-500 font-bold text-sm mt-2 uppercase tracking-wider">Focus on what matters most</p>
           </div>
