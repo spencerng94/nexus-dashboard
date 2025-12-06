@@ -1,3 +1,5 @@
+
+
 export interface Subgoal {
   id: string;
   title: string;
@@ -38,10 +40,13 @@ export interface HabitLog {
 export interface CalendarEvent {
   id: string | number;
   title: string;
-  time: string;
+  time: string; // Display string (legacy support)
   startTime: number | Date;
+  endTime?: number | Date; // Added endTime
   type: string;
   duration: string;
+  color?: string;
+  location?: string;
 }
 
 export interface ProposedEvent {

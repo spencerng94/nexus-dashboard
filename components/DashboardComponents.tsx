@@ -29,11 +29,16 @@ export const DailyBriefingWidget: React.FC<{
       
       <div className="relative z-10 w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-500 dark:text-emerald-400">
-              <Sparkles size={20} />
+          <div className="shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-500 dark:text-emerald-400">
+                <Sparkles size={20} />
+              </div>
+              <span className="text-sm font-bold text-emerald-900 dark:text-emerald-400 tracking-wider uppercase opacity-60">Plan for Today</span>
             </div>
-            <span className="text-sm font-bold text-emerald-900 dark:text-emerald-400 tracking-wider uppercase opacity-60">Plan for Today</span>
+            <p className="text-[10px] md:text-[11px] text-slate-400 dark:text-stone-500 font-medium mt-1 ml-1">
+              Select a plan style to create an AI generated plan for your day
+            </p>
           </div>
           
           <div className="w-full md:w-auto min-w-0 bg-white/40 dark:bg-stone-800/50 p-1 rounded-xl border border-white/40 dark:border-stone-700/50 shadow-sm overflow-hidden">
@@ -89,20 +94,27 @@ export const DailyBriefingWidget: React.FC<{
   );
 };
 
-const EventRow: React.FC<{ event: CalendarEvent }> = ({ event }) => {
-  // Robustly handle time strings that might not have a space (e.g. "14:00" vs "2:00 PM")
-  const timeParts = event.time ? event.time.split(' ') : ['--:--', ''];
-  const mainTime = timeParts[0];
-  const period = timeParts.length > 1 ? timeParts[1] : '';
+const EventRow: React.FC<{ event: CalendarEvent; onClick?: (event: CalendarEvent) => void }> = ({ event, onClick }) => {
+  // Format times directly from timestamps if available
+  const startTime = new Date(event.startTime);
+  const startStr = startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  
+  let endStr = "";
+  if (event.endTime) {
+      endStr = new Date(event.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
 
   return (
-    <div className="flex items-center py-4 px-2 lg:hover:bg-white/10 rounded-2xl transition-all duration-300 cursor-pointer group -mx-2 border border-transparent lg:hover:border-white/5">
-      <div className="w-20 flex flex-col items-center justify-center shrink-0">
-        <span className="text-sm font-bold text-blue-200">{mainTime}</span>
-        {period && <span className="text-xs font-bold text-stone-400 uppercase tracking-wide">{period}</span>}
+    <div 
+      onClick={() => onClick && onClick(event)}
+      className="flex items-center py-4 px-2 lg:hover:bg-white/10 rounded-2xl transition-all duration-300 cursor-pointer group -mx-2 border border-transparent lg:hover:border-white/5"
+    >
+      <div className="w-24 flex flex-col items-end justify-center shrink-0 pr-2">
+        <span className="text-sm font-bold text-blue-200 leading-tight">{startStr}</span>
+        {endStr && <span className="text-xs font-bold text-stone-500 leading-tight">{endStr}</span>}
       </div>
       <div className="w-px h-8 bg-white/10 mx-2" />
-      <div className="flex-1 px-4 min-w-0">
+      <div className="flex-1 px-2 min-w-0">
         <h4 className="font-bold text-stone-100 text-sm md:text-[15px] truncate">{event.title}</h4>
         <div className="flex items-center gap-3 text-xs font-medium text-stone-400 mt-1">
           <span className="flex items-center gap-1"><Clock size={12} /> {event.duration}</span>
@@ -274,6 +286,8 @@ interface DashboardViewProps {
   onViewHabitHistory: (habit: Habit, view: 'calendar' | 'list') => void;
   // New: Subgoals
   onToggleSubgoal: (goalId: string, subgoalId: string) => void;
+  // New: Events
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ 
@@ -281,7 +295,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName, syncError,
   importantDates, onAddImportantDate, onEditImportantDate, onDeleteImportantDate, weather,
   userConfig, onUpdateConfig, habitLogs, onToggleHabit, onUpdateHabitNote, onDeleteHabit, onEditHabit, onViewHabitHistory,
-  onToggleSubgoal
+  onToggleSubgoal, onEventClick
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [is24Hour, setIs24Hour] = useState(false);
@@ -453,7 +467,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div className="space-y-1 flex-1">
             {todaysEvents.length > 0 ? (
-                todaysEvents.map(event => <EventRow key={event.id} event={event} />)
+                todaysEvents.map(event => <EventRow key={event.id} event={event} onClick={onEventClick} />)
             ) : (
                 <div className="text-center py-12 text-stone-500 italic text-sm">No events scheduled today.</div>
             )}
@@ -587,7 +601,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white tracking-tight">{greeting}, {displayName}</h1>
-            <p className="text-emerald-500 dark:text-emerald-400 font-bold text-sm mt-2 uppercase tracking-wider">Focus on what matters most</p>
+            <p className="text-emerald-500 dark:text-emerald-400 font-bold text-sm mt-2 uppercase tracking-wider">YOUR PRIORITIES, ORGANIZED WITH AI</p>
           </div>
         </div>
         
@@ -602,7 +616,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               {/* Date below Time */}
-              <p className="text-slate-400 dark:text-stone-500 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
+              <p className="text-emerald-500 dark:text-emerald-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
               
               {/* Weather Below Date */}
               <div className="flex items-center gap-2 text-slate-600 dark:text-stone-400">

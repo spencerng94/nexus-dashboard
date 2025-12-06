@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Pencil, Trash2, Plus, Minus, X, Save, Sparkles, Loader2, ArrowRight, Search, Link as LinkIcon, Flame, CheckSquare, Square } from 'lucide-react';
 import { Goal, Habit, Subgoal } from '../types';
@@ -398,7 +399,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
                 </div>
 
                 {/* Category & Target */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Category</label>
                         <input
@@ -436,7 +437,7 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
                             type="text"
                             value={formData.unit}
                             onChange={e => setFormData({...formData, unit: e.target.value})}
-                            className="flex-1 bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-3 py-4 font-medium text-slate-700 dark:text-stone-200 text-base md:text-sm"
+                            className="flex-1 min-w-0 bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-3 py-4 font-medium text-slate-700 dark:text-stone-200 text-base md:text-sm"
                             placeholder="pts"
                           />
                         </div>

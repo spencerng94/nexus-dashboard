@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Pencil, Trash2, Check, AlignLeft, List, CalendarDays, X, Save, CornerDownLeft, Sparkles, Loader2, ChevronLeft, ChevronRight, Plus, MoreHorizontal, History, Flame, MessageSquarePlus, Link as LinkIcon, Search } from 'lucide-react';
 import { Habit, HabitLog, Goal } from '../types';
@@ -478,7 +479,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({
                 </div>
 
                 {/* Category & Target Row */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Category</label>
                         <input
@@ -518,7 +519,7 @@ export const HabitFormModal: React.FC<HabitFormModalProps> = ({
                                 type="text"
                                 value={formData.unit}
                                 onChange={e => setFormData({...formData, unit: e.target.value})}
-                                className="flex-1 bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-3 py-3 font-medium text-slate-700 dark:text-stone-200 text-base md:text-sm"
+                                className="flex-1 min-w-0 bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-3 py-3 font-medium text-slate-700 dark:text-stone-200 text-base md:text-sm"
                                 placeholder="mins"
                             />
                         </div>

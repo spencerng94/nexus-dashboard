@@ -24,9 +24,33 @@ export const INITIAL_HABITS: Habit[] = [
 ];
 
 export const INITIAL_EVENTS: CalendarEvent[] = [
-  { id: 1, title: "Team Standup", time: "10:00 AM", startTime: new Date().setHours(10,0,0,0), type: "work", duration: "30m" },
-  { id: 2, title: "Lunch with Sarah", time: "12:30 PM", startTime: new Date().setHours(12,30,0,0), type: "personal", duration: "1h" },
-  { id: 3, title: "Project Review", time: "03:00 PM", startTime: new Date().setHours(15,0,0,0), type: "work", duration: "1h" },
+  { 
+    id: 1, 
+    title: "Team Standup", 
+    time: "10:00 AM", 
+    startTime: new Date().setHours(10,0,0,0), 
+    endTime: new Date().setHours(10,30,0,0),
+    type: "work", 
+    duration: "30m" 
+  },
+  { 
+    id: 2, 
+    title: "Lunch with Sarah", 
+    time: "12:30 PM", 
+    startTime: new Date().setHours(12,30,0,0), 
+    endTime: new Date().setHours(13,30,0,0),
+    type: "personal", 
+    duration: "1h" 
+  },
+  { 
+    id: 3, 
+    title: "Project Review", 
+    time: "03:00 PM", 
+    startTime: new Date().setHours(15,0,0,0), 
+    endTime: new Date().setHours(16,0,0,0),
+    type: "work", 
+    duration: "1h" 
+  },
 ];
 
 export const INITIAL_IMPORTANT_DATES: ImportantDate[] = [

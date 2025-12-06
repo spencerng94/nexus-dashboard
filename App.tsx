@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings, ArrowUp, ArrowDown, Eye, EyeOff, LayoutDashboard, Moon, Sun, Clock } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate, DashboardConfig, BriefingStyle, Theme } from './types';
@@ -11,7 +12,7 @@ import { generateDailyBriefing, generateSuggestions } from './services/gemini';
 import Sidebar from './components/Sidebar';
 import LoginScreen from './components/LoginScreen';
 import ChatWidget from './components/ChatWidget';
-import CalendarView from './components/CalendarView';
+import CalendarView, { EventFormModal } from './components/CalendarView';
 import AboutView from './components/AboutView'; 
 import PlannerView from './components/PlannerView';
 import { DashboardView, CategoryFilter } from './components/DashboardComponents';
@@ -189,6 +190,10 @@ export default function App() {
   const [habitDefaultValues, setHabitDefaultValues] = useState<{title?: string, category?: string, icon?: string} | undefined>(undefined);
   const [viewingHabitHistory, setViewingHabitHistory] = useState<Habit | null>(null);
   const [historyViewMode, setHistoryViewMode] = useState<'calendar' | 'list'>('calendar');
+  
+  // Dashboard Event Editing
+  const [dashboardEvent, setDashboardEvent] = useState<CalendarEvent | null>(null);
+  const [isDashboardEventModalOpen, setIsDashboardEventModalOpen] = useState(false);
 
   // Profile Modal State
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -669,6 +674,59 @@ export default function App() {
     }
   };
 
+  const handleEditEvent = async (updatedEvent: CalendarEvent) => {
+    const newEvents = events.map(e => e.id === updatedEvent.id ? updatedEvent : e);
+    setEvents(newEvents);
+    
+    if (user?.accessToken && !user.isGuest) {
+      try {
+        const dStr = updatedEvent.duration;
+        let durationMinutes = 60;
+        if (dStr === 'All Day') {
+            durationMinutes = 1440;
+        } else {
+            const hMatch = dStr.match(/(\d+)h/);
+            const mMatch = dStr.match(/(\d+)m/);
+            let mins = 0;
+            if (hMatch) mins += parseInt(hMatch[1]) * 60;
+            if (mMatch) mins += parseInt(mMatch[1]);
+            if (mins > 0) durationMinutes = mins;
+        }
+        
+        const startTime = new Date(updatedEvent.startTime);
+        const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+        
+        const updates: any = {
+           summary: updatedEvent.title,
+           start: { dateTime: startTime.toISOString() },
+           end: { dateTime: endTime.toISOString() },
+           location: updatedEvent.location
+        };
+
+        await googleService.updateEvent(user.accessToken, updatedEvent.id as string, updates);
+      } catch (e) {
+        console.error("Failed to update Google Event", e);
+      }
+    } else {
+       storageService.saveEvents(newEvents);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    const newEvents = events.filter(e => e.id !== eventId);
+    setEvents(newEvents);
+    
+    if (user?.accessToken && !user.isGuest) {
+       try {
+         await googleService.deleteEvent(user.accessToken, eventId);
+       } catch (e) {
+         console.error("Failed to delete Google Event", e);
+       }
+    } else {
+       storageService.saveEvents(newEvents);
+    }
+  };
+
   const handleBatchAddEvents = async (newEvents: Omit<CalendarEvent, 'id'>[]) => {
      for (const evt of newEvents) {
          await handleAddEvent(evt);
@@ -829,6 +887,10 @@ export default function App() {
             onEditHabit={(habit) => { setEditingHabit(habit); setIsHabitModalOpen(true); }}
             onViewHabitHistory={openHabitHistory}
             onToggleSubgoal={handleToggleSubgoal}
+            onEventClick={(event) => {
+                setDashboardEvent(event);
+                setIsDashboardEventModalOpen(true);
+            }}
           />
         )}
         {activeTab === 'planner' && (
@@ -914,6 +976,8 @@ export default function App() {
             events={events} 
             importantDates={importantDates} 
             onAddEvent={handleAddEvent}
+            onEditEvent={handleEditEvent}
+            onDeleteEvent={handleDeleteEvent}
             habits={habits}
             habitLogs={habitLogs}
           />
@@ -1216,6 +1280,15 @@ export default function App() {
         initialView={historyViewMode}
         onUpdateNote={handleUpdateHabitNote}
         onDeleteLog={handleDeleteHabitLog}
+      />
+
+      <EventFormModal
+        isOpen={isDashboardEventModalOpen}
+        onClose={() => setIsDashboardEventModalOpen(false)}
+        onSave={handleAddEvent}
+        onUpdate={handleEditEvent}
+        onDelete={handleDeleteEvent}
+        editingEvent={dashboardEvent}
       />
 
       {user && (

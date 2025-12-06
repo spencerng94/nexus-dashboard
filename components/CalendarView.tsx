@@ -1,63 +1,141 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { CalendarEvent, ImportantDate, Habit, HabitLog } from '../types';
-import { Plus, X, Clock, Save, Calendar as CalendarIcon, Briefcase, User, ChevronLeft, ChevronRight, AlignJustify, Grid, Star, Dumbbell } from 'lucide-react';
+import { Plus, X, Clock, Save, Calendar as CalendarIcon, Briefcase, User, ChevronLeft, ChevronRight, AlignJustify, Grid, Star, Dumbbell, Trash2, MapPin } from 'lucide-react';
 
 interface CalendarViewProps {
   events: CalendarEvent[];
   importantDates: ImportantDate[];
   onAddEvent: (event: Omit<CalendarEvent, 'id'>) => void;
+  onEditEvent: (event: CalendarEvent) => void;
+  onDeleteEvent: (id: string) => void;
   // New props for Habits
   habits?: Habit[];
   habitLogs?: Record<string, HabitLog>;
 }
 
-interface EventFormModalProps {
+export interface EventFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (event: Omit<CalendarEvent, 'id'>) => void;
+  onUpdate: (event: CalendarEvent) => void;
+  onDelete: (id: string) => void;
+  editingEvent?: CalendarEvent | null;
 }
 
-const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave }) => {
+export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave, onUpdate, onDelete, editingEvent }) => {
   const [formData, setFormData] = useState({
     title: '',
     date: new Date().toISOString().split('T')[0],
-    time: '09:00',
+    startTime: '09:00',
+    endTime: '10:00',
     type: 'work',
-    duration: '1h'
+    location: ''
   });
+
+  useEffect(() => {
+    if (editingEvent) {
+      const start = new Date(editingEvent.startTime);
+      const end = editingEvent.endTime ? new Date(editingEvent.endTime) : new Date(editingEvent.startTime + 3600000); // Default 1h if missing
+      
+      const year = start.getFullYear();
+      const month = String(start.getMonth() + 1).padStart(2, '0');
+      const day = String(start.getDate()).padStart(2, '0');
+      
+      const sHours = String(start.getHours()).padStart(2, '0');
+      const sMins = String(start.getMinutes()).padStart(2, '0');
+
+      const eHours = String(end.getHours()).padStart(2, '0');
+      const eMins = String(end.getMinutes()).padStart(2, '0');
+
+      setFormData({
+        title: editingEvent.title,
+        date: `${year}-${month}-${day}`,
+        startTime: `${sHours}:${sMins}`,
+        endTime: `${eHours}:${eMins}`,
+        type: editingEvent.type || 'work',
+        location: editingEvent.location || ''
+      });
+    } else {
+      setFormData({
+        title: '',
+        date: new Date().toISOString().split('T')[0],
+        startTime: '09:00',
+        endTime: '10:00',
+        type: 'work',
+        location: ''
+      });
+    }
+  }, [editingEvent, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Construct Date object for startTime
+    // Construct Date objects
     const [year, month, day] = formData.date.split('-').map(Number);
-    const [hours, minutes] = formData.time.split(':').map(Number);
-    const startDate = new Date(year, month - 1, day, hours, minutes);
+    
+    const [sHours, sMinutes] = formData.startTime.split(':').map(Number);
+    const startDate = new Date(year, month - 1, day, sHours, sMinutes);
 
-    // Format display time
+    const [eHours, eMinutes] = formData.endTime.split(':').map(Number);
+    const endDate = new Date(year, month - 1, day, eHours, eMinutes);
+
+    // Basic Validation: End must be after Start
+    if (endDate <= startDate) {
+      alert("End time must be after start time");
+      return;
+    }
+
+    // Format display time (start)
     const displayTime = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    onSave({
+    // Calculate Duration String
+    const diffMs = endDate.getTime() - startDate.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const h = Math.floor(diffMins / 60);
+    const m = diffMins % 60;
+    
+    let durationStr = "";
+    if (h > 0) durationStr += `${h}h`;
+    if (m > 0) durationStr += ` ${m}m`;
+    if (durationStr === "") durationStr = "0m";
+
+    const eventData = {
       title: formData.title,
       startTime: startDate.getTime(),
+      endTime: endDate.getTime(),
       time: displayTime,
       type: formData.type,
-      duration: formData.duration
-    });
+      duration: durationStr.trim(),
+      location: formData.location
+    };
+
+    if (editingEvent) {
+      onUpdate({ ...eventData, id: editingEvent.id, color: editingEvent.color });
+    } else {
+      onSave(eventData);
+    }
     
     onClose();
   };
 
+  const handleDelete = () => {
+    if (editingEvent) {
+      onDelete(editingEvent.id.toString());
+      onClose();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
-      <div className="bg-white dark:bg-stone-900 rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 dark:border-stone-800 animate-in fade-in zoom-in duration-300">
+      <div className="bg-white dark:bg-stone-900 rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 dark:border-stone-800 animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">New Event</h3>
-            <p className="text-slate-500 dark:text-stone-400 text-sm">Add to your schedule</p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{editingEvent ? 'Edit Event' : 'New Event'}</h3>
+            <p className="text-slate-500 dark:text-stone-400 text-sm">{editingEvent ? 'Update details' : 'Add to your schedule'}</p>
           </div>
           <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-800 rounded-full transition-colors text-slate-400 dark:text-stone-500 lg:hover:text-slate-600 dark:lg:hover:text-stone-300">
             <X size={24} />
@@ -78,83 +156,102 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Date</label>
+            <div className="relative">
+              <input
+                required
+                type="date"
+                value={formData.date}
+                onChange={e => setFormData({...formData, date: e.target.value})}
+                className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 dark:text-stone-200"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
              <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Date</label>
-                <div className="relative">
-                  <input
-                    required
-                    type="date"
-                    value={formData.date}
-                    onChange={e => setFormData({...formData, date: e.target.value})}
-                    className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 dark:text-stone-200"
-                  />
-                </div>
-             </div>
-             <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Time</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Start Time</label>
                 <div className="relative">
                    <input
                     required
                     type="time"
-                    value={formData.time}
-                    onChange={e => setFormData({...formData, time: e.target.value})}
+                    value={formData.startTime}
+                    onChange={e => setFormData({...formData, startTime: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 dark:text-stone-200"
+                  />
+                </div>
+             </div>
+             <div>
+                <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">End Time</label>
+                <div className="relative">
+                   <input
+                    required
+                    type="time"
+                    value={formData.endTime}
+                    onChange={e => setFormData({...formData, endTime: e.target.value})}
                     className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 dark:text-stone-200"
                   />
                 </div>
              </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Type</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFormData({...formData, type: 'work'})}
-                  className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${
-                    formData.type === 'work' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20' : 'bg-slate-50 dark:bg-stone-800 text-slate-400 dark:text-stone-500 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-700'
-                  }`}
-                >
-                  <Briefcase size={16} /> Work
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({...formData, type: 'personal'})}
-                  className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${
-                    formData.type === 'personal' ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 ring-2 ring-rose-500/20' : 'bg-slate-50 dark:bg-stone-800 text-slate-400 dark:text-stone-500 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-700'
-                  }`}
-                >
-                  <User size={16} /> Personal
-                </button>
-              </div>
-            </div>
-            
-            <div>
-               <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Duration</label>
-               <select 
-                 value={formData.duration}
-                 onChange={e => setFormData({...formData, duration: e.target.value})}
-                 className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 dark:text-stone-200 appearance-none"
-               >
-                 <option value="15m">15m</option>
-                 <option value="30m">30m</option>
-                 <option value="45m">45m</option>
-                 <option value="1h">1h</option>
-                 <option value="1.5h">1.5h</option>
-                 <option value="2h">2h</option>
-                 <option value="All Day">All Day</option>
-               </select>
-            </div>
+          <div>
+             <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Location</label>
+             <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={e => setFormData({...formData, location: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl pl-11 pr-5 py-4 font-medium text-slate-700 dark:text-stone-200 placeholder:text-slate-400"
+                  placeholder="e.g. Conference Room A or Zoom"
+                />
+             </div>
           </div>
 
-          <button 
-            type="submit" 
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg py-4 rounded-2xl mt-4 lg:hover:shadow-lg lg:hover:shadow-emerald-500/20 lg:hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
-          >
-            <Save size={20} />
-            Save Event
-          </button>
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Type</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, type: 'work'})}
+                className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${
+                  formData.type === 'work' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20' : 'bg-slate-50 dark:bg-stone-800 text-slate-400 dark:text-stone-500 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-700'
+                }`}
+              >
+                <Briefcase size={16} /> Work
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({...formData, type: 'personal'})}
+                className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${
+                  formData.type === 'personal' ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 ring-2 ring-rose-500/20' : 'bg-slate-50 dark:bg-stone-800 text-slate-400 dark:text-stone-500 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-700'
+                }`}
+              >
+                <User size={16} /> Personal
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-4">
+             {editingEvent && (
+                 <button
+                   type="button"
+                   onClick={handleDelete}
+                   className="px-5 py-4 bg-rose-50 dark:bg-rose-900/20 text-rose-500 dark:text-rose-400 rounded-2xl font-bold lg:hover:bg-rose-100 dark:lg:hover:bg-rose-900/40 transition-all flex items-center justify-center"
+                 >
+                   <Trash2 size={20} />
+                 </button>
+             )}
+             <button 
+                type="submit" 
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg py-4 rounded-2xl lg:hover:shadow-lg lg:hover:shadow-emerald-500/20 lg:hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+             >
+                <Save size={20} />
+                {editingEvent ? 'Update Event' : 'Save Event'}
+             </button>
+          </div>
         </form>
       </div>
     </div>
@@ -193,10 +290,13 @@ const CurrentTimeLine: React.FC<{ startHour: number, rowHeight: number }> = ({ s
   );
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onAddEvent, habits = [], habitLogs = {} }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onAddEvent, onEditEvent, onDeleteEvent, habits = [], habitLogs = {} }) => {
   const [view, setView] = useState<'month'|'week'|'day'>('month'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Edit State
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   
   // Toggle for showing habits
   const [showHabits, setShowHabits] = useState(false);
@@ -213,6 +313,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
     setCurrentDate(new Date());
   };
 
+  const handleEventClick = (e: React.MouseEvent, event: CalendarEvent) => {
+      e.stopPropagation();
+      setEditingEvent(event);
+      setIsModalOpen(true);
+  };
+
+  const openNewEventModal = () => {
+      setEditingEvent(null);
+      setIsModalOpen(true);
+  };
+
   const getWeekRangeString = (date: Date) => {
     const start = new Date(date);
     start.setDate(date.getDate() - date.getDay()); 
@@ -221,6 +332,57 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
 
     const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
     return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
+  };
+
+  // Helper to generate dynamic styles from Google Calendar color
+  const getEventStyle = (event: CalendarEvent, isWeekView = false) => {
+      // If no color from google, use default based on type
+      if (!event.color) {
+          if (event.type === 'work') {
+              // Work default (blue-ish)
+              return isWeekView ? {
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)', // blue-500 10%
+                  borderColor: 'rgba(96, 165, 250, 1)', // blue-400
+                  color: 'rgba(29, 78, 216, 1)', // blue-700
+                  borderLeftWidth: '4px',
+                  borderStyle: 'solid'
+              } : {
+                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                  color: 'rgba(30, 64, 175, 1)'
+              };
+          } else {
+             // Personal default (rose-ish)
+             return isWeekView ? {
+                  backgroundColor: 'rgba(244, 63, 94, 0.1)', // rose-500 10%
+                  borderColor: 'rgba(251, 113, 133, 1)', // rose-400
+                  color: 'rgba(190, 18, 60, 1)', // rose-700
+                  borderLeftWidth: '4px',
+                  borderStyle: 'solid'
+              } : {
+                  backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                  color: 'rgba(159, 18, 57, 1)'
+              };
+          }
+      }
+
+      // We have a hex color from Google
+      // We want to mimic the light background style.
+      // background: color with ~15% opacity
+      // border/text: solid color
+      
+      // Since we receive hex, we need to handle opacity manually or use CSS variables if possible.
+      // Easiest is to append '26' (approx 15% in hex alpha) or '40' (25%)
+      const bg = event.color + '26'; // 15% opacity hex
+      
+      return {
+          backgroundColor: bg,
+          borderColor: isWeekView ? event.color : undefined,
+          borderLeftColor: event.color,
+          color: event.color,
+          // Specifics for week view vertical bars
+          borderStyle: isWeekView ? 'solid' : undefined,
+          borderLeftWidth: isWeekView ? '4px' : undefined
+      };
   };
   
   const renderMonthView = () => {
@@ -303,7 +465,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                <div className="mt-1 flex-1 min-h-0 relative">
                  {showHabits ? (
                     // --- HABIT VIEW ---
-                    // Added overflow-y-auto and no-scrollbar to allow scrolling if too many habits
                     <div className="flex flex-wrap content-start gap-0.5 md:gap-1 mt-1 h-full overflow-y-auto custom-scrollbar pb-2">
                        {completedHabits.length > 0 ? completedHabits.map(h => (
                            <span key={h.id} className="text-[10px] md:text-sm leading-none select-none hover:scale-125 transition-transform cursor-help shrink-0" title={h.title}>
@@ -318,22 +479,27 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                  ) : (
                     // --- EVENT VIEW ---
                     <div className="flex flex-col h-full space-y-0.5 md:space-y-1 overflow-hidden">
-                        {/* Show Important Date Title at top if important */}
                         {isImportant && (
                             <div className="hidden md:block text-[9px] font-bold text-amber-300 truncate mb-1 shrink-0">
                                 {importantDate?.title}
                             </div>
                         )}
 
-                        {dayEvents.slice(0, isImportant ? 2 : 4).map(e => (
-                        <div key={e.id} className={`h-1.5 md:h-auto w-full md:w-auto rounded-full md:rounded-md shrink-0 ${
-                            e.type === 'work' ? 'bg-blue-400 md:bg-blue-50 dark:md:bg-blue-900/50 md:text-blue-600 dark:md:text-blue-300' : 'bg-rose-400 md:bg-rose-50 dark:md:bg-rose-900/50 md:text-rose-600 dark:md:text-rose-300'
-                        }`}>
-                            <div className="hidden md:block text-[10px] px-1 truncate font-medium">
-                            {e.time} {e.title}
-                            </div>
-                        </div>
-                        ))}
+                        {dayEvents.slice(0, isImportant ? 2 : 4).map(e => {
+                            const dynamicStyle = getEventStyle(e);
+                            return (
+                                <div 
+                                    key={e.id} 
+                                    onClick={(ev) => handleEventClick(ev, e)}
+                                    style={dynamicStyle}
+                                    className="h-1.5 md:h-auto w-full md:w-auto rounded-full md:rounded-md shrink-0 cursor-pointer lg:hover:opacity-80 transition-opacity"
+                                >
+                                    <div className="hidden md:block text-[10px] px-1 truncate font-medium">
+                                    {e.time} {e.title}
+                                    </div>
+                                </div>
+                            );
+                        })}
                         {dayEvents.length > (isImportant ? 2 : 4) && (
                         <div className={`hidden md:block text-[9px] font-bold px-1 shrink-0 ${isImportant ? 'text-stone-400' : 'text-slate-400 dark:text-stone-500'}`}>+{dayEvents.length - (isImportant ? 2 : 4)} more</div>
                         )}
@@ -361,8 +527,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
     return (
       <div className="flex flex-col h-[600px] overflow-hidden bg-white dark:bg-stone-900 rounded-[2rem] border border-slate-100 dark:border-stone-800 shadow-sm w-full">
         {/* Grid Wrapper */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar relative w-full">
-           <div className="min-w-[800px] w-full"> 
+        <div className="flex-1 overflow-y-auto custom-scrollbar overflow-x-hidden relative w-full">
+           <div className="w-full min-w-0"> 
               {/* Header Row */}
               <div className="grid grid-cols-8 border-b border-slate-100 dark:border-stone-800 bg-slate-50/50 dark:bg-stone-800 sticky top-0 z-30">
                 <div className="p-1 md:p-4 text-[10px] md:text-xs font-bold text-slate-400 dark:text-stone-500 uppercase bg-slate-50 dark:bg-stone-800 flex items-center justify-center">Time</div>
@@ -428,20 +594,20 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                           if (e.duration.includes('h')) height = parseInt(e.duration) * 60;
                           if (e.duration.includes('30m')) height = 30;
                           const heightPx = height * (rowHeight / 60);
+                          
+                          const dynamicStyle = getEventStyle(e, true);
 
                           return (
                             <div 
                               key={e.id}
-                              className={`absolute left-0.5 right-0.5 md:left-1 md:right-1 p-0.5 md:p-1.5 rounded-sm md:rounded-lg border-l-2 md:border-l-4 text-[8px] md:text-[10px] leading-tight shadow-sm cursor-pointer lg:hover:scale-105 transition-transform z-10 overflow-hidden ${
-                                 e.type === 'work' 
-                                   ? 'bg-blue-50 dark:bg-blue-900/50 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-200' 
-                                   : 'bg-rose-50 dark:bg-rose-900/50 border-rose-400 dark:border-rose-500 text-rose-700 dark:text-rose-200'
-                              }`}
-                              style={{ top: `${top}px`, height: `${Math.max(heightPx, 20)}px` }}
+                              onClick={(ev) => handleEventClick(ev, e)}
+                              className="absolute left-0.5 right-0.5 md:left-1 md:right-1 p-0.5 md:p-1.5 rounded-sm md:rounded-lg text-[8px] md:text-[10px] leading-tight shadow-sm cursor-pointer lg:hover:scale-105 transition-transform z-10 overflow-hidden"
+                              style={{ top: `${top}px`, height: `${Math.max(heightPx, 20)}px`, ...dynamicStyle }}
                               title={`${e.time} - ${e.title}`}
                             >
                               <div className="font-bold hidden md:block">{e.time}</div>
                               <div className="truncate font-semibold md:font-normal">{e.title}</div>
+                              {e.location && <div className="hidden md:flex items-center gap-0.5 text-[8px] opacity-75 truncate"><MapPin size={8} /> {e.location}</div>}
                             </div>
                           );
                         })}
@@ -480,21 +646,24 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                   {h > 12 ? `${h - 12} PM` : h === 12 ? '12 PM' : `${h} AM`}
                 </div>
                 <div className="flex-1 relative p-1 md:p-2">
-                   {dayEvents.filter(e => new Date(e.startTime).getHours() === h).map(e => (
-                     <div key={e.id} className={`mb-2 p-2 md:p-3 rounded-xl border-l-4 flex justify-between items-center shadow-sm ${
-                        e.type === 'work' 
-                          ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-800 dark:text-blue-200' 
-                          : 'bg-rose-50 dark:bg-rose-900/30 border-rose-500 text-rose-800 dark:text-rose-200'
-                     }`}>
-                       <div className="min-w-0 flex-1">
-                         <span className="font-bold mr-2 text-xs md:text-base">{e.time}</span>
-                         <span className="font-medium text-xs md:text-base truncate">{e.title}</span>
-                       </div>
-                       <span className={`text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide shrink-0 ml-2 ${
-                          e.type === 'work' ? 'bg-blue-200/50 dark:bg-blue-900/50' : 'bg-rose-200/50 dark:bg-rose-900/50'
-                       }`}>{e.type}</span>
-                     </div>
-                   ))}
+                   {dayEvents.filter(e => new Date(e.startTime).getHours() === h).map(e => {
+                     const dynamicStyle = getEventStyle(e);
+                     return (
+                        <div 
+                            key={e.id} 
+                            onClick={(ev) => handleEventClick(ev, e)}
+                            style={dynamicStyle}
+                            className="mb-2 p-2 md:p-3 rounded-xl border-l-4 flex justify-between items-center shadow-sm cursor-pointer lg:hover:scale-[1.01] transition-transform"
+                        >
+                        <div className="min-w-0 flex-1">
+                            <span className="font-bold mr-2 text-xs md:text-base">{e.time}</span>
+                            <span className="font-medium text-xs md:text-base truncate">{e.title}</span>
+                            {e.location && <div className="text-xs opacity-75 flex items-center gap-1 mt-0.5"><MapPin size={10} /> {e.location}</div>}
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide shrink-0 ml-2 bg-white/30">{e.type}</span>
+                        </div>
+                    );
+                   })}
                 </div>
               </div>
             ))}
@@ -570,7 +739,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
            </div>
            
            <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={openNewEventModal}
             className="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-lg shadow-emerald-500/20 lg:hover:scale-105 transition-all flex items-center justify-center gap-2 text-sm mt-2 md:mt-0"
            >
              <Plus size={18} /> <span className="inline">New Event</span>
@@ -611,6 +780,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onSave={onAddEvent} 
+        onUpdate={onEditEvent}
+        onDelete={onDeleteEvent}
+        editingEvent={editingEvent}
       />
     </div>
   );
