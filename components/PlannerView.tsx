@@ -21,20 +21,20 @@ const VisualSchedulePreview: React.FC<VisualSchedulePreviewProps> = ({ targetDat
     const rowHeight = 60; // Compact height
 
     return (
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full">
-            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+        <div className="bg-white dark:bg-stone-900 rounded-[2rem] border border-slate-100 dark:border-stone-800 shadow-sm overflow-hidden flex flex-col h-full">
+            <div className="p-4 border-b border-slate-100 dark:border-stone-800 bg-slate-50 dark:bg-stone-800 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800 dark:text-stone-100 flex items-center gap-2">
                     <CalendarIcon size={18} className="text-emerald-500" />
                     {targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric'})}
                 </h3>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Preview</span>
+                <span className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wider">Preview</span>
             </div>
             
-            <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-white">
+            <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-white dark:bg-stone-900">
                 <div className="relative" style={{ height: hours.length * rowHeight }}>
                     {hours.map(h => (
-                        <div key={h} className="group flex border-b border-slate-50 h-[60px]">
-                            <div className="w-24 border-r border-slate-50 text-[10px] font-bold text-slate-400 flex items-center justify-center bg-slate-50/30">
+                        <div key={h} className="group flex border-b border-slate-50 dark:border-stone-800 h-[60px]">
+                            <div className="w-24 border-r border-slate-50 dark:border-stone-800 text-[10px] font-bold text-slate-400 dark:text-stone-500 flex items-center justify-center bg-slate-50/30 dark:bg-stone-800/30">
                                 {h > 12 ? `${h-12} PM` : h === 12 ? '12 PM' : `${h} AM`}
                             </div>
                             <div className="flex-1 relative">
@@ -67,14 +67,14 @@ const VisualSchedulePreview: React.FC<VisualSchedulePreviewProps> = ({ targetDat
                         const isWork = e.type === 'work';
 
                         const bgClass = isProposed 
-                            ? (isWork ? 'bg-blue-50' : 'bg-rose-50') 
-                            : (isWork ? 'bg-blue-100' : 'bg-rose-100');
+                            ? (isWork ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-rose-50 dark:bg-rose-900/30') 
+                            : (isWork ? 'bg-blue-100 dark:bg-blue-800/60' : 'bg-rose-100 dark:bg-rose-800/60');
                         
                         const borderClass = isProposed
-                            ? (isWork ? 'border-blue-400 border-dashed' : 'border-rose-400 border-dashed')
-                            : (isWork ? 'border-blue-500' : 'border-rose-500');
+                            ? (isWork ? 'border-blue-400 dark:border-blue-400 border-dashed' : 'border-rose-400 dark:border-rose-400 border-dashed')
+                            : (isWork ? 'border-blue-500 dark:border-blue-500' : 'border-rose-500 dark:border-rose-500');
 
-                        const textClass = isWork ? 'text-blue-900' : 'text-rose-900';
+                        const textClass = isWork ? 'text-blue-900 dark:text-blue-100' : 'text-rose-900 dark:text-rose-100';
 
                         return (
                             <div 
@@ -84,7 +84,7 @@ const VisualSchedulePreview: React.FC<VisualSchedulePreviewProps> = ({ targetDat
                             >
                                 <div className="flex justify-between items-start">
                                     <span className="font-bold truncate">{e.time}</span>
-                                    {isProposed && <span className="text-[8px] font-black uppercase tracking-wider bg-white/50 px-1 rounded">New</span>}
+                                    {isProposed && <span className="text-[8px] font-black uppercase tracking-wider bg-white/50 dark:bg-black/30 px-1 rounded">New</span>}
                                 </div>
                                 <div className="font-semibold truncate">{e.title}</div>
                             </div>
@@ -231,22 +231,22 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
             <NotebookPen className="text-white w-5 h-5 md:w-8 md:h-8" />
         </div>
         <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">AI Planner</h1>
-            <p className="text-emerald-500 font-bold text-sm mt-1 uppercase tracking-wider">Intelligent scheduling, synced to your calendar</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">AI Planner</h1>
+            <p className="text-emerald-500 dark:text-emerald-400 font-bold text-sm mt-1 uppercase tracking-wider">Intelligent scheduling, synced to your calendar</p>
         </div>
       </div>
 
       {/* MOBILE TABS - Hidden on Tablet (md) and up */}
-      <div className="md:hidden flex bg-slate-200/50 p-1 rounded-xl mb-4 shrink-0">
+      <div className="md:hidden flex bg-slate-200/50 dark:bg-stone-800 p-1 rounded-xl mb-4 shrink-0">
           <button 
             onClick={() => setMobileTab('editor')}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${mobileTab === 'editor' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${mobileTab === 'editor' ? 'bg-white dark:bg-stone-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-stone-400'}`}
           >
             <Edit3 size={16} /> Editor
           </button>
           <button 
             onClick={() => setMobileTab('preview')}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${mobileTab === 'preview' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${mobileTab === 'preview' ? 'bg-white dark:bg-stone-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-stone-400'}`}
           >
             <Eye size={16} /> Preview
           </button>
@@ -258,29 +258,29 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
         <div className={`flex flex-col gap-6 flex-1 min-w-0 overflow-y-auto custom-scrollbar pb-20 ${mobileTab === 'preview' ? 'hidden md:flex' : 'flex'}`}>
             
             {/* Input Card */}
-            <div className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-slate-100 shrink-0">
-                <div className="flex bg-slate-100 p-1 rounded-2xl mb-6">
+            <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-6 shadow-xl border border-slate-100 dark:border-stone-800 shrink-0">
+                <div className="flex bg-slate-100 dark:bg-stone-800 p-1 rounded-2xl mb-6">
                     <button 
                       onClick={() => setDateContext('today')}
-                      className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${dateContext === 'today' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 lg:hover:text-slate-900'}`}
+                      className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${dateContext === 'today' ? 'bg-white dark:bg-stone-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-stone-400 lg:hover:text-slate-900 dark:lg:hover:text-stone-200'}`}
                     >
                       Today
                     </button>
                     <button 
                       onClick={() => setDateContext('tomorrow')}
-                      className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${dateContext === 'tomorrow' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 lg:hover:text-slate-900'}`}
+                      className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${dateContext === 'tomorrow' ? 'bg-white dark:bg-stone-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-stone-400 lg:hover:text-slate-900 dark:lg:hover:text-stone-200'}`}
                     >
                       Tomorrow
                     </button>
                 </div>
 
                 <div className="mb-6">
-                    <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Your Goal</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Your Goal</label>
                     <textarea
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       placeholder="e.g. I need to pick up meds at 7:30pm, then gym at 8:30pm, then dinner..."
-                      className="w-full h-32 bg-slate-50 border-0 rounded-2xl p-4 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none placeholder:text-slate-400 text-sm"
+                      className="w-full h-32 bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl p-4 font-medium text-slate-700 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none placeholder:text-slate-400 dark:placeholder:text-stone-500 text-sm"
                     />
                 </div>
 
@@ -293,7 +293,7 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
                     Generate Plan
                 </button>
                 
-                <p className="text-center text-xs text-slate-400 font-medium mt-4 px-2 leading-relaxed">
+                <p className="text-center text-xs text-slate-400 dark:text-stone-500 font-medium mt-4 px-2 leading-relaxed">
                    Describe your plans naturally. Review the generated timeline, make adjustments, and sync directly to your calendar.
                 </p>
             </div>
@@ -302,31 +302,31 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
             {proposedEvents.length > 0 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                     <div className="flex items-center justify-between px-2">
-                        <h3 className="font-bold text-slate-800 text-lg">Proposed Events</h3>
-                        <span className="text-xs font-bold bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full">
+                        <h3 className="font-bold text-slate-800 dark:text-white text-lg">Proposed Events</h3>
+                        <span className="text-xs font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full">
                             {proposedEvents.length} New
                         </span>
                     </div>
 
                     <div className="space-y-3">
                         {proposedEvents.map(event => (
-                            <div key={event.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex gap-3 lg:hover:border-emerald-200 transition-colors group">
+                            <div key={event.id} className="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-slate-100 dark:border-stone-800 shadow-sm flex gap-3 lg:hover:border-emerald-200 dark:lg:hover:border-emerald-700 transition-colors group">
                                 <div className="flex flex-col gap-2 pt-1 shrink-0">
                                     <input 
                                       type="time" 
                                       value={event.startTime} 
                                       onChange={(e) => handleUpdateProposed(event.id, 'startTime', e.target.value)}
-                                      className="bg-slate-50 text-xs font-bold text-slate-600 rounded-lg p-1 w-[70px] text-center border-0 focus:ring-1 focus:ring-emerald-500"
+                                      className="bg-slate-50 dark:bg-stone-800 text-xs font-bold text-slate-600 dark:text-stone-300 rounded-lg p-1 w-[70px] text-center border-0 focus:ring-1 focus:ring-emerald-500"
                                     />
                                      <div className="flex gap-1 justify-center">
                                        <button 
                                          onClick={() => handleUpdateProposed(event.id, 'type', 'work')}
-                                         className={`p-1 rounded-md ${event.type === 'work' ? 'bg-blue-100 text-blue-600' : 'bg-slate-50 text-slate-300'}`}
+                                         className={`p-1 rounded-md ${event.type === 'work' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300' : 'bg-slate-50 dark:bg-stone-800 text-slate-300 dark:text-stone-500'}`}
                                          title="Work"
                                        ><Briefcase size={12} /></button>
                                        <button 
                                          onClick={() => handleUpdateProposed(event.id, 'type', 'personal')}
-                                         className={`p-1 rounded-md ${event.type === 'personal' ? 'bg-rose-100 text-rose-600' : 'bg-slate-50 text-slate-300'}`}
+                                         className={`p-1 rounded-md ${event.type === 'personal' ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300' : 'bg-slate-50 dark:bg-stone-800 text-slate-300 dark:text-stone-500'}`}
                                          title="Personal"
                                        ><User size={12} /></button>
                                      </div>
@@ -337,23 +337,23 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
                                        type="text" 
                                        value={event.title}
                                        onChange={(e) => handleUpdateProposed(event.id, 'title', e.target.value)}
-                                       className="font-bold text-slate-800 bg-transparent border-0 p-0 focus:ring-0 w-full placeholder:text-slate-300 text-sm"
+                                       className="font-bold text-slate-800 dark:text-stone-100 bg-transparent border-0 p-0 focus:ring-0 w-full placeholder:text-slate-300 dark:placeholder:text-stone-600 text-sm"
                                        placeholder="Event Title"
                                      />
-                                     <div className="flex items-center gap-2 text-xs text-slate-400">
+                                     <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-stone-500">
                                         <Clock size={12} />
                                         <input 
                                            type="text"
                                            value={event.duration}
                                            onChange={(e) => handleUpdateProposed(event.id, 'duration', e.target.value)}
-                                           className="bg-transparent w-16 border-b border-slate-200 focus:border-emerald-500 focus:outline-none"
+                                           className="bg-transparent text-slate-600 dark:text-stone-300 w-16 border-b border-slate-200 dark:border-stone-700 focus:border-emerald-500 focus:outline-none"
                                         />
                                      </div>
                                 </div>
 
                                 <button 
                                   onClick={() => handleDeleteProposed(event.id)}
-                                  className="text-slate-300 lg:hover:text-rose-500 self-start p-1"
+                                  className="text-slate-300 dark:text-stone-600 lg:hover:text-rose-500 dark:lg:hover:text-rose-400 self-start p-1"
                                 >
                                     <Trash2 size={16} />
                                 </button>
@@ -362,8 +362,8 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
                     </div>
 
                     {/* REFINEMENT SECTION */}
-                    <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100/50 mt-4">
-                       <label className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-2 block">Refine this plan</label>
+                    <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl p-4 border border-emerald-100/50 dark:border-emerald-800/30 mt-4">
+                       <label className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-2 block">Refine this plan</label>
                        <div className="flex gap-2">
                          <input 
                            type="text"
@@ -371,7 +371,7 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
                            onChange={(e) => setRefinementPrompt(e.target.value)}
                            onKeyDown={(e) => e.key === 'Enter' && handleRefine()}
                            placeholder="e.g. Move dinner 30 mins later"
-                           className="flex-1 bg-white border border-emerald-100 rounded-xl px-4 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                           className="flex-1 bg-white dark:bg-stone-800 border border-emerald-100 dark:border-emerald-900/30 rounded-xl px-4 py-2 text-sm text-slate-700 dark:text-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                          />
                          <button 
                            onClick={handleRefine}
@@ -386,7 +386,7 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
                     <button
                         onClick={handleSaveAll}
                         disabled={isSaving || isRefining}
-                        className="w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl lg:hover:bg-black transition-all flex items-center justify-center gap-2 mt-2 shadow-lg shadow-slate-900/20"
+                        className="w-full bg-slate-900 dark:bg-stone-800 text-white font-bold text-lg py-4 rounded-2xl lg:hover:bg-black dark:lg:hover:bg-stone-700 transition-all flex items-center justify-center gap-2 mt-2 shadow-lg shadow-slate-900/20 dark:shadow-none"
                     >
                          {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Check size={20} />}
                          Approve & Sync
@@ -395,8 +395,8 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
             )}
              
             {successMessage && (
-                <div className="bg-emerald-100 border border-emerald-200 text-emerald-800 p-6 rounded-[2rem] flex items-center gap-4 animate-in fade-in zoom-in">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-500 shrink-0">
+                <div className="bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 p-6 rounded-[2rem] flex items-center gap-4 animate-in fade-in zoom-in">
+                    <div className="w-10 h-10 bg-white dark:bg-stone-900 rounded-full flex items-center justify-center text-emerald-500 shrink-0">
                         <Check size={20} strokeWidth={3} />
                     </div>
                     <div>
@@ -408,9 +408,9 @@ const PlannerView: React.FC<PlannerViewProps> = ({ existingEvents, onAddEvents }
         </div>
 
         {/* RIGHT COLUMN: VISUAL PREVIEW (Visible on Tablet+ OR Mobile Preview Tab) */}
-        <div className={`flex-1 min-w-0 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200 p-2 md:p-6 overflow-hidden flex-col ${mobileTab === 'editor' ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 min-w-0 bg-slate-50/50 dark:bg-stone-950/50 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-stone-800 p-2 md:p-6 overflow-hidden flex-col ${mobileTab === 'editor' ? 'hidden md:flex' : 'flex'}`}>
              <VisualSchedulePreview targetDate={targetDate} events={previewEvents} />
-             <p className="text-center text-xs text-slate-400 font-medium mt-4">
+             <p className="text-center text-xs text-slate-400 dark:text-stone-500 font-medium mt-4">
                {proposedEvents.length > 0 
                   ? "Visualizing proposed schedule changes" 
                   : "Current schedule shown above. Generate a plan to see updates."}

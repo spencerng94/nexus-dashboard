@@ -1,4 +1,11 @@
 
+
+export interface Subgoal {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Goal {
   id: string;
   title: string;
@@ -8,6 +15,7 @@ export interface Goal {
   unit: string;
   color: string;
   icon: string;
+  subgoals?: Subgoal[];
 }
 
 export interface Habit {
@@ -18,6 +26,8 @@ export interface Habit {
   color: string;
   streak: number;
   linkedGoalIds?: string[];
+  dailyTarget?: number;
+  unit?: string;
 }
 
 export interface HabitLog {
@@ -52,6 +62,34 @@ export interface ImportantDate {
   type: string; // e.g. "Urgent", "Personal", "Birthday"
 }
 
+export interface BriefingHistoryEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  content: string;
+  style: BriefingStyle;
+  timestamp: number;
+}
+
+// --- DASHBOARD CONFIGURATION TYPES ---
+
+export type DashboardSectionType = 'briefing' | 'goals' | 'habits' | 'schedule' | 'dates';
+
+export type BriefingStyle = 'standard' | 'concise' | 'fun' | 'motivating' | 'thorough';
+
+export interface DashboardSectionConfig {
+  id: DashboardSectionType;
+  label: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface DashboardConfig {
+  sections: DashboardSectionConfig[];
+  briefingStyle: BriefingStyle;
+}
+
+export type Theme = 'light' | 'dark' | 'auto';
+
 export interface User {
   uid: string;
   displayName: string | null;
@@ -64,6 +102,8 @@ export interface User {
     value: string; // The emoji char OR the initial char
     color?: string; // Tailwind color name (e.g. 'emerald', 'blue') for initials background
   };
+  dashboardConfig?: DashboardConfig;
+  theme?: Theme;
 }
 
 export interface DashboardState {

@@ -53,26 +53,26 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
+      <div className="bg-white dark:bg-stone-900 rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-white/50 dark:border-stone-800 animate-in fade-in zoom-in duration-300">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h3 className="text-2xl font-bold text-slate-900">New Event</h3>
-            <p className="text-slate-500 text-sm">Add to your schedule</p>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">New Event</h3>
+            <p className="text-slate-500 dark:text-stone-400 text-sm">Add to your schedule</p>
           </div>
-          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 rounded-full transition-colors text-slate-400 lg:hover:text-slate-600">
+          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-800 rounded-full transition-colors text-slate-400 dark:text-stone-500 lg:hover:text-slate-600 dark:lg:hover:text-stone-300">
             <X size={24} />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Event Title</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Event Title</label>
             <input
               required
               type="text"
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
-              className="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 font-semibold placeholder:text-slate-300"
+              className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-stone-100 font-semibold placeholder:text-slate-300 dark:placeholder:text-stone-500"
               placeholder="e.g. Project Meeting"
               autoFocus
             />
@@ -80,26 +80,26 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave
 
           <div className="grid grid-cols-2 gap-4">
              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Date</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Date</label>
                 <div className="relative">
                   <input
                     required
                     type="date"
                     value={formData.date}
                     onChange={e => setFormData({...formData, date: e.target.value})}
-                    className="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700"
+                    className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 dark:text-stone-200"
                   />
                 </div>
              </div>
              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Time</label>
+                <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Time</label>
                 <div className="relative">
                    <input
                     required
                     type="time"
                     value={formData.time}
                     onChange={e => setFormData({...formData, time: e.target.value})}
-                    className="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700"
+                    className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 dark:text-stone-200"
                   />
                 </div>
              </div>
@@ -107,13 +107,13 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Type</label>
+              <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Type</label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setFormData({...formData, type: 'work'})}
                   className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${
-                    formData.type === 'work' ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500/20' : 'bg-slate-50 text-slate-400 lg:hover:bg-slate-100'
+                    formData.type === 'work' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/20' : 'bg-slate-50 dark:bg-stone-800 text-slate-400 dark:text-stone-500 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-700'
                   }`}
                 >
                   <Briefcase size={16} /> Work
@@ -122,7 +122,7 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave
                   type="button"
                   onClick={() => setFormData({...formData, type: 'personal'})}
                   className={`flex-1 py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${
-                    formData.type === 'personal' ? 'bg-rose-100 text-rose-700 ring-2 ring-rose-500/20' : 'bg-slate-50 text-slate-400 lg:hover:bg-slate-100'
+                    formData.type === 'personal' ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 ring-2 ring-rose-500/20' : 'bg-slate-50 dark:bg-stone-800 text-slate-400 dark:text-stone-500 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-700'
                   }`}
                 >
                   <User size={16} /> Personal
@@ -131,11 +131,11 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave
             </div>
             
             <div>
-               <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Duration</label>
+               <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Duration</label>
                <select 
                  value={formData.duration}
                  onChange={e => setFormData({...formData, duration: e.target.value})}
-                 className="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 appearance-none"
+                 className="w-full bg-slate-50 dark:bg-stone-800 border-0 rounded-2xl px-5 py-4 font-medium text-slate-700 dark:text-stone-200 appearance-none"
                >
                  <option value="15m">15m</option>
                  <option value="30m">30m</option>
@@ -187,7 +187,7 @@ const CurrentTimeLine: React.FC<{ startHour: number, rowHeight: number }> = ({ s
       className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
       style={{ top: `${offset}px` }}
     >
-      <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-rose-500 -ml-1 md:-ml-1.5 shadow-md border-2 border-white" />
+      <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-rose-500 -ml-1 md:-ml-1.5 shadow-md border-2 border-white dark:border-stone-900" />
       <div className="h-0.5 bg-rose-500 w-full opacity-60 shadow-sm" />
     </div>
   );
@@ -235,7 +235,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
       <div className="grid grid-cols-7 auto-rows-fr gap-1 md:gap-2 h-[500px] md:h-[600px] w-full">
          {/* Headers */}
          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-           <div key={d} className="text-center font-bold text-slate-400 text-[10px] md:text-sm py-2 uppercase tracking-wide">{d}</div>
+           <div key={d} className="text-center font-bold text-slate-400 dark:text-stone-500 text-[10px] md:text-sm py-2 uppercase tracking-wide">{d}</div>
          ))}
          
          {/* Empty Cells */}
@@ -259,8 +259,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
            const completedHabits = showHabits ? habits.filter(h => !!habitLogs[`${h.id}_${dateString}`]) : [];
 
            // Dynamic Styles for Cell
-           let cellClasses = "bg-white border-slate-100 lg:hover:border-emerald-200 lg:hover:shadow-lg";
-           let textClasses = "text-slate-600";
+           let cellClasses = "bg-white dark:bg-stone-900 border-slate-100 dark:border-stone-800 lg:hover:border-emerald-200 lg:dark:hover:border-emerald-800 lg:hover:shadow-lg";
+           let textClasses = "text-slate-600 dark:text-stone-300";
            
            if (isImportant) {
              cellClasses = "bg-gradient-to-br from-stone-800 to-stone-700 border-stone-600 shadow-md";
@@ -274,8 +274,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                textClasses = "text-emerald-400";
              } else {
                // Just Today
-               cellClasses = "bg-emerald-50 border-emerald-200";
-               textClasses = "text-emerald-600";
+               cellClasses = "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800";
+               textClasses = "text-emerald-600 dark:text-emerald-400";
              }
            }
 
@@ -311,7 +311,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                            </span>
                        )) : (
                            <div className="w-full h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                               <span className="text-[10px] text-slate-300 select-none">-</span>
+                               <span className="text-[10px] text-slate-300 dark:text-stone-600 select-none">-</span>
                            </div>
                        )}
                     </div>
@@ -327,7 +327,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
 
                         {dayEvents.slice(0, isImportant ? 2 : 4).map(e => (
                         <div key={e.id} className={`h-1.5 md:h-auto w-full md:w-auto rounded-full md:rounded-md shrink-0 ${
-                            e.type === 'work' ? 'bg-blue-400 md:bg-blue-50 md:text-blue-600' : 'bg-rose-400 md:bg-rose-50 md:text-rose-600'
+                            e.type === 'work' ? 'bg-blue-400 md:bg-blue-50 dark:md:bg-blue-900/50 md:text-blue-600 dark:md:text-blue-300' : 'bg-rose-400 md:bg-rose-50 dark:md:bg-rose-900/50 md:text-rose-600 dark:md:text-rose-300'
                         }`}>
                             <div className="hidden md:block text-[10px] px-1 truncate font-medium">
                             {e.time} {e.title}
@@ -335,7 +335,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                         </div>
                         ))}
                         {dayEvents.length > (isImportant ? 2 : 4) && (
-                        <div className={`hidden md:block text-[9px] font-bold px-1 shrink-0 ${isImportant ? 'text-stone-400' : 'text-slate-400'}`}>+{dayEvents.length - (isImportant ? 2 : 4)} more</div>
+                        <div className={`hidden md:block text-[9px] font-bold px-1 shrink-0 ${isImportant ? 'text-stone-400' : 'text-slate-400 dark:text-stone-500'}`}>+{dayEvents.length - (isImportant ? 2 : 4)} more</div>
                         )}
                     </div>
                  )}
@@ -359,23 +359,23 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
     const rowHeight = 60; // px
 
     return (
-      <div className="flex flex-col h-[600px] overflow-hidden bg-white rounded-[2rem] border border-slate-100 shadow-sm w-full">
+      <div className="flex flex-col h-[600px] overflow-hidden bg-white dark:bg-stone-900 rounded-[2rem] border border-slate-100 dark:border-stone-800 shadow-sm w-full">
         {/* Grid Wrapper */}
         <div className="flex-1 overflow-y-auto custom-scrollbar relative w-full">
            <div className="min-w-[800px] w-full"> 
               {/* Header Row */}
-              <div className="grid grid-cols-8 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-30">
-                <div className="p-1 md:p-4 text-[10px] md:text-xs font-bold text-slate-400 uppercase bg-slate-50 flex items-center justify-center">Time</div>
+              <div className="grid grid-cols-8 border-b border-slate-100 dark:border-stone-800 bg-slate-50/50 dark:bg-stone-800 sticky top-0 z-30">
+                <div className="p-1 md:p-4 text-[10px] md:text-xs font-bold text-slate-400 dark:text-stone-500 uppercase bg-slate-50 dark:bg-stone-800 flex items-center justify-center">Time</div>
                 {Array.from({length: 7}).map((_, i) => {
                   const d = new Date(startOfWeek);
                   d.setDate(startOfWeek.getDate() + i);
                   const isToday = d.toDateString() === new Date().toDateString();
                   return (
-                    <div key={i} className={`p-1 md:p-4 text-center border-l border-slate-100 overflow-hidden ${isToday ? 'bg-emerald-50/50' : ''}`}>
-                      <div className={`text-[8px] md:text-xs font-bold uppercase truncate ${isToday ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    <div key={i} className={`p-1 md:p-4 text-center border-l border-slate-100 dark:border-stone-800 overflow-hidden ${isToday ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}`}>
+                      <div className={`text-[8px] md:text-xs font-bold uppercase truncate ${isToday ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-stone-500'}`}>
                         {d.toLocaleDateString('en-US', { weekday: 'short' })}
                       </div>
-                      <div className={`text-xs md:text-lg font-bold ${isToday ? 'text-emerald-600' : 'text-slate-700'}`}>
+                      <div className={`text-xs md:text-lg font-bold ${isToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-stone-200'}`}>
                         {d.getDate()}
                       </div>
                     </div>
@@ -386,9 +386,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
               {/* Grid Body */}
               <div className="grid grid-cols-8 relative w-full">
                  {/* Time Column */}
-                 <div className="flex flex-col border-r border-slate-100 bg-white z-20 sticky left-0 shadow-sm">
+                 <div className="flex flex-col border-r border-slate-100 dark:border-stone-800 bg-white dark:bg-stone-900 z-20 sticky left-0 shadow-sm">
                    {hours.map(h => (
-                     <div key={h} className="h-[60px] border-b border-slate-50 text-[9px] md:text-xs text-slate-400 font-medium p-1 md:p-2 text-center md:text-right flex items-center justify-center md:justify-end">
+                     <div key={h} className="h-[60px] border-b border-slate-50 dark:border-stone-800 text-[9px] md:text-xs text-slate-400 dark:text-stone-500 font-medium p-1 md:p-2 text-center md:text-right flex items-center justify-center md:justify-end">
                        {h > 12 ? `${h - 12}` : h}
                        <span className="hidden md:inline ml-0.5">{h >= 12 ? 'PM' : 'AM'}</span>
                      </div>
@@ -407,10 +407,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                     });
 
                     return (
-                      <div key={dayIdx} className={`relative border-r border-slate-100 h-[${hours.length * rowHeight}px] ${isToday ? 'bg-emerald-50/10' : ''}`}>
+                      <div key={dayIdx} className={`relative border-r border-slate-100 dark:border-stone-800 h-[${hours.length * rowHeight}px] ${isToday ? 'bg-emerald-50/10 dark:bg-emerald-900/5' : ''}`}>
                         {/* Hour Lines */}
                         {hours.map(h => (
-                          <div key={h} className="h-[60px] border-b border-slate-50" />
+                          <div key={h} className="h-[60px] border-b border-slate-50 dark:border-stone-800" />
                         ))}
 
                         {/* Red Current Time Line (Only for Today) */}
@@ -434,8 +434,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                               key={e.id}
                               className={`absolute left-0.5 right-0.5 md:left-1 md:right-1 p-0.5 md:p-1.5 rounded-sm md:rounded-lg border-l-2 md:border-l-4 text-[8px] md:text-[10px] leading-tight shadow-sm cursor-pointer lg:hover:scale-105 transition-transform z-10 overflow-hidden ${
                                  e.type === 'work' 
-                                   ? 'bg-blue-50 border-blue-400 text-blue-700' 
-                                   : 'bg-rose-50 border-rose-400 text-rose-700'
+                                   ? 'bg-blue-50 dark:bg-blue-900/50 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-200' 
+                                   : 'bg-rose-50 dark:bg-rose-900/50 border-rose-400 dark:border-rose-500 text-rose-700 dark:text-rose-200'
                               }`}
                               style={{ top: `${top}px`, height: `${Math.max(heightPx, 20)}px` }}
                               title={`${e.time} - ${e.title}`}
@@ -469,29 +469,29 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
     const isToday = currentDate.toDateString() === new Date().toDateString();
 
     return (
-      <div className="flex flex-col h-[600px] overflow-hidden bg-white rounded-[2rem] border border-slate-100 shadow-sm relative">
+      <div className="flex flex-col h-[600px] overflow-hidden bg-white dark:bg-stone-900 rounded-[2rem] border border-slate-100 dark:border-stone-800 shadow-sm relative">
         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
           <div className="relative min-h-full">
             {isToday && <CurrentTimeLine startHour={startHour} rowHeight={rowHeight} />}
 
             {hours.map(h => (
-              <div key={h} className="group flex border-b border-slate-100 min-h-[80px]">
-                <div className="w-14 md:w-20 p-2 md:p-4 border-r border-slate-100 text-right text-xs md:text-sm font-bold text-slate-400 bg-slate-50/30 flex items-center justify-end">
+              <div key={h} className="group flex border-b border-slate-100 dark:border-stone-800 min-h-[80px]">
+                <div className="w-14 md:w-20 p-2 md:p-4 border-r border-slate-100 dark:border-stone-800 text-right text-xs md:text-sm font-bold text-slate-400 dark:text-stone-500 bg-slate-50/30 dark:bg-stone-800/30 flex items-center justify-end">
                   {h > 12 ? `${h - 12} PM` : h === 12 ? '12 PM' : `${h} AM`}
                 </div>
                 <div className="flex-1 relative p-1 md:p-2">
                    {dayEvents.filter(e => new Date(e.startTime).getHours() === h).map(e => (
                      <div key={e.id} className={`mb-2 p-2 md:p-3 rounded-xl border-l-4 flex justify-between items-center shadow-sm ${
                         e.type === 'work' 
-                          ? 'bg-blue-50 border-blue-500 text-blue-800' 
-                          : 'bg-rose-50 border-rose-500 text-rose-800'
+                          ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-800 dark:text-blue-200' 
+                          : 'bg-rose-50 dark:bg-rose-900/30 border-rose-500 text-rose-800 dark:text-rose-200'
                      }`}>
                        <div className="min-w-0 flex-1">
                          <span className="font-bold mr-2 text-xs md:text-base">{e.time}</span>
                          <span className="font-medium text-xs md:text-base truncate">{e.title}</span>
                        </div>
                        <span className={`text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide shrink-0 ml-2 ${
-                          e.type === 'work' ? 'bg-blue-200/50' : 'bg-rose-200/50'
+                          e.type === 'work' ? 'bg-blue-200/50 dark:bg-blue-900/50' : 'bg-rose-200/50 dark:bg-rose-900/50'
                        }`}>{e.type}</span>
                      </div>
                    ))}
@@ -513,57 +513,57 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
              <CalendarIcon className="text-white w-5 h-5 md:w-8 md:h-8" />
           </div>
           <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Calendar</h1>
-            <p className="text-emerald-500 font-bold text-sm mt-1 uppercase tracking-wider">Manage your schedule</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Calendar</h1>
+            <p className="text-emerald-500 dark:text-emerald-400 font-bold text-sm mt-1 uppercase tracking-wider">Manage your schedule</p>
           </div>
         </div>
         
         {/* Controls Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 md:gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100 w-full">
+        <div className="flex flex-wrap items-center gap-2 md:gap-4 bg-white dark:bg-stone-900 p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-stone-800 w-full">
            <div className="flex items-center gap-1 md:gap-2 px-1 md:px-2 flex-1 justify-between md:justify-start">
-             <button onClick={resetToToday} className="px-3 py-1.5 bg-slate-100 lg:hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition-colors">Today</button>
-             <button onClick={() => navigateDate(-1)} className="p-2 lg:hover:bg-slate-100 rounded-xl transition-colors text-slate-500"><ChevronLeft size={20} /></button>
-             <span className="font-bold text-slate-800 text-xs md:text-base text-center select-none truncate">
+             <button onClick={resetToToday} className="px-3 py-1.5 bg-slate-100 dark:bg-stone-800 lg:hover:bg-slate-200 dark:lg:hover:bg-stone-700 rounded-xl text-xs font-bold text-slate-600 dark:text-stone-300 transition-colors">Today</button>
+             <button onClick={() => navigateDate(-1)} className="p-2 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-800 rounded-xl transition-colors text-slate-500 dark:text-stone-400"><ChevronLeft size={20} /></button>
+             <span className="font-bold text-slate-800 dark:text-white text-xs md:text-base text-center select-none truncate">
                {view === 'month' && currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
                {view === 'day' && currentDate.toLocaleDateString('default', { month: 'long', day: 'numeric' })}
                {view === 'week' && getWeekRangeString(currentDate)}
              </span>
-             <button onClick={() => navigateDate(1)} className="p-2 lg:hover:bg-slate-100 rounded-xl transition-colors text-slate-500"><ChevronRight size={20} /></button>
+             <button onClick={() => navigateDate(1)} className="p-2 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-800 rounded-xl transition-colors text-slate-500 dark:text-stone-400"><ChevronRight size={20} /></button>
            </div>
            
-           <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block" />
+           <div className="h-8 w-px bg-slate-200 dark:bg-stone-700 mx-1 hidden md:block" />
            
            {/* Habits Toggle */}
            <button
              onClick={() => setShowHabits(!showHabits)}
              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                showHabits 
-                ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm' 
-                : 'bg-white text-slate-500 border-transparent lg:hover:bg-slate-50'
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 shadow-sm' 
+                : 'bg-white dark:bg-stone-800 text-slate-500 dark:text-stone-400 border-transparent lg:hover:bg-slate-50 dark:lg:hover:bg-stone-700'
              }`}
            >
              <Dumbbell size={14} />
              <span className="hidden md:inline">Habits</span>
            </button>
 
-           <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block" />
+           <div className="h-8 w-px bg-slate-200 dark:bg-stone-700 mx-1 hidden md:block" />
 
-           <div className="flex bg-slate-100 rounded-xl p-1 shrink-0 w-full md:w-auto mt-2 md:mt-0">
+           <div className="flex bg-slate-100 dark:bg-stone-800 rounded-xl p-1 shrink-0 w-full md:w-auto mt-2 md:mt-0">
              <button 
                onClick={() => setView('month')}
-               className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'month' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 lg:hover:text-slate-900'}`}
+               className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'month' ? 'bg-white dark:bg-stone-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-stone-400 lg:hover:text-slate-900 dark:lg:hover:text-stone-200'}`}
              >
                Month
              </button>
              <button 
                onClick={() => setView('week')}
-               className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'week' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 lg:hover:text-slate-900'}`}
+               className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'week' ? 'bg-white dark:bg-stone-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-stone-400 lg:hover:text-slate-900 dark:lg:hover:text-stone-200'}`}
              >
                Week
              </button>
              <button 
                onClick={() => setView('day')}
-               className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'day' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 lg:hover:text-slate-900'}`}
+               className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${view === 'day' ? 'bg-white dark:bg-stone-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-stone-400 lg:hover:text-slate-900 dark:lg:hover:text-stone-200'}`}
              >
                Day
              </button>
@@ -581,7 +581,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
       {/* Habit Legend Key - Only visible when habits are shown */}
       {showHabits && habits.length > 0 && (
          <div className="mb-6 flex gap-3 overflow-x-auto pb-2 custom-scrollbar animate-in fade-in slide-in-from-top-2">
-            <div className="bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center shrink-0">
+            <div className="bg-slate-100 dark:bg-stone-800 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 dark:text-stone-400 uppercase tracking-wide flex items-center shrink-0">
                Habit Key:
             </div>
             {habits.map(h => {
@@ -590,7 +590,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                const colorName = colorMatch ? colorMatch[1] : 'slate';
                
                return (
-                  <div key={h.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border shrink-0 bg-${colorName}-50 border-${colorName}-100 text-${colorName}-700`}>
+                  <div key={h.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border shrink-0 bg-${colorName}-50 dark:bg-${colorName}-900/20 border-${colorName}-100 dark:border-${colorName}-800 text-${colorName}-700 dark:text-${colorName}-300`}>
                      <span className="text-base leading-none">{h.icon}</span>
                      <span className="text-xs font-bold">{h.title}</span>
                   </div>
@@ -599,7 +599,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
          </div>
       )}
 
-      <div className="bg-white/50 backdrop-blur-md rounded-[2rem] md:rounded-[2.5rem] p-2 md:p-8 border border-white/60 shadow-xl shadow-slate-200/40 overflow-hidden">
+      <div className="bg-white/50 dark:bg-stone-900/50 backdrop-blur-md rounded-[2rem] md:rounded-[2.5rem] p-2 md:p-8 border border-white/60 dark:border-stone-800 shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden">
          <div className="w-full">
            {view === 'month' && renderMonthView()}
          </div>

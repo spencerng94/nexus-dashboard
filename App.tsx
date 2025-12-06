@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings } from 'lucide-react';
-import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate } from './types';
+import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings, ArrowUp, ArrowDown, Eye, EyeOff, LayoutDashboard, Moon, Sun, Clock } from 'lucide-react';
+import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate, DashboardConfig, BriefingStyle, Theme, BriefingHistoryEntry } from './types';
 import { storageService } from './services/storage';
 import { googleService } from './services/google';
 import { weatherService } from './services/weather';
@@ -14,10 +14,24 @@ import ChatWidget from './components/ChatWidget';
 import CalendarView from './components/CalendarView';
 import AboutView from './components/AboutView'; 
 import PlannerView from './components/PlannerView';
-import { DashboardView } from './components/DashboardComponents';
+import HistoryView from './components/HistoryView';
+import { DashboardView, CategoryFilter } from './components/DashboardComponents';
 import { ProgressCard, GoalFormModal, GoalSuggestionCard, SuggestionControl as GoalSuggestionControl } from './components/GoalComponents';
 import { HabitCard, HabitFormModal, HabitHistoryModal, HabitSuggestionCard, SuggestionControl as HabitSuggestionControl } from './components/HabitComponents';
 
+// Default Dashboard Config
+const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
+  sections: [
+    { id: 'briefing', label: 'Daily Briefing', visible: true, order: 0 },
+    { id: 'goals', label: 'Goals', visible: true, order: 1 },
+    { id: 'schedule', label: 'Today\'s Schedule', visible: true, order: 2 },
+    { id: 'dates', label: 'Important Dates', visible: true, order: 3 },
+    { id: 'habits', label: 'Habits', visible: false, order: 4 },
+  ],
+  briefingStyle: 'standard'
+};
+
+// ... (ProfileAvatarModal code remains the same as provided in previous turns, omitted for brevity but assumed present)
 // --- PROFILE EDIT MODAL ---
 interface ProfileAvatarModalProps {
   isOpen: boolean;
@@ -66,25 +80,25 @@ const ProfileAvatarModal: React.FC<ProfileAvatarModalProps> = ({ isOpen, onClose
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl border border-white/50 animate-in fade-in zoom-in duration-300">
+      <div className="bg-white dark:bg-stone-900 rounded-[2rem] p-8 w-full max-w-sm shadow-2xl border border-white/50 dark:border-stone-800 animate-in fade-in zoom-in duration-300">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-slate-900">Customize Profile</h3>
-          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 rounded-full transition-colors text-slate-400 lg:hover:text-slate-600">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">Customize Profile</h3>
+          <button onClick={onClose} className="p-2 lg:hover:bg-slate-100 dark:lg:hover:bg-stone-800 rounded-full transition-colors text-slate-400 dark:text-stone-500 lg:hover:text-slate-600 dark:lg:hover:text-stone-300">
             <X size={20} />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
+        <div className="flex bg-slate-100 dark:bg-stone-800 p-1 rounded-xl mb-6">
             <button 
                 onClick={() => setActiveTab('initials')}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'initials' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'initials' ? 'bg-white dark:bg-stone-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 dark:text-stone-500'}`}
             >
                 <Type size={16} /> Initials
             </button>
             <button 
                 onClick={() => setActiveTab('emoji')}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'emoji' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'}`}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'emoji' ? 'bg-white dark:bg-stone-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-400 dark:text-stone-500'}`}
             >
                 <Smile size={16} /> Emoji
             </button>
@@ -95,7 +109,7 @@ const ProfileAvatarModal: React.FC<ProfileAvatarModalProps> = ({ isOpen, onClose
             {activeTab === 'initials' ? (
                 <div className="space-y-4">
                     <div className="flex justify-center mb-6">
-                        <div className={`w-24 h-24 rounded-full bg-${selectedColor}-500 flex items-center justify-center text-4xl font-bold text-white shadow-xl ring-4 ring-${selectedColor}-100 transition-colors`}>
+                        <div className={`w-24 h-24 rounded-full bg-${selectedColor}-500 flex items-center justify-center text-4xl font-bold text-white shadow-xl ring-4 ring-${selectedColor}-100 dark:ring-${selectedColor}-900 transition-colors`}>
                             {currentUser.displayName?.charAt(0).toUpperCase() || 'U'}
                         </div>
                     </div>
@@ -104,7 +118,7 @@ const ProfileAvatarModal: React.FC<ProfileAvatarModalProps> = ({ isOpen, onClose
                             <button
                                 key={c}
                                 onClick={() => setSelectedColor(c)}
-                                className={`w-10 h-10 rounded-full bg-${c}-500 flex items-center justify-center transition-transform hover:scale-110 ${selectedColor === c ? 'ring-2 ring-offset-2 ring-slate-300 scale-110' : ''}`}
+                                className={`w-10 h-10 rounded-full bg-${c}-500 flex items-center justify-center transition-transform hover:scale-110 ${selectedColor === c ? 'ring-2 ring-offset-2 ring-slate-300 dark:ring-stone-600 scale-110' : ''}`}
                             >
                                 {selectedColor === c && <Check size={16} className="text-white" strokeWidth={3} />}
                             </button>
@@ -114,7 +128,7 @@ const ProfileAvatarModal: React.FC<ProfileAvatarModalProps> = ({ isOpen, onClose
             ) : (
                 <div className="space-y-4">
                     <div className="flex justify-center mb-6">
-                        <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-5xl shadow-inner">
+                        <div className="w-24 h-24 rounded-full bg-slate-100 dark:bg-stone-800 flex items-center justify-center text-5xl shadow-inner">
                             {selectedEmoji}
                         </div>
                     </div>
@@ -123,7 +137,7 @@ const ProfileAvatarModal: React.FC<ProfileAvatarModalProps> = ({ isOpen, onClose
                             <button
                                 key={e}
                                 onClick={() => setSelectedEmoji(e)}
-                                className={`w-12 h-12 rounded-xl text-2xl flex items-center justify-center transition-all hover:bg-slate-50 ${selectedEmoji === e ? 'bg-white shadow-md ring-2 ring-emerald-500/20' : 'grayscale opacity-70 hover:grayscale-0 hover:opacity-100'}`}
+                                className={`w-12 h-12 rounded-xl text-2xl flex items-center justify-center transition-all hover:bg-slate-50 dark:hover:bg-stone-700 ${selectedEmoji === e ? 'bg-white dark:bg-stone-700 shadow-md ring-2 ring-emerald-500/20' : 'grayscale opacity-70 hover:grayscale-0 hover:opacity-100'}`}
                             >
                                 {e}
                             </button>
@@ -135,7 +149,7 @@ const ProfileAvatarModal: React.FC<ProfileAvatarModalProps> = ({ isOpen, onClose
 
         <button 
             onClick={handleSave}
-            className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition-all shadow-lg"
+            className="w-full py-3 bg-slate-900 dark:bg-emerald-600 text-white rounded-xl font-bold hover:bg-black dark:hover:bg-emerald-700 transition-all shadow-lg"
         >
             Save Changes
         </button>
@@ -145,13 +159,22 @@ const ProfileAvatarModal: React.FC<ProfileAvatarModalProps> = ({ isOpen, onClose
 };
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  // Use lazy initializer for user to avoid flash of login screen if user exists
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+        return storageService.getUser();
+    } catch {
+        return null;
+    }
+  });
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [goals, setGoals] = useState<Goal[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitLogs, setHabitLogs] = useState<Record<string, HabitLog>>({}); 
   const [events, setEvents] = useState<CalendarEvent[]>([]); 
   const [importantDates, setImportantDates] = useState<ImportantDate[]>([]);
+  const [briefingHistory, setBriefingHistory] = useState<BriefingHistoryEntry[]>([]);
   const [weather, setWeather] = useState<{ temp: number, condition: string } | null>(null);
 
   const [briefing, setBriefing] = useState("");
@@ -181,22 +204,75 @@ export default function App() {
   const [suggestedHabits, setSuggestedHabits] = useState<Array<{title: string, category: string, icon: string}>>([]);
   const [isLoadingHabitSuggestions, setIsLoadingHabitSuggestions] = useState(false);
 
-  // Load User on Mount
+  // Category Filtering State
+  const [selectedGoalCategory, setSelectedGoalCategory] = useState<string>('All');
+  const [selectedHabitCategory, setSelectedHabitCategory] = useState<string>('All');
+
+  // Date Helpers
+  const getTodayLocal = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayLocal = getTodayLocal();
+  const todaysHistoryEntry = briefingHistory.find(h => h.date === todayLocal);
+
+  // Sync Theme with User Preference
+  useEffect(() => {
+    const applyTheme = () => {
+      let effectiveTheme = user?.theme;
+      if (!effectiveTheme || effectiveTheme === 'auto') {
+        const hour = new Date().getHours();
+        effectiveTheme = (hour >= 6 && hour < 18) ? 'light' : 'dark';
+      }
+
+      if (effectiveTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    applyTheme();
+    // Check every minute for auto update
+    const interval = setInterval(applyTheme, 60000);
+    return () => clearInterval(interval);
+  }, [user?.theme]);
+
+  // Load User on Mount (Logic primarily for side effects like weather fetching now)
   useEffect(() => {
     try {
-      const loadedUser = storageService.getUser();
-      if (loadedUser) {
-        setUser(loadedUser);
+      if (user) {
+        // Fetch Weather
+        weatherService.getCurrentWeather().then(data => {
+            if (data) setWeather(data);
+        });
+
+        // Load local data synchronously to ensure we have it for the briefing
+        const localGoals = storageService.getGoals();
+        const localHabits = storageService.getHabits();
+        const localLogs = storageService.getHabitLogs();
+        const localDates = storageService.getImportantDates();
+        // Always fetch fresh history on load
+        const localHistory = storageService.getBriefingHistory();
+
+        setGoals(localGoals);
+        setHabits(localHabits);
+        setHabitLogs(localLogs);
+        setImportantDates(localDates);
+        setBriefingHistory(localHistory);
+
+        syncEvents();
       }
     } catch (e) {
       console.error("Initialization error:", e);
     } finally {
-      // Wrap in try-finally in case something throws, ensuring we don't get stuck on loader
-      try {
-        setIsLoadingAuth(false);
-      } catch (e) {}
+      setIsLoadingAuth(false);
     }
-  }, []);
+  }, [user]); // user is now stable from state, but logic only needs to run when user context becomes valid
 
   // Event Sync Logic - extracted for re-use
   const syncEvents = async () => {
@@ -229,40 +305,80 @@ export default function App() {
     }
   };
 
-  // Load Data when User loads
-  useEffect(() => {
-    if (!user) return;
-    
-    // Load local data synchronously to ensure we have it for the briefing
-    const localGoals = storageService.getGoals();
-    const localHabits = storageService.getHabits();
-    const localLogs = storageService.getHabitLogs();
-    const localDates = storageService.getImportantDates();
-
-    setGoals(localGoals);
-    setHabits(localHabits);
-    setHabitLogs(localLogs);
-    setImportantDates(localDates);
-
-    // Fetch Weather
-    weatherService.getCurrentWeather().then(data => {
-      if (data) setWeather(data);
-    });
-
-    syncEvents();
-
-  }, [user]);
-
   const generateBriefingHelper = async (
       currentGoals = goals, 
       currentEvents = events, 
-      currentHabits = habits
+      currentHabits = habits,
+      overrideStyle?: BriefingStyle
     ) => {
     setIsGeneratingBriefing(true);
-    const newBriefing = await generateDailyBriefing(currentGoals, currentEvents, currentHabits);
+    const style = overrideStyle || user?.dashboardConfig?.briefingStyle || 'standard';
+    const newBriefing = await generateDailyBriefing(currentGoals, currentEvents, currentHabits, style);
     setBriefing(newBriefing);
     setIsGeneratingBriefing(false);
   };
+
+  const handleSaveBriefing = (contentToSave: string) => {
+      // 1. Determine content
+      const content = contentToSave; 
+      if (!content) return false;
+      
+      const tLocal = getTodayLocal();
+
+      // 2. Fresh read from storage
+      const currentHistory = storageService.getBriefingHistory() || [];
+      
+      // 3. Check for existing
+      const existingEntry = currentHistory.find(h => h.date === tLocal);
+      
+      if (existingEntry) {
+        // If content matches, we consider it saved (no action needed but report success)
+        if (existingEntry.content === content) {
+          return true;
+        }
+
+        // WARN USER
+        if (!window.confirm("A plan for today already exists. Do you want to replace it with this new version?")) {
+          return false;
+        }
+      }
+
+      // 4. Create new entry
+      const newEntry: BriefingHistoryEntry = {
+        id: Date.now().toString(),
+        date: tLocal,
+        content: content,
+        style: user?.dashboardConfig?.briefingStyle || 'standard',
+        timestamp: Date.now()
+      };
+
+      // 5. Construct completely new array: Remove old entry for today if exists, add new one to top
+      const filteredHistory = currentHistory.filter(h => h.date !== tLocal);
+      const updatedHistory = [newEntry, ...filteredHistory];
+
+      // 6. Save and Update State
+      storageService.saveBriefingHistory(updatedHistory);
+      setBriefingHistory(updatedHistory); 
+
+      return true;
+  };
+
+  const handleDeleteHistoryEntry = (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this plan from history?")) {
+        return;
+    }
+    
+    // 1. Read fresh
+    const currentHistory = storageService.getBriefingHistory() || [];
+    // 2. Filter
+    const updatedHistory = currentHistory.filter(h => h.id !== id);
+    // 3. Write
+    storageService.saveBriefingHistory(updatedHistory);
+    // 4. Update State (using spread to ensure new reference)
+    setBriefingHistory([...updatedHistory]);
+  };
+
+  // ... (Rest of App.tsx remains largely unchanged - handling login, guests, profiles, etc.)
 
   const handleLogin = async (clientId: string) => {
     setLoginError("");
@@ -283,6 +399,8 @@ export default function App() {
         
         googleService.init(finalClientId);
         const loggedInUser = await googleService.login();
+        // Set default theme to auto if not present
+        if (!loggedInUser.theme) loggedInUser.theme = 'auto';
         storageService.saveUser(loggedInUser);
         setUser(loggedInUser);
     } catch (e: any) {
@@ -294,7 +412,7 @@ export default function App() {
   };
 
   const handleGuestLogin = () => {
-    const newUser: User = { uid: 'guest', displayName: 'Guest', photoURL: null, isGuest: true };
+    const newUser: User = { uid: 'guest', displayName: 'Guest', photoURL: null, isGuest: true, theme: 'auto' };
     storageService.saveUser(newUser);
     setUser(newUser);
   };
@@ -305,6 +423,7 @@ export default function App() {
     setEvents([]);
     setBriefing("");
     setCalendarError(null);
+    document.documentElement.classList.remove('dark'); // Reset theme
   };
 
   const handleUpdateProfile = (customAvatar: User['customAvatar']) => {
@@ -312,6 +431,72 @@ export default function App() {
     const updatedUser = { ...user, customAvatar };
     setUser(updatedUser);
     storageService.saveUser(updatedUser);
+  };
+
+  const handleToggleTheme = (theme: Theme) => {
+    if (!user) return;
+    const updatedUser = { ...user, theme };
+    setUser(updatedUser);
+    storageService.saveUser(updatedUser);
+  };
+
+  // Wrapper for sidebar toggle - switches between light/dark manually overriding auto if active
+  const toggleTheme = () => {
+    if (!user) return;
+    let currentTheme = user.theme;
+    
+    // Resolve auto to actual current state for toggling purposes
+    if (currentTheme === 'auto' || !currentTheme) {
+        const hour = new Date().getHours();
+        const effective = (hour >= 6 && hour < 18) ? 'light' : 'dark';
+        handleToggleTheme(effective === 'light' ? 'dark' : 'light');
+    } else {
+        // Standard toggle
+        handleToggleTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+  };
+
+  // --- DASHBOARD CONFIG UPDATES ---
+  const handleUpdateDashboardConfig = (newConfig: DashboardConfig) => {
+      if (!user) return;
+      const oldStyle = user.dashboardConfig?.briefingStyle;
+      const updatedUser = { ...user, dashboardConfig: newConfig };
+      setUser(updatedUser);
+      storageService.saveUser(updatedUser);
+
+      // If briefing style changed, refresh immediately
+      if (oldStyle !== newConfig.briefingStyle) {
+          generateBriefingHelper(goals, events, habits, newConfig.briefingStyle);
+      }
+  };
+
+  const toggleSectionVisibility = (id: string) => {
+      if (!user) return;
+      const config = user.dashboardConfig || DEFAULT_DASHBOARD_CONFIG;
+      const newSections = config.sections.map(s => 
+          s.id === id ? { ...s, visible: !s.visible } : s
+      );
+      handleUpdateDashboardConfig({ ...config, sections: newSections });
+  };
+
+  const moveSection = (id: string, direction: 'up' | 'down') => {
+      if (!user) return;
+      const config = user.dashboardConfig || DEFAULT_DASHBOARD_CONFIG;
+      const sections = [...config.sections].sort((a,b) => a.order - b.order);
+      const index = sections.findIndex(s => s.id === id);
+      
+      if (index === -1) return;
+      if (direction === 'up' && index === 0) return;
+      if (direction === 'down' && index === sections.length - 1) return;
+
+      const swapIndex = direction === 'up' ? index - 1 : index + 1;
+      
+      // Swap orders
+      const tempOrder = sections[index].order;
+      sections[index].order = sections[swapIndex].order;
+      sections[swapIndex].order = tempOrder;
+
+      handleUpdateDashboardConfig({ ...config, sections });
   };
 
   // --- GOAL HANDLERS ---
@@ -352,6 +537,21 @@ export default function App() {
     });
     setGoals(updatedGoals);
     storageService.saveGoals(updatedGoals);
+  };
+
+  const handleToggleSubgoal = (goalId: string, subgoalId: string) => {
+      const updatedGoals = goals.map(g => {
+          if (g.id === goalId && g.subgoals) {
+              const updatedSubgoals = g.subgoals.map(s => 
+                  s.id === subgoalId ? { ...s, completed: !s.completed } : s
+              );
+              const newProgress = updatedSubgoals.filter(s => s.completed).length;
+              return { ...g, subgoals: updatedSubgoals, progress: newProgress };
+          }
+          return g;
+      });
+      setGoals(updatedGoals);
+      storageService.saveGoals(updatedGoals);
   };
 
   const loadGoalSuggestions = async (topic?: string) => {
@@ -411,7 +611,6 @@ export default function App() {
     const updatedHabits = currentHabits.map(h => {
         let streak = 0;
         const d = new Date();
-        // Check backwards from today
         while (true) {
             const k = formatLocalYMD(d);
             if (currentLogs[`${h.id}_${k}`]) {
@@ -451,14 +650,6 @@ export default function App() {
      // --- LINKED GOALS LOGIC ---
      const habit = habits.find(h => h.id === habitId);
      if (habit && habit.linkedGoalIds && habit.linkedGoalIds.length > 0) {
-        // Iterate through all linked goals
-        // If Habit is marked completed -> Increment Goal Progress
-        // If Habit is un-marked -> Decrement Goal Progress
-        // Note: We use the existing increment/decrement handlers which update state and storage.
-        // We need to call them in a way that respects the latest state. 
-        // Since setState is async, we shouldn't rely on 'goals' state inside loop immediately if multiple updates occur.
-        // However, handleGoalIncrement does full immutable update based on 'goals'.
-        
         let currentGoalsSnapshot = [...goals];
 
         habit.linkedGoalIds.forEach(goalId => {
@@ -474,8 +665,6 @@ export default function App() {
                 currentGoalsSnapshot[goalIndex] = { ...g, progress: newProgress };
             }
         });
-
-        // Batch update to prevent multiple re-renders
         setGoals(currentGoalsSnapshot);
         storageService.saveGoals(currentGoalsSnapshot);
      }
@@ -490,8 +679,6 @@ export default function App() {
          storageService.saveHabitLogs(updatedLogs);
          updateStreaks(habits, updatedLogs);
          
-         // Note: Deleting a log via history modal (past date) ideally should decrement the linked goal too.
-         // Re-using the toggle logic or replicating it:
          const habit = habits.find(h => h.id === habitId);
          if (habit && habit.linkedGoalIds && habit.linkedGoalIds.length > 0) {
              let currentGoalsSnapshot = [...goals];
@@ -525,7 +712,6 @@ export default function App() {
 
   // --- EVENT HANDLERS ---
   const handleAddEvent = async (newEventData: Omit<CalendarEvent, 'id'>) => {
-    // Optimistic Update
     const tempId = Date.now().toString();
     const tempEvent = { ...newEventData, id: tempId };
     const optimisticEvents = [...events, tempEvent].sort((a, b) => 
@@ -537,7 +723,6 @@ export default function App() {
         try {
             const createdEvent = await googleService.createEvent(user.accessToken, newEventData);
             if (createdEvent) {
-                // Replace temp event with real one
                 setEvents(prev => prev.map(e => e.id === tempId ? createdEvent : e));
             }
         } catch (e: any) {
@@ -550,7 +735,6 @@ export default function App() {
     }
   };
 
-  // Batch Add Events (For Planner)
   const handleBatchAddEvents = async (newEvents: Omit<CalendarEvent, 'id'>[]) => {
      for (const evt of newEvents) {
          await handleAddEvent(evt);
@@ -582,23 +766,104 @@ export default function App() {
     setIsHistoryModalOpen(true);
   };
 
-  if (isLoadingAuth) return <div className="h-screen flex items-center justify-center bg-[#F5F5F7]"><Loader2 className="animate-spin text-slate-400" size={32} /></div>;
+  const getCategories = (items: { category?: string }[]) => {
+    const cats = new Set(items.map(i => i.category || 'Uncategorized'));
+    return Array.from(cats).sort();
+  };
+
+  const renderGoalsGrid = () => {
+    const goalCategories = getCategories(goals);
+    const visibleCategories = selectedGoalCategory === 'All' ? goalCategories : [selectedGoalCategory];
+
+    return (
+      <div className="space-y-12">
+        {visibleCategories.map(cat => {
+           const catGoals = goals.filter(g => (g.category || 'Uncategorized') === cat);
+           if (catGoals.length === 0) return null;
+           
+           return (
+              <div key={cat} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                 {selectedGoalCategory === 'All' && (
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-stone-100 mb-6 flex items-center gap-2 border-b border-slate-200 dark:border-stone-800 pb-2">
+                      {cat} <span className="text-xs font-bold bg-slate-100 dark:bg-stone-800 text-slate-500 dark:text-stone-400 px-2 py-0.5 rounded-full">{catGoals.length}</span>
+                    </h3>
+                 )}
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {catGoals.map(goal => (
+                      <ProgressCard 
+                        key={goal.id} 
+                        goal={goal} 
+                        linkedHabits={habits.filter(h => h.linkedGoalIds?.includes(goal.id))}
+                        onIncrement={handleGoalIncrement} 
+                        onDecrement={handleGoalDecrement}
+                        onDelete={handleDeleteGoal}
+                        onEdit={(goal) => { setEditingGoal(goal); setIsGoalModalOpen(true); }}
+                        onToggleSubgoal={handleToggleSubgoal}
+                      />
+                    ))}
+                 </div>
+              </div>
+           );
+        })}
+      </div>
+    );
+  };
+
+  const renderHabitsGrid = () => {
+    const habitCategories = getCategories(habits);
+    const visibleCategories = selectedHabitCategory === 'All' ? habitCategories : [selectedHabitCategory];
+
+    return (
+      <div className="space-y-12">
+        {visibleCategories.map(cat => {
+           const catHabits = habits.filter(h => (h.category || 'Uncategorized') === cat);
+           if (catHabits.length === 0) return null;
+           
+           return (
+              <div key={cat} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                 {selectedHabitCategory === 'All' && (
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-stone-100 mb-6 flex items-center gap-2 border-b border-slate-200 dark:border-stone-800 pb-2">
+                      {cat} <span className="text-xs font-bold bg-slate-100 dark:bg-stone-800 text-slate-500 dark:text-stone-400 px-2 py-0.5 rounded-full">{catHabits.length}</span>
+                    </h3>
+                 )}
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {catHabits.map(habit => (
+                      <HabitCard 
+                        key={habit.id} 
+                        habit={habit} 
+                        habitLogs={habitLogs}
+                        onToggle={handleToggleHabit} 
+                        onUpdateNote={handleUpdateHabitNote}
+                        onDelete={handleDeleteHabit}
+                        onEdit={(habit) => { setEditingHabit(habit); setIsHabitModalOpen(true); }}
+                        onViewHistory={openHabitHistory}
+                      />
+                    ))}
+                 </div>
+              </div>
+           );
+        })}
+      </div>
+    );
+  };
+
+  if (isLoadingAuth) return <div className="h-screen flex items-center justify-center bg-[#F5F5F7] dark:bg-stone-950"><Loader2 className="animate-spin text-slate-400" size={32} /></div>;
 
   if (!user) return <LoginScreen onLogin={handleLogin} onGuestLogin={handleGuestLogin} loginError={loginError} />;
 
   const dashboardState = { goals, events, habits };
 
   return (
-    <div className="bg-[#F5F5F7] min-h-screen font-sans text-slate-900 selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
+    <div className="bg-[#F5F5F7] dark:bg-stone-950 min-h-screen font-sans text-slate-900 dark:text-stone-100 selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden transition-colors duration-300">
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         user={user} 
         onSignOut={handleSignOut} 
         onProfileClick={() => setActiveTab('settings')}
+        onThemeToggle={toggleTheme}
       />
       
-      {/* Increased padding-left to separate sidebar from content */}
       <main className="md:pl-[120px] lg:pl-[360px] p-6 pb-32 md:pb-10 min-h-screen transition-all duration-300">
         {activeTab === 'dashboard' && (
           <DashboardView 
@@ -608,6 +873,7 @@ export default function App() {
             briefing={briefing}
             isGeneratingBriefing={isGeneratingBriefing}
             onRefreshBriefing={() => generateBriefingHelper(goals, events, habits)}
+            onSaveBriefing={handleSaveBriefing}
             openAddModal={() => { setEditingGoal(null); setGoalDefaultValues(undefined); setIsGoalModalOpen(true); }}
             onViewCalendar={() => setActiveTab('calendar')}
             onGoalIncrement={handleGoalIncrement} 
@@ -621,12 +887,28 @@ export default function App() {
             onEditImportantDate={handleEditImportantDate}
             onDeleteImportantDate={handleDeleteImportantDate}
             weather={weather}
+            userConfig={user.dashboardConfig || DEFAULT_DASHBOARD_CONFIG}
+            onUpdateConfig={handleUpdateDashboardConfig}
+            habitLogs={habitLogs}
+            onToggleHabit={handleToggleHabit}
+            onUpdateHabitNote={handleUpdateHabitNote}
+            onDeleteHabit={handleDeleteHabit}
+            onEditHabit={(habit) => { setEditingHabit(habit); setIsHabitModalOpen(true); }}
+            onViewHabitHistory={openHabitHistory}
+            onToggleSubgoal={handleToggleSubgoal}
+            todaysBriefingEntry={todaysHistoryEntry}
           />
         )}
         {activeTab === 'planner' && (
             <PlannerView 
                 existingEvents={events} 
                 onAddEvents={handleBatchAddEvents} 
+            />
+        )}
+        {activeTab === 'history' && (
+            <HistoryView 
+                history={briefingHistory} 
+                onDelete={handleDeleteHistoryEntry} 
             />
         )}
         {activeTab === 'goals' && (
@@ -637,8 +919,8 @@ export default function App() {
                     <Target className="text-white w-5 h-5 md:w-8 md:h-8" />
                  </div>
                  <div>
-                    <h1 className="text-2xl md:text-4xl font-bold text-slate-900 tracking-tight">Goals & Focus</h1>
-                    <p className="text-emerald-500 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Set targets and visualize your progress</p>
+                    <h1 className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Goals & Focus</h1>
+                    <p className="text-emerald-500 dark:text-emerald-400 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Set targets and visualize your progress</p>
                  </div>
                </div>
                <button 
@@ -648,36 +930,27 @@ export default function App() {
                  <Plus size={20} /> <span className="hidden md:inline">New Goal</span><span className="md:hidden">New</span>
                </button>
              </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {goals.map(goal => (
-                <ProgressCard 
-                  key={goal.id} 
-                  goal={goal} 
-                  linkedHabits={habits.filter(h => h.linkedGoalIds?.includes(goal.id))}
-                  onIncrement={handleGoalIncrement} 
-                  onDecrement={handleGoalDecrement}
-                  onDelete={handleDeleteGoal}
-                  onEdit={(goal) => { setEditingGoal(goal); setIsGoalModalOpen(true); }}
-                />
-              ))}
-              <button 
-                onClick={() => { setEditingGoal(null); setGoalDefaultValues(undefined); setIsGoalModalOpen(true); }}
-                className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 lg:hover:border-emerald-400/50 lg:hover:bg-emerald-50/30 transition-all duration-300 group min-h-[140px] md:min-h-[200px]"
-              >
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-50 lg:group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
-                  <Plus size={24} className="lg:group-hover:text-emerald-500 md:w-7 md:h-7" />
-                </div>
-                <span className="font-bold text-sm">Create New Goal</span>
-              </button>
-             </div>
+             
+             <CategoryFilter 
+                categories={getCategories(goals)} 
+                selected={selectedGoalCategory}
+                onSelect={setSelectedGoalCategory}
+             />
 
-             {/* Goal Suggestions Section */}
-             <div className="mt-12">
+             {goals.length > 0 ? (
+               renderGoalsGrid()
+             ) : (
+                <div className="text-center py-20 bg-white/50 dark:bg-stone-800/50 rounded-[2rem] border border-dashed border-slate-200 dark:border-stone-700">
+                    <p className="text-slate-400 dark:text-stone-500 font-medium">No goals yet. Create one to get started!</p>
+                </div>
+             )}
+
+             <div className="mt-20 border-t border-slate-200 dark:border-stone-800 pt-12">
                <div className="flex items-center gap-3 mb-6">
-                 <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
+                 <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-500 dark:text-emerald-400">
                    <Sparkles size={20} />
                  </div>
-                 <h2 className="text-2xl font-bold text-slate-900">Suggested for you</h2>
+                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Suggested for you</h2>
                </div>
 
                <GoalSuggestionControl 
@@ -689,7 +962,7 @@ export default function App() {
                {isLoadingSuggestions ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
                    {[1,2,3,4].map(i => (
-                     <div key={i} className="h-32 bg-slate-100 rounded-[1.5rem]" />
+                     <div key={i} className="h-32 bg-slate-100 dark:bg-stone-800 rounded-[1.5rem]" />
                    ))}
                  </div>
                ) : suggestedGoals.length > 0 ? (
@@ -703,8 +976,8 @@ export default function App() {
                    ))}
                  </div>
                ) : (
-                 <div className="bg-white/50 border border-slate-100 rounded-[1.5rem] p-8 text-center">
-                   <p className="text-slate-500 font-medium">Select a topic or type your own to get personalized goal suggestions.</p>
+                 <div className="bg-white/50 dark:bg-stone-800/50 border border-slate-100 dark:border-stone-800 rounded-[1.5rem] p-8 text-center">
+                   <p className="text-slate-500 dark:text-stone-500 font-medium">Select a topic or type your own to get personalized goal suggestions.</p>
                  </div>
                )}
              </div>
@@ -727,8 +1000,8 @@ export default function App() {
                     <Dumbbell className="text-white w-5 h-5 md:w-8 md:h-8" />
                  </div>
                  <div>
-                   <h1 className="text-2xl md:text-4xl font-bold text-slate-900 tracking-tight">Habit Tracker</h1>
-                   <p className="text-emerald-500 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Build consistency one day at a time</p>
+                   <h1 className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Habit Tracker</h1>
+                   <p className="text-emerald-500 dark:text-emerald-400 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Build consistency one day at a time</p>
                  </div>
                </div>
                <button 
@@ -738,40 +1011,27 @@ export default function App() {
                  <Plus size={20} /> <span className="hidden md:inline">New Habit</span><span className="md:hidden">New</span>
                </button>
              </div>
-             
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {habits.map(habit => {
-                return (
-                  <HabitCard 
-                    key={habit.id} 
-                    habit={habit} 
-                    habitLogs={habitLogs}
-                    onToggle={handleToggleHabit} 
-                    onUpdateNote={handleUpdateHabitNote}
-                    onDelete={handleDeleteHabit}
-                    onEdit={(habit) => { setEditingHabit(habit); setIsHabitModalOpen(true); }}
-                    onViewHistory={openHabitHistory}
-                  />
-                );
-              })}
-              <button 
-                onClick={() => { setEditingHabit(null); setHabitDefaultValues(undefined); setIsHabitModalOpen(true); }}
-                className="border-2 border-dashed border-slate-200/60 rounded-[2rem] p-6 flex flex-col items-center justify-center text-slate-400 lg:hover:border-emerald-400/50 lg:hover:bg-emerald-50/30 transition-all duration-300 group min-h-[140px] md:min-h-[200px]"
-              >
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-50 lg:group-hover:bg-emerald-100 flex items-center justify-center mb-3 transition-colors">
-                  <Plus size={24} className="lg:group-hover:text-emerald-500 md:w-7 md:h-7" />
-                </div>
-                <span className="font-bold text-sm">Create New Habit</span>
-              </button>
-             </div>
 
-             {/* Habit Suggestions Section */}
-             <div className="mt-12">
+             <CategoryFilter 
+                categories={getCategories(habits)} 
+                selected={selectedHabitCategory}
+                onSelect={setSelectedHabitCategory}
+             />
+             
+             {habits.length > 0 ? (
+               renderHabitsGrid()
+             ) : (
+                <div className="text-center py-20 bg-white/50 dark:bg-stone-800/50 rounded-[2rem] border border-dashed border-slate-200 dark:border-stone-700">
+                    <p className="text-slate-400 dark:text-stone-500 font-medium">No habits yet. Start a new routine!</p>
+                </div>
+             )}
+
+             <div className="mt-20 border-t border-slate-200 dark:border-stone-800 pt-12">
                <div className="flex items-center gap-3 mb-6">
-                 <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
+                 <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-500 dark:text-emerald-400">
                    <Sparkles size={20} />
                  </div>
-                 <h2 className="text-2xl font-bold text-slate-900">Suggested for you</h2>
+                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Suggested for you</h2>
                </div>
                
                <HabitSuggestionControl 
@@ -783,7 +1043,7 @@ export default function App() {
                {isLoadingHabitSuggestions ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
                    {[1,2,3,4].map(i => (
-                     <div key={i} className="h-32 bg-slate-100 rounded-[1.5rem]" />
+                     <div key={i} className="h-32 bg-slate-100 dark:bg-stone-800 rounded-[1.5rem]" />
                    ))}
                  </div>
                ) : suggestedHabits.length > 0 ? (
@@ -797,8 +1057,8 @@ export default function App() {
                    ))}
                  </div>
                ) : (
-                 <div className="bg-white/50 border border-slate-100 rounded-[1.5rem] p-8 text-center">
-                   <p className="text-slate-500 font-medium">Select a topic or type your own to get personalized habit suggestions.</p>
+                 <div className="bg-white/50 dark:bg-stone-800/50 border border-slate-100 dark:border-stone-800 rounded-[1.5rem] p-8 text-center">
+                   <p className="text-slate-500 dark:text-stone-500 font-medium">Select a topic or type your own to get personalized habit suggestions.</p>
                  </div>
                )}
              </div>
@@ -814,18 +1074,18 @@ export default function App() {
                     <Settings className="text-white w-5 h-5 md:w-8 md:h-8" />
                  </div>
                  <div>
-                    <h1 className="text-2xl md:text-4xl font-bold text-slate-900 tracking-tight">Profile & Settings</h1>
-                    <p className="text-emerald-500 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Manage your account and preferences</p>
+                    <h1 className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Profile & Settings</h1>
+                    <p className="text-emerald-500 dark:text-emerald-400 font-bold text-xs md:text-sm mt-1 uppercase tracking-wider">Manage your account and preferences</p>
                  </div>
              </div>
 
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Col: Profile Identity */}
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group h-full">
-                    <div className="absolute top-0 w-full h-32 bg-gradient-to-r from-emerald-100 to-teal-100 opacity-50"></div>
+                <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 shadow-xl border border-slate-100 dark:border-stone-800 flex flex-col items-center text-center relative overflow-hidden group">
+                    <div className="absolute top-0 w-full h-32 bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 opacity-50"></div>
                     
                     <div className="relative z-10 mb-6 mt-4">
-                        <div className={`w-32 h-32 rounded-[2rem] flex items-center justify-center text-5xl font-bold text-white shadow-xl p-1 border-4 border-white lg:group-hover:scale-105 transition-transform duration-300 ${user.customAvatar?.type === 'emoji' ? 'bg-slate-100' : 'bg-gradient-to-tr from-emerald-400 to-teal-500'}`}>
+                        <div className={`w-32 h-32 rounded-[2rem] flex items-center justify-center text-5xl font-bold text-white shadow-xl p-1 border-4 border-white dark:border-stone-800 lg:group-hover:scale-105 transition-transform duration-300 ${user.customAvatar?.type === 'emoji' ? 'bg-slate-100 dark:bg-stone-800' : 'bg-gradient-to-tr from-emerald-400 to-teal-500'}`}>
                             {user.customAvatar ? (
                                 user.customAvatar.type === 'emoji' ? (
                                     <span className="text-7xl">{user.customAvatar.value}</span>
@@ -843,48 +1103,148 @@ export default function App() {
                         
                         <button 
                             onClick={() => setIsProfileModalOpen(true)}
-                            className="absolute -bottom-2 -right-2 bg-white text-slate-600 p-2.5 rounded-full shadow-lg border border-slate-200 lg:hover:bg-slate-50 lg:hover:text-emerald-500 transition-colors"
+                            className="absolute -bottom-2 -right-2 bg-white dark:bg-stone-800 text-slate-600 dark:text-stone-300 p-2.5 rounded-full shadow-lg border border-slate-200 dark:border-stone-700 lg:hover:bg-slate-50 dark:lg:hover:bg-stone-700 lg:hover:text-emerald-500 dark:lg:hover:text-emerald-400 transition-colors"
                             title="Edit Profile Picture"
                         >
                             <Pencil size={18} />
                         </button>
                     </div>
                     
-                    <h2 className="text-2xl font-bold text-slate-900 mb-1">{user.displayName}</h2>
-                    <p className="text-slate-500 font-medium bg-slate-50 px-4 py-1.5 rounded-full text-sm inline-block border border-slate-100">{user.email || 'Guest User'}</p>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{user.displayName}</h2>
+                    <p className="text-slate-500 dark:text-stone-400 font-medium bg-slate-50 dark:bg-stone-800 px-4 py-1.5 rounded-full text-sm inline-block border border-slate-100 dark:border-stone-700">{user.email || 'Guest User'}</p>
+                
+                    <button 
+                         onClick={handleSignOut}
+                         className="w-full mt-8 py-3 bg-white dark:bg-stone-800 text-rose-500 border border-rose-100 dark:border-rose-900/30 rounded-xl font-bold hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-all flex items-center justify-center gap-2"
+                     >
+                         Sign Out
+                     </button>
                 </div>
 
-                {/* Right Col: Stats & Actions */}
-                <div className="lg:col-span-2 flex flex-col gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-lg flex flex-col items-center justify-center gap-2 lg:hover:shadow-xl transition-shadow">
-                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-2">
-                                <Target size={24} />
-                            </div>
-                            <div className="text-4xl font-bold text-slate-900">{goals.length}</div>
-                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Goals</div>
+                {/* Right Col: Dashboard Customization & Stats */}
+                <div className="lg:col-span-2 space-y-8">
+                    
+                    {/* Theme Settings */}
+                    <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-stone-800 shadow-lg">
+                        <div className="flex items-center gap-3 mb-6">
+                           <div className="p-2 bg-slate-100 dark:bg-stone-800 text-slate-600 dark:text-stone-400 rounded-xl">
+                              <Settings size={20} />
+                           </div>
+                           <h3 className="text-xl font-bold text-slate-800 dark:text-white">Appearance</h3>
                         </div>
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-lg flex flex-col items-center justify-center gap-2 lg:hover:shadow-xl transition-shadow">
-                            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-500 flex items-center justify-center mb-2">
-                                <Dumbbell size={24} />
-                            </div>
-                            <div className="text-4xl font-bold text-slate-900">{habits.length}</div>
-                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tracked Habits</div>
+
+                        <div className="bg-slate-50 dark:bg-stone-800 p-1 rounded-2xl border border-slate-100 dark:border-stone-700 flex">
+                            <button
+                                onClick={() => handleToggleTheme('auto')}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${(!user.theme || user.theme === 'auto') ? 'bg-white dark:bg-stone-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-stone-500'}`}
+                            >
+                                <Clock size={18} /> Auto
+                            </button>
+                            <button
+                                onClick={() => handleToggleTheme('light')}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${(user.theme === 'light') ? 'bg-white dark:bg-stone-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-stone-500'}`}
+                            >
+                                <Sun size={18} /> Light
+                            </button>
+                            <button
+                                onClick={() => handleToggleTheme('dark')}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${user.theme === 'dark' ? 'bg-white dark:bg-stone-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-stone-500'}`}
+                            >
+                                <Moon size={18} /> Dark
+                            </button>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-lg flex-1 flex flex-col justify-center items-center gap-6">
-                        <div className="text-center max-w-md">
-                            <h3 className="font-bold text-slate-900 text-lg mb-2">Account Management</h3>
-                            <p className="text-slate-500 text-sm">Sign out to switch accounts or clear your local session.</p>
+                    {/* Dashboard Config */}
+                    <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-stone-800 shadow-lg">
+                        <div className="flex items-center gap-3 mb-6">
+                           <div className="p-2 bg-slate-100 dark:bg-stone-800 text-slate-600 dark:text-stone-400 rounded-xl">
+                              <LayoutDashboard size={20} />
+                           </div>
+                           <h3 className="text-xl font-bold text-slate-800 dark:text-white">Dashboard Layout</h3>
                         </div>
-                        <button 
-                            onClick={handleSignOut}
-                            className="w-full max-w-sm py-4 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-2xl font-bold lg:hover:from-red-600 lg:hover:to-rose-700 transition-all shadow-lg shadow-red-500/20 lg:hover:shadow-xl lg:hover:shadow-red-500/30 flex items-center justify-center gap-2"
-                        >
-                            Sign Out
-                        </button>
-                        <p className="text-xs text-slate-300 font-mono">v1.2.0 • Nexus Dashboard</p>
+                        
+                        <div className="space-y-4">
+                           {/* Style Selector */}
+                           <div className="bg-slate-50 dark:bg-stone-800 p-4 rounded-2xl border border-slate-100 dark:border-stone-700 mb-6">
+                               <label className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wide block mb-3">Daily Briefing Style</label>
+                               <div className="flex gap-2 flex-wrap">
+                                  {['standard', 'concise', 'thorough', 'motivating', 'fun'].map(style => (
+                                     <button
+                                       key={style}
+                                       onClick={() => handleUpdateDashboardConfig({ ...(user.dashboardConfig || DEFAULT_DASHBOARD_CONFIG), briefingStyle: style as any })}
+                                       className={`px-3 py-2 rounded-xl text-sm font-bold capitalize transition-all ${
+                                         (user.dashboardConfig?.briefingStyle || 'standard') === style
+                                           ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                                           : 'bg-white dark:bg-stone-700 text-slate-500 dark:text-stone-400 border border-slate-200 dark:border-stone-600 hover:border-emerald-200 dark:hover:border-emerald-700'
+                                       }`}
+                                     >
+                                        {style}
+                                     </button>
+                                  ))}
+                               </div>
+                           </div>
+
+                           {/* Section Ordering */}
+                           <div className="space-y-2">
+                              <label className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wide block mb-2 px-1">Overview Sections</label>
+                              {[...(user.dashboardConfig?.sections || DEFAULT_DASHBOARD_CONFIG.sections)]
+                                 .sort((a,b) => a.order - b.order)
+                                 .map((section, index, arr) => (
+                                   <div key={section.id} className="flex items-center gap-3 bg-white dark:bg-stone-800 p-3 rounded-2xl border border-slate-100 dark:border-stone-700 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors group">
+                                      <div className="flex-1 font-bold text-slate-700 dark:text-stone-300 ml-2">{section.label}</div>
+                                      
+                                      <div className="flex items-center gap-1">
+                                          <button 
+                                            onClick={() => moveSection(section.id, 'up')}
+                                            disabled={index === 0}
+                                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-stone-700 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
+                                          >
+                                             <ArrowUp size={16} />
+                                          </button>
+                                          <button 
+                                            onClick={() => moveSection(section.id, 'down')}
+                                            disabled={index === arr.length - 1}
+                                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-stone-700 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
+                                          >
+                                             <ArrowDown size={16} />
+                                          </button>
+                                      </div>
+
+                                      <div className="w-px h-6 bg-slate-100 dark:bg-stone-700 mx-1"></div>
+
+                                      <button 
+                                        onClick={() => toggleSectionVisibility(section.id)}
+                                        className={`p-2 rounded-xl transition-all ${
+                                            section.visible 
+                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' 
+                                            : 'bg-slate-50 dark:bg-stone-700 text-slate-400 grayscale'
+                                        }`}
+                                        title={section.visible ? "Hide Section" : "Show Section"}
+                                      >
+                                          {section.visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                                      </button>
+                                   </div>
+                              ))}
+                           </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-stone-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-stone-800 shadow-lg flex flex-col items-center justify-center gap-2 lg:hover:shadow-xl transition-shadow">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 dark:text-emerald-400 flex items-center justify-center mb-2">
+                                <Target size={24} />
+                            </div>
+                            <div className="text-4xl font-bold text-slate-900 dark:text-white">{goals.length}</div>
+                            <div className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-widest">Active Goals</div>
+                        </div>
+                        <div className="bg-white dark:bg-stone-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-stone-800 shadow-lg flex flex-col items-center justify-center gap-2 lg:hover:shadow-xl transition-shadow">
+                            <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-900/20 text-teal-500 dark:text-teal-400 flex items-center justify-center mb-2">
+                                <Dumbbell size={24} />
+                            </div>
+                            <div className="text-4xl font-bold text-slate-900 dark:text-white">{habits.length}</div>
+                            <div className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-widest">Tracked Habits</div>
+                        </div>
                     </div>
                 </div>
              </div>
@@ -904,6 +1264,7 @@ export default function App() {
         onSave={handleSaveGoal}
         editingGoal={editingGoal}
         defaultValues={goalDefaultValues}
+        existingGoals={goals}
       />
 
       <HabitFormModal
@@ -912,6 +1273,7 @@ export default function App() {
         onSave={handleSaveHabit}
         editingHabit={editingHabit}
         defaultValues={habitDefaultValues}
+        existingHabits={habits}
         existingGoals={goals}
       />
 

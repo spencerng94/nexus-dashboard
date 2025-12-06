@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, FunctionDeclaration, Type, Tool } from "@google/genai";
-import { Goal, CalendarEvent, Habit, DashboardState, ProposedEvent } from '../types';
+import { Goal, CalendarEvent, Habit, DashboardState, ProposedEvent, BriefingStyle } from '../types';
 import { googleService } from './google';
 
 // Lazy initialization of the AI client
@@ -74,7 +74,8 @@ const calendarTools: Tool[] = [
 export const generateDailyBriefing = async (
   goals: Goal[],
   events: CalendarEvent[],
-  habits: Habit[]
+  habits: Habit[],
+  style: BriefingStyle = 'standard'
 ): Promise<string> => {
   const ai = getAIClient();
   
@@ -91,24 +92,45 @@ export const generateDailyBriefing = async (
       return eDate.getDate() === today.getDate() && eDate.getMonth() === today.getMonth();
     });
 
+    let styleInstructions = "";
+    switch (style) {
+        case 'concise':
+            styleInstructions = "Be brief but include critical details. Summarize today's schedule items and top 2 priorities in a dense, informative paragraph. Do not skip time-sensitive events. No HTML lists.";
+            break;
+        case 'thorough':
+            styleInstructions = "Be comprehensive and detailed. Analyze the schedule, goals, and habits in depth. Use structured <ul> lists. Provide specific tactical advice for the day. Executive tone.";
+            break;
+        case 'fun':
+            styleInstructions = "Be super enthusiastic, use slang, use lots of emojis! 🚀 Make it feel like a hype-man speaking. High energy!";
+            break;
+        case 'motivating':
+            styleInstructions = "Be an encouraging coach. Focus on potential, growth, and crushing goals. Use strong, empowering verbs. Inspiring tone.";
+            break;
+        default: // standard
+            styleInstructions = "Friendly, productive, and direct. Focus on the main highlights only. Use a compact list format for key events and 1-2 top goals. Avoid fluff and keep it moderate in length.";
+            break;
+    }
+
     const prompt = `
-      Act as an elite productivity strategist and personal chief of staff. Analyze my schedule, goals, and habits to generate a high-impact "Plan for Today".
+      Act as an elite productivity strategist. Analyze my schedule, goals, and habits to generate a "Plan for Today".
 
       CONTEXT:
       - Today's Schedule: ${JSON.stringify(todaysEvents)}
       - Active Goals: ${JSON.stringify(goals.map(g => ({ title: g.title, category: g.category, progress: g.progress, target: g.target })))}
-      - Habits: ${JSON.stringify(habits.map(h => ({ title: h.title, category: h.category })))}
+      - Habits: ${JSON.stringify(habits.map(h => ({ title: h.title, category: h.category, streak: h.streak })))}
 
-      INSTRUCTIONS:
+      STYLE SETTING: ${style}
+      STYLE INSTRUCTIONS: ${styleInstructions}
+
+      GENERAL INSTRUCTIONS:
       1. Output raw HTML only. No Markdown block markers.
-      2. Structure the content into clear, productivity-focused categories (e.g., "⚡ WORK FOCUS", "💪 HEALTH & ROUTINE", "🎯 PERSONAL GROWTH"). Derive these based on the category data provided.
-      3. Opening: A concise, motivating 1-sentence summary of the day's potential (<p class="text-xl md:text-2xl font-medium text-slate-800 mb-6 leading-tight">).
-      4. Categories:
-         - Header: <h4 class="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3 mt-6 border-b border-emerald-100 pb-1">CATEGORY NAME</h4>
-         - List: <ul class="space-y-3">
-         - Items: <li class="text-sm md:text-base text-slate-600 flex items-start gap-2"><span class="text-emerald-400 mt-1.5 text-[10px] scale-75">●</span> <span>Content here...</span></li>
-      5. Highlights: Wrap specific times, event titles, and key numbers in <span class="text-emerald-700 font-bold">...</span>.
-      6. Content Style: Be specific and actionable. Connect habits to goals. Identify the "one big thing" if possible.
+      2. If style is 'standard', 'fun', 'motivating', or 'thorough', use these classes:
+         - Opening: <p class="text-xl md:text-2xl font-medium text-slate-800 dark:text-slate-100 mb-6 leading-tight">
+         - Headers: <h4 class="text-xs font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-widest mb-3 mt-6 border-b border-emerald-100 dark:border-emerald-500/30 pb-1">
+         - List Items: <li class="text-sm md:text-base text-slate-600 dark:text-slate-300 mb-2 pl-2 border-l-2 border-slate-100 dark:border-slate-700 block">
+         - Highlights: <span class="text-emerald-700 dark:text-emerald-400 font-bold">
+      3. If style is 'concise', return a single <p class="text-lg text-slate-700 dark:text-slate-300 font-medium leading-relaxed"> block containing the critical details.
+      4. Ensure lists do NOT use flexbox to prevent wrapping issues.
     `;
 
     const response = await ai.models.generateContent({

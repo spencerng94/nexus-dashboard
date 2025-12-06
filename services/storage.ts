@@ -1,4 +1,4 @@
-import { Goal, Habit, HabitLog, CalendarEvent, ImportantDate } from '../types';
+import { Goal, Habit, HabitLog, CalendarEvent, ImportantDate, BriefingHistoryEntry } from '../types';
 
 // Keys for LocalStorage
 const KEYS = {
@@ -7,7 +7,8 @@ const KEYS = {
   HABIT_LOGS: 'nexus_habit_logs',
   EVENTS: 'nexus_events',
   IMPORTANT_DATES: 'nexus_dates',
-  USER: 'nexus_user'
+  USER: 'nexus_user',
+  BRIEFING_HISTORY: 'nexus_briefing_history'
 };
 
 // Initial Mock Data
@@ -69,6 +70,9 @@ export const storageService = {
   getImportantDates: () => get<ImportantDate[]>(KEYS.IMPORTANT_DATES, INITIAL_IMPORTANT_DATES),
   saveImportantDates: (dates: ImportantDate[]) => set(KEYS.IMPORTANT_DATES, dates),
   
+  getBriefingHistory: () => get<BriefingHistoryEntry[]>(KEYS.BRIEFING_HISTORY, []),
+  saveBriefingHistory: (history: BriefingHistoryEntry[]) => set(KEYS.BRIEFING_HISTORY, history),
+
   getUser: () => {
     try {
       const userStr = localStorage.getItem(KEYS.USER);

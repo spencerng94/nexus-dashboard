@@ -1,25 +1,25 @@
 
 import React from 'react';
-import { LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, Shield, ArrowRight, Info, NotebookPen } from 'lucide-react';
+import { LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, Shield, ArrowRight, Info, NotebookPen, Mail } from 'lucide-react';
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
-  <div className="bg-white/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 shadow-lg shadow-emerald-100/20 lg:hover:shadow-xl lg:hover:shadow-emerald-100/40 transition-all duration-300 lg:hover:-translate-y-1">
-    <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 mb-4">
+  <div className="bg-white/60 dark:bg-stone-900/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 dark:border-stone-800 shadow-lg shadow-emerald-100/20 dark:shadow-none lg:hover:shadow-xl lg:hover:shadow-emerald-100/40 transition-all duration-300 lg:hover:-translate-y-1">
+    <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center text-emerald-500 dark:text-emerald-400 mb-4">
       {icon}
     </div>
-    <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
-    <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
+    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
+    <p className="text-sm text-slate-500 dark:text-stone-400 leading-relaxed">{description}</p>
   </div>
 );
 
 const StepCard: React.FC<{ number: string; title: string; text: string }> = ({ number, title, text }) => (
   <div className="flex gap-4 items-start">
-    <div className="w-10 h-10 shrink-0 bg-slate-900 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-slate-900/20">
+    <div className="w-10 h-10 shrink-0 bg-slate-900 dark:bg-stone-700 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 dark:shadow-none">
       {number}
     </div>
     <div>
-      <h4 className="font-bold text-slate-800 text-lg mb-1">{title}</h4>
-      <p className="text-sm text-slate-500">{text}</p>
+      <h4 className="font-bold text-slate-800 dark:text-white text-lg mb-1">{title}</h4>
+      <p className="text-sm text-slate-500 dark:text-stone-400">{text}</p>
     </div>
   </div>
 );
@@ -32,8 +32,8 @@ const AboutView: React.FC = () => {
             <Info className="text-white w-5 h-5 md:w-8 md:h-8" />
         </div>
         <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">About Nexus</h1>
-            <p className="text-emerald-500 font-bold text-sm mt-1 uppercase tracking-wider">Philosophy & Guide</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">About Nexus</h1>
+            <p className="text-emerald-500 dark:text-emerald-400 font-bold text-sm mt-1 uppercase tracking-wider">Philosophy & Guide</p>
         </div>
       </div>
 
@@ -42,17 +42,17 @@ const AboutView: React.FC = () => {
         <div className="lg:col-span-2 space-y-8">
           
           {/* Mission */}
-          <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-100/50 to-teal-100/50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+          <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-stone-800 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-100/50 to-teal-100/50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
              
-             <h2 className="text-3xl font-bold text-slate-900 mb-6 relative z-10">
+             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-6 relative z-10">
                Your Intelligent Command Center
              </h2>
-             <p className="text-lg text-slate-600 leading-relaxed mb-6 relative z-10">
+             <p className="text-lg text-slate-600 dark:text-stone-300 leading-relaxed mb-6 relative z-10">
                Nexus is designed to close the gap between <strong>planning</strong> and <strong>doing</strong>. 
                Unlike fragmented tools that separate your calendar from your goals, Nexus brings them together into a single, cohesive dashboard powered by Generative AI.
              </p>
-             <p className="text-lg text-slate-600 leading-relaxed relative z-10">
+             <p className="text-lg text-slate-600 dark:text-stone-300 leading-relaxed relative z-10">
                Whether you want to build new habits, track professional goals, or simply get a handle on your daily schedule, Nexus provides the clarity you need to perform at your best.
              </p>
           </div>
@@ -97,8 +97,8 @@ const AboutView: React.FC = () => {
         <div className="space-y-8">
            
            {/* How to Use */}
-           <div className="bg-slate-50 rounded-[2.5rem] p-8 border border-slate-100">
-              <h3 className="text-xl font-bold text-slate-900 mb-6">How to use Nexus</h3>
+           <div className="bg-slate-50 dark:bg-stone-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-stone-800">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">How to use Nexus</h3>
               <div className="space-y-8">
                 <StepCard 
                   number="1"
@@ -124,7 +124,7 @@ const AboutView: React.FC = () => {
            </div>
 
            {/* Tech Stack */}
-           <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-[2.5rem] p-8 text-white shadow-xl shadow-stone-900/20 relative overflow-hidden">
+           <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-[2.5rem] p-8 text-white shadow-xl shadow-stone-900/20 dark:shadow-none relative overflow-hidden">
               <div className="absolute bottom-0 right-0 w-32 h-32 bg-emerald-500 rounded-full blur-3xl opacity-20 -mr-10 -mb-10" />
               <h3 className="text-xl font-bold text-white mb-4">Under the Hood</h3>
               <p className="text-stone-300 text-sm mb-6 leading-relaxed">
@@ -149,6 +149,32 @@ const AboutView: React.FC = () => {
                 </li>
               </ul>
            </div>
+
+           {/* Feedback Section */}
+           <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-stone-800 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-100 dark:bg-emerald-900/10 rounded-full blur-3xl -mr-10 -mt-10 transition-opacity opacity-50 group-hover:opacity-100 pointer-events-none" />
+              
+              <div className="relative z-10">
+                <div className="w-12 h-12 bg-slate-50 dark:bg-stone-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-stone-500 mb-4 group-hover:scale-110 transition-transform duration-300 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20 group-hover:text-emerald-500">
+                    <Mail size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Have Feedback?</h3>
+                <p className="text-slate-500 dark:text-stone-400 text-sm mb-6 leading-relaxed">
+                    We'd love to hear from you. Help us shape the future of Nexus by sharing your ideas or reporting issues.
+                </p>
+                
+                <a 
+                    href="mailto:nexus.planner.ai@gmail.com?subject=Nexus%20Feedback&body=Hi%20Nexus%20Team%2C%0A%0AType%20of%20Feedback%3A%20(Feature%20Request%20%2F%20Bug%20Report%20%2F%20General)%0A%0ADescription%3A%0A%0AWhat%20I%20love%3A%0A%0AWhat%20could%20be%20better%3A"
+                    className="w-full py-3.5 bg-slate-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10 dark:shadow-none"
+                >
+                    <Mail size={18} /> Send Feedback
+                </a>
+                <p className="text-center text-[10px] text-slate-400 dark:text-stone-500 mt-3">
+                    Opens email client with template
+                </p>
+              </div>
+           </div>
+
         </div>
       </div>
     </div>
