@@ -983,7 +983,7 @@ export default function App() {
            <AboutView />
         )}
         {activeTab === 'settings' && (
-          <div className="max-w-[1600px] mx-auto">
+          <div className="max-w-[1200px] mx-auto pb-20">
              <div className="flex items-center gap-4 mb-8">
                  <div className="w-10 h-10 md:w-14 md:h-14 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
                     <Settings className="text-white w-5 h-5 md:w-8 md:h-8" />
@@ -994,16 +994,16 @@ export default function App() {
                  </div>
              </div>
 
-             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Col: Profile Identity */}
-                <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 shadow-xl border border-slate-100 dark:border-stone-800 flex flex-col items-center text-center relative overflow-hidden group">
-                    <div className="absolute top-0 w-full h-32 bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 opacity-50"></div>
+             <div className="space-y-6">
+                {/* Profile Card - Horizontal Row */}
+                <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-6 md:p-8 shadow-xl border border-slate-100 dark:border-stone-800 flex flex-col md:flex-row items-center gap-6 md:gap-8 relative overflow-hidden group">
+                    <div className="absolute top-0 w-full h-full bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-900/10 dark:to-teal-900/10 opacity-50 pointer-events-none"></div>
                     
-                    <div className="relative z-10 mb-6 mt-4">
-                        <div className={`w-32 h-32 rounded-[2rem] flex items-center justify-center text-5xl font-bold text-white shadow-xl p-1 border-4 border-white dark:border-stone-800 lg:group-hover:scale-105 transition-transform duration-300 ${user.customAvatar?.type === 'emoji' ? 'bg-slate-100 dark:bg-stone-800' : 'bg-gradient-to-tr from-emerald-400 to-teal-500'}`}>
+                    <div className="relative z-10 shrink-0">
+                        <div className={`w-24 h-24 md:w-28 md:h-28 rounded-[2rem] flex items-center justify-center text-4xl md:text-5xl font-bold text-white shadow-xl p-1 border-4 border-white dark:border-stone-800 ${user.customAvatar?.type === 'emoji' ? 'bg-slate-100 dark:bg-stone-800' : 'bg-gradient-to-tr from-emerald-400 to-teal-500'}`}>
                             {user.customAvatar ? (
                                 user.customAvatar.type === 'emoji' ? (
-                                    <span className="text-7xl">{user.customAvatar.value}</span>
+                                    <span>{user.customAvatar.value}</span>
                                 ) : (
                                     <div className={`w-full h-full rounded-[1.8rem] bg-${user.customAvatar.color || 'emerald'}-500 flex items-center justify-center`}>
                                         {user.customAvatar.value}
@@ -1015,37 +1015,38 @@ export default function App() {
                                 <span>{user.displayName?.charAt(0) || 'U'}</span>
                             )}
                         </div>
-                        
                         <button 
                             onClick={() => setIsProfileModalOpen(true)}
-                            className="absolute -bottom-2 -right-2 bg-white dark:bg-stone-800 text-slate-600 dark:text-stone-300 p-2.5 rounded-full shadow-lg border border-slate-200 dark:border-stone-700 lg:hover:bg-slate-50 dark:lg:hover:bg-stone-700 lg:hover:text-emerald-500 dark:lg:hover:text-emerald-400 transition-colors"
-                            title="Edit Profile Picture"
+                            className="absolute -bottom-2 -right-2 bg-white dark:bg-stone-800 text-slate-600 dark:text-stone-300 p-2 rounded-full shadow-lg border border-slate-200 dark:border-stone-700 hover:text-emerald-500 transition-colors"
                         >
-                            <Pencil size={18} />
+                            <Pencil size={16} />
                         </button>
                     </div>
-                    
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{user.displayName}</h2>
-                    <p className="text-slate-500 dark:text-stone-400 font-medium bg-slate-50 dark:bg-stone-800 px-4 py-1.5 rounded-full text-sm inline-block border border-slate-100 dark:border-stone-700">{user.email || 'Guest User'}</p>
-                
-                    <button 
-                         onClick={handleSignOut}
-                         className="w-full mt-8 py-3 bg-white dark:bg-stone-800 text-rose-500 border border-rose-100 dark:border-rose-900/30 rounded-xl font-bold hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-all flex items-center justify-center gap-2"
-                     >
-                         Sign Out
-                     </button>
+
+                    <div className="relative z-10 flex-1 text-center md:text-left min-w-0">
+                        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-1 truncate">{user.displayName}</h2>
+                        <p className="text-slate-500 dark:text-stone-400 font-medium bg-white/50 dark:bg-stone-800 px-4 py-1.5 rounded-full text-sm inline-block border border-slate-200 dark:border-stone-700">{user.email || 'Guest User'}</p>
+                    </div>
+
+                    <div className="relative z-10 w-full md:w-auto">
+                        <button 
+                            onClick={handleSignOut}
+                            className="w-full md:w-auto px-6 py-3 bg-white dark:bg-stone-800 text-rose-500 border border-rose-100 dark:border-rose-900/30 rounded-xl font-bold hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-all flex items-center justify-center gap-2 shadow-sm"
+                        >
+                            Sign Out
+                        </button>
+                    </div>
                 </div>
 
-                {/* Right Col: Dashboard Customization & Stats */}
-                <div className="lg:col-span-2 space-y-8">
-                    
+                {/* Second Row: Appearance & Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Theme Settings */}
-                    <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-stone-800 shadow-lg">
+                    <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-stone-800 shadow-lg flex flex-col justify-center">
                         <div className="flex items-center gap-3 mb-6">
-                           <div className="p-2 bg-slate-100 dark:bg-stone-800 text-slate-600 dark:text-stone-400 rounded-xl">
-                              <Settings size={20} />
-                           </div>
-                           <h3 className="text-xl font-bold text-slate-800 dark:text-white">Appearance</h3>
+                        <div className="p-2 bg-slate-100 dark:bg-stone-800 text-slate-600 dark:text-stone-400 rounded-xl">
+                            <Settings size={20} />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-white">Appearance</h3>
                         </div>
 
                         <div className="bg-slate-50 dark:bg-stone-800 p-1 rounded-2xl border border-slate-100 dark:border-stone-700 flex">
@@ -1070,99 +1071,102 @@ export default function App() {
                         </div>
                     </div>
 
-                    {/* Dashboard Config */}
-                    <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-stone-800 shadow-lg">
-                        <div className="flex items-center gap-3 mb-6">
-                           <div className="p-2 bg-slate-100 dark:bg-stone-800 text-slate-600 dark:text-stone-400 rounded-xl">
-                              <LayoutDashboard size={20} />
-                           </div>
-                           <h3 className="text-xl font-bold text-slate-800 dark:text-white">Dashboard Layout</h3>
-                        </div>
-                        
-                        <div className="space-y-4">
-                           {/* Style Selector */}
-                           <div className="bg-slate-50 dark:bg-stone-800 p-4 rounded-2xl border border-slate-100 dark:border-stone-700 mb-6">
-                               <label className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wide block mb-3">Daily Briefing Style</label>
-                               <div className="flex gap-2 flex-wrap">
-                                  {['standard', 'concise', 'thorough', 'motivating', 'fun'].map(style => (
-                                     <button
-                                       key={style}
-                                       onClick={() => handleUpdateDashboardConfig({ ...(user.dashboardConfig || DEFAULT_DASHBOARD_CONFIG), briefingStyle: style as any })}
-                                       className={`px-3 py-2 rounded-xl text-sm font-bold capitalize transition-all ${
-                                         (user.dashboardConfig?.briefingStyle || 'standard') === style
-                                           ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                                           : 'bg-white dark:bg-stone-700 text-slate-500 dark:text-stone-400 border border-slate-200 dark:border-stone-600 hover:border-emerald-200 dark:hover:border-emerald-700'
-                                       }`}
-                                     >
-                                        {style}
-                                     </button>
-                                  ))}
-                               </div>
-                           </div>
-
-                           {/* Section Ordering */}
-                           <div className="space-y-2">
-                              <label className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wide block mb-2 px-1">Overview Sections</label>
-                              {[...(user.dashboardConfig?.sections || DEFAULT_DASHBOARD_CONFIG.sections)]
-                                 .sort((a,b) => a.order - b.order)
-                                 .map((section, index, arr) => (
-                                   <div key={section.id} className="flex items-center gap-3 bg-white dark:bg-stone-800 p-3 rounded-2xl border border-slate-100 dark:border-stone-700 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors group">
-                                      <div className="flex-1 font-bold text-slate-700 dark:text-stone-300 ml-2">{section.label}</div>
-                                      
-                                      <div className="flex items-center gap-1">
-                                          <button 
-                                            onClick={() => moveSection(section.id, 'up')}
-                                            disabled={index === 0}
-                                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-stone-700 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
-                                          >
-                                             <ArrowUp size={16} />
-                                          </button>
-                                          <button 
-                                            onClick={() => moveSection(section.id, 'down')}
-                                            disabled={index === arr.length - 1}
-                                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-stone-700 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
-                                          >
-                                             <ArrowDown size={16} />
-                                          </button>
-                                      </div>
-
-                                      <div className="w-px h-6 bg-slate-100 dark:bg-stone-700 mx-1"></div>
-
-                                      <button 
-                                        onClick={() => toggleSectionVisibility(section.id)}
-                                        className={`p-2 rounded-xl transition-all ${
-                                            section.visible 
-                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' 
-                                            : 'bg-slate-50 dark:bg-stone-700 text-slate-400 grayscale'
-                                        }`}
-                                        title={section.visible ? "Hide Section" : "Show Section"}
-                                      >
-                                          {section.visible ? <Eye size={18} /> : <EyeOff size={18} />}
-                                      </button>
-                                   </div>
-                              ))}
-                           </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-stone-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-stone-800 shadow-lg flex flex-col items-center justify-center gap-2 lg:hover:shadow-xl transition-shadow">
-                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 dark:text-emerald-400 flex items-center justify-center mb-2">
-                                <Target size={24} />
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-4 h-full">
+                        <div className="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-stone-800 shadow-lg flex flex-col items-center justify-center gap-2">
+                            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 dark:text-emerald-400 flex items-center justify-center mb-1">
+                                <Target size={20} />
                             </div>
-                            <div className="text-4xl font-bold text-slate-900 dark:text-white">{goals.length}</div>
-                            <div className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-widest">Active Goals</div>
+                            <div className="text-3xl font-bold text-slate-900 dark:text-white">{goals.length}</div>
+                            <div className="text-[10px] font-bold text-slate-400 dark:text-stone-500 uppercase tracking-widest text-center">Active Goals</div>
                         </div>
-                        <div className="bg-white dark:bg-stone-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-stone-800 shadow-lg flex flex-col items-center justify-center gap-2 lg:hover:shadow-xl transition-shadow">
-                            <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-900/20 text-teal-500 dark:text-teal-400 flex items-center justify-center mb-2">
-                                <Dumbbell size={24} />
+                        <div className="bg-white dark:bg-stone-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-stone-800 shadow-lg flex flex-col items-center justify-center gap-2">
+                            <div className="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-900/20 text-teal-500 dark:text-teal-400 flex items-center justify-center mb-1">
+                                <Dumbbell size={20} />
                             </div>
-                            <div className="text-4xl font-bold text-slate-900 dark:text-white">{habits.length}</div>
-                            <div className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-widest">Tracked Habits</div>
+                            <div className="text-3xl font-bold text-slate-900 dark:text-white">{habits.length}</div>
+                            <div className="text-[10px] font-bold text-slate-400 dark:text-stone-500 uppercase tracking-widest text-center">Habits</div>
                         </div>
                     </div>
                 </div>
-             </div>
+
+                {/* Third Row: Dashboard Config */}
+                <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-stone-800 shadow-lg">
+                    <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-slate-100 dark:bg-stone-800 text-slate-600 dark:text-stone-400 rounded-xl">
+                        <LayoutDashboard size={20} />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white">Dashboard Layout</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Style Selector */}
+                    <div>
+                        <label className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wide block mb-3">Daily Briefing Style</label>
+                        <div className="flex gap-2 flex-wrap">
+                            {['standard', 'concise', 'thorough', 'motivating', 'fun'].map(style => (
+                                <button
+                                key={style}
+                                onClick={() => handleUpdateDashboardConfig({ ...(user.dashboardConfig || DEFAULT_DASHBOARD_CONFIG), briefingStyle: style as any })}
+                                className={`px-3 py-2 rounded-xl text-sm font-bold capitalize transition-all ${
+                                    (user.dashboardConfig?.briefingStyle || 'standard') === style
+                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                                    : 'bg-white dark:bg-stone-800 text-slate-500 dark:text-stone-400 border border-slate-200 dark:border-stone-700 hover:border-emerald-200 dark:hover:border-emerald-700'
+                                }`}
+                                >
+                                    {style}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Section Ordering */}
+                    <div>
+                        <label className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wide block mb-2 px-1">Overview Sections</label>
+                        <div className="space-y-2">
+                        {[...(user.dashboardConfig?.sections || DEFAULT_DASHBOARD_CONFIG.sections)]
+                            .sort((a,b) => a.order - b.order)
+                            .map((section, index, arr) => (
+                            <div key={section.id} className="flex items-center gap-3 bg-slate-50 dark:bg-stone-800/50 p-3 rounded-2xl border border-slate-100 dark:border-stone-700 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors group">
+                                <div className="flex-1 font-bold text-slate-700 dark:text-stone-300 ml-2 text-sm">{section.label}</div>
+                                
+                                <div className="flex items-center gap-1">
+                                    <button 
+                                        onClick={() => moveSection(section.id, 'up')}
+                                        disabled={index === 0}
+                                        className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-stone-600 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
+                                    >
+                                        <ArrowUp size={14} />
+                                    </button>
+                                    <button 
+                                        onClick={() => moveSection(section.id, 'down')}
+                                        disabled={index === arr.length - 1}
+                                        className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-stone-600 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
+                                    >
+                                        <ArrowDown size={14} />
+                                    </button>
+                                </div>
+
+                                <div className="w-px h-6 bg-slate-200 dark:bg-stone-600 mx-1"></div>
+
+                                <button 
+                                    onClick={() => toggleSectionVisibility(section.id)}
+                                    className={`p-1.5 rounded-xl transition-all ${
+                                        section.visible 
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' 
+                                        : 'bg-slate-200 dark:bg-stone-700 text-slate-400 grayscale'
+                                    }`}
+                                    title={section.visible ? "Hide Section" : "Show Section"}
+                                >
+                                    {section.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                                </button>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
           </div>
         )}
       </main>
