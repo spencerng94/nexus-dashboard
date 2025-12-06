@@ -1,5 +1,3 @@
-
-
 export interface Subgoal {
   id: string;
   title: string;
@@ -62,19 +60,19 @@ export interface ImportantDate {
   type: string; // e.g. "Urgent", "Personal", "Birthday"
 }
 
-export interface BriefingHistoryEntry {
-  id: string;
-  date: string; // YYYY-MM-DD
-  content: string;
-  style: BriefingStyle;
-  timestamp: number;
-}
-
 // --- DASHBOARD CONFIGURATION TYPES ---
 
 export type DashboardSectionType = 'briefing' | 'goals' | 'habits' | 'schedule' | 'dates';
 
 export type BriefingStyle = 'standard' | 'concise' | 'fun' | 'motivating' | 'thorough';
+
+export interface BriefingHistoryEntry {
+  id: string;
+  date: string;
+  timestamp: number;
+  style: BriefingStyle;
+  content: string;
+}
 
 export interface DashboardSectionConfig {
   id: DashboardSectionType;

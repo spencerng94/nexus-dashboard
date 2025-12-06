@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings, ArrowUp, ArrowDown, Eye, EyeOff, LayoutDashboard, Moon, Sun, Clock } from 'lucide-react';
-import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate, DashboardConfig, BriefingStyle, Theme, BriefingHistoryEntry } from './types';
+import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate, DashboardConfig, BriefingStyle, Theme } from './types';
 import { storageService } from './services/storage';
 import { googleService } from './services/google';
 import { weatherService } from './services/weather';
@@ -14,7 +15,6 @@ import ChatWidget from './components/ChatWidget';
 import CalendarView from './components/CalendarView';
 import AboutView from './components/AboutView'; 
 import PlannerView from './components/PlannerView';
-import HistoryView from './components/HistoryView';
 import { DashboardView, CategoryFilter } from './components/DashboardComponents';
 import { ProgressCard, GoalFormModal, GoalSuggestionCard, SuggestionControl as GoalSuggestionControl } from './components/GoalComponents';
 import { HabitCard, HabitFormModal, HabitHistoryModal, HabitSuggestionCard, SuggestionControl as HabitSuggestionControl } from './components/HabitComponents';
@@ -31,7 +31,6 @@ const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
   briefingStyle: 'standard'
 };
 
-// ... (ProfileAvatarModal code remains the same as provided in previous turns, omitted for brevity but assumed present)
 // --- PROFILE EDIT MODAL ---
 interface ProfileAvatarModalProps {
   isOpen: boolean;
@@ -174,7 +173,6 @@ export default function App() {
   const [habitLogs, setHabitLogs] = useState<Record<string, HabitLog>>({}); 
   const [events, setEvents] = useState<CalendarEvent[]>([]); 
   const [importantDates, setImportantDates] = useState<ImportantDate[]>([]);
-  const [briefingHistory, setBriefingHistory] = useState<BriefingHistoryEntry[]>([]);
   const [weather, setWeather] = useState<{ temp: number, condition: string } | null>(null);
 
   const [briefing, setBriefing] = useState("");
@@ -185,7 +183,7 @@ export default function App() {
   
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // Used for Habit History Modal
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [goalDefaultValues, setGoalDefaultValues] = useState<{title?: string, category?: string, icon?: string} | undefined>(undefined);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
@@ -207,18 +205,6 @@ export default function App() {
   // Category Filtering State
   const [selectedGoalCategory, setSelectedGoalCategory] = useState<string>('All');
   const [selectedHabitCategory, setSelectedHabitCategory] = useState<string>('All');
-
-  // Date Helpers
-  const getTodayLocal = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const todayLocal = getTodayLocal();
-  const todaysHistoryEntry = briefingHistory.find(h => h.date === todayLocal);
 
   // Sync Theme with User Preference
   useEffect(() => {
@@ -256,14 +242,11 @@ export default function App() {
         const localHabits = storageService.getHabits();
         const localLogs = storageService.getHabitLogs();
         const localDates = storageService.getImportantDates();
-        // Always fetch fresh history on load
-        const localHistory = storageService.getBriefingHistory();
 
         setGoals(localGoals);
         setHabits(localHabits);
         setHabitLogs(localLogs);
         setImportantDates(localDates);
-        setBriefingHistory(localHistory);
 
         syncEvents();
       }
@@ -316,66 +299,6 @@ export default function App() {
     const newBriefing = await generateDailyBriefing(currentGoals, currentEvents, currentHabits, style);
     setBriefing(newBriefing);
     setIsGeneratingBriefing(false);
-  };
-
-  const handleSaveBriefing = (contentToSave: string) => {
-      // 1. Determine content
-      const content = contentToSave; 
-      if (!content) return false;
-      
-      const tLocal = getTodayLocal();
-
-      // 2. Fresh read from storage
-      const currentHistory = storageService.getBriefingHistory() || [];
-      
-      // 3. Check for existing
-      const existingEntry = currentHistory.find(h => h.date === tLocal);
-      
-      if (existingEntry) {
-        // If content matches, we consider it saved (no action needed but report success)
-        if (existingEntry.content === content) {
-          return true;
-        }
-
-        // WARN USER
-        if (!window.confirm("A plan for today already exists. Do you want to replace it with this new version?")) {
-          return false;
-        }
-      }
-
-      // 4. Create new entry
-      const newEntry: BriefingHistoryEntry = {
-        id: Date.now().toString(),
-        date: tLocal,
-        content: content,
-        style: user?.dashboardConfig?.briefingStyle || 'standard',
-        timestamp: Date.now()
-      };
-
-      // 5. Construct completely new array: Remove old entry for today if exists, add new one to top
-      const filteredHistory = currentHistory.filter(h => h.date !== tLocal);
-      const updatedHistory = [newEntry, ...filteredHistory];
-
-      // 6. Save and Update State
-      storageService.saveBriefingHistory(updatedHistory);
-      setBriefingHistory(updatedHistory); 
-
-      return true;
-  };
-
-  const handleDeleteHistoryEntry = (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this plan from history?")) {
-        return;
-    }
-    
-    // 1. Read fresh
-    const currentHistory = storageService.getBriefingHistory() || [];
-    // 2. Filter
-    const updatedHistory = currentHistory.filter(h => h.id !== id);
-    // 3. Write
-    storageService.saveBriefingHistory(updatedHistory);
-    // 4. Update State (using spread to ensure new reference)
-    setBriefingHistory([...updatedHistory]);
   };
 
   // ... (Rest of App.tsx remains largely unchanged - handling login, guests, profiles, etc.)
@@ -826,7 +749,7 @@ export default function App() {
                       {cat} <span className="text-xs font-bold bg-slate-100 dark:bg-stone-800 text-slate-500 dark:text-stone-400 px-2 py-0.5 rounded-full">{catHabits.length}</span>
                     </h3>
                  )}
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {catHabits.map(habit => (
                       <HabitCard 
                         key={habit.id} 
@@ -873,7 +796,6 @@ export default function App() {
             briefing={briefing}
             isGeneratingBriefing={isGeneratingBriefing}
             onRefreshBriefing={() => generateBriefingHelper(goals, events, habits)}
-            onSaveBriefing={handleSaveBriefing}
             openAddModal={() => { setEditingGoal(null); setGoalDefaultValues(undefined); setIsGoalModalOpen(true); }}
             onViewCalendar={() => setActiveTab('calendar')}
             onGoalIncrement={handleGoalIncrement} 
@@ -896,19 +818,12 @@ export default function App() {
             onEditHabit={(habit) => { setEditingHabit(habit); setIsHabitModalOpen(true); }}
             onViewHabitHistory={openHabitHistory}
             onToggleSubgoal={handleToggleSubgoal}
-            todaysBriefingEntry={todaysHistoryEntry}
           />
         )}
         {activeTab === 'planner' && (
             <PlannerView 
                 existingEvents={events} 
                 onAddEvents={handleBatchAddEvents} 
-            />
-        )}
-        {activeTab === 'history' && (
-            <HistoryView 
-                history={briefingHistory} 
-                onDelete={handleDeleteHistoryEntry} 
             />
         )}
         {activeTab === 'goals' && (

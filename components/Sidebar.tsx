@@ -1,7 +1,7 @@
 
 
 import React, { useMemo } from 'react';
-import { LayoutDashboard, Calendar as CalendarIcon, Target, Dumbbell, User as UserIcon, LogOut, Info, NotebookPen, Moon, Sun, History } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Target, Dumbbell, User as UserIcon, LogOut, Info, NotebookPen, Moon, Sun } from 'lucide-react';
 import { User } from '../types';
 
 interface SidebarProps {
@@ -20,7 +20,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
     { id: 'calendar', icon: CalendarIcon, label: 'Calendar' },
     { id: 'goals', icon: Target, label: 'Goals' },
     { id: 'habits', icon: Dumbbell, label: 'Habits' },
-    { id: 'history', icon: History, label: 'History' },
     { id: 'about', icon: Info, label: 'About' },
   ];
 

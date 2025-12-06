@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin, LayoutDashboard, Pencil, Check, History } from 'lucide-react';
-import { Goal, CalendarEvent, ImportantDate, Habit, DashboardConfig, DashboardSectionConfig, HabitLog, BriefingStyle, BriefingHistoryEntry } from '../types';
+import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin, LayoutDashboard, Pencil, Check } from 'lucide-react';
+import { Goal, CalendarEvent, ImportantDate, Habit, DashboardConfig, DashboardSectionConfig, HabitLog, BriefingStyle } from '../types';
 import { ProgressCard } from './GoalComponents';
 import { HabitCard } from './HabitComponents';
 
@@ -11,26 +12,7 @@ export const DailyBriefingWidget: React.FC<{
   onRefresh: () => void;
   currentStyle: BriefingStyle;
   onSetStyle: (s: BriefingStyle) => void;
-  onSave: (content: string) => boolean; 
-  savedBriefingEntry?: BriefingHistoryEntry;
-}> = ({ briefing, isGenerating, onRefresh, currentStyle, onSetStyle, onSave, savedBriefingEntry }) => {
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  // Robustly compare current briefing vs saved entry to determine if "Saved" or "Updated"
-  const isContentSaved = savedBriefingEntry 
-    ? (savedBriefingEntry.content || "").trim() === (briefing || "").trim() 
-    : false;
-    
-  const hasEntryForToday = !!savedBriefingEntry;
-
-  const handleSaveClick = () => {
-    if (!briefing) return;
-    const success = onSave(briefing);
-    if (success) {
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2500);
-    }
-  };
+}> = ({ briefing, isGenerating, onRefresh, currentStyle, onSetStyle }) => {
 
   const styles: {id: BriefingStyle, label: string}[] = [
     { id: 'standard', label: 'Standard' },
@@ -47,77 +29,41 @@ export const DailyBriefingWidget: React.FC<{
       
       <div className="relative z-10 w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-500 dark:text-emerald-400">
               <Sparkles size={20} />
             </div>
             <span className="text-sm font-bold text-emerald-900 dark:text-emerald-400 tracking-wider uppercase opacity-60">Plan for Today</span>
           </div>
           
-          <div className="flex items-center gap-1.5 bg-white/40 dark:bg-stone-800/50 p-1 rounded-xl border border-white/40 dark:border-stone-700/50 shadow-sm self-end md:self-auto flex-wrap justify-end">
-             {styles.map(s => (
-               <button
-                 key={s.id}
-                 onClick={() => onSetStyle(s.id)}
-                 className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all ${
-                   currentStyle === s.id 
-                     ? 'bg-emerald-500 text-white shadow-md' 
-                     : 'text-slate-500 dark:text-stone-400 hover:bg-white/50 dark:hover:bg-stone-700/50'
-                 }`}
-               >
-                 {s.label}
-               </button>
-             ))}
-             <div className="w-px h-4 bg-slate-300 dark:bg-stone-600 mx-1 hidden md:block"></div>
-             
-             <div className="relative flex items-center">
-                 <button 
-                   type="button"
-                   onClick={handleSaveClick}
-                   disabled={!briefing || isGenerating || isContentSaved}
-                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-[10px] md:text-xs font-bold ${
-                     isContentSaved
-                       ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 cursor-default opacity-80' 
-                       : hasEntryForToday
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 lg:hover:bg-amber-200 ring-2 ring-amber-500/20'
-                          : 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 lg:hover:bg-emerald-600'
-                   } disabled:opacity-50 disabled:shadow-none`}
-                   title={isContentSaved ? "Already saved to history" : hasEntryForToday ? "Overwrite existing plan for today" : "Save this plan to history"}
-                 >
-                   {isContentSaved ? (
-                     <>
-                        <Check size={12} strokeWidth={3} />
-                        <span>Saved</span>
-                     </>
-                   ) : hasEntryForToday ? (
-                     <>
-                        <RefreshCw size={12} strokeWidth={3} />
-                        <span>Update Plan</span>
-                     </>
-                   ) : (
-                     <>
-                        <Save size={12} />
-                        <span>Save Plan</span>
-                     </>
-                   )}
-                 </button>
-                 
-                 {/* Success Toast Animation */}
-                 {showSuccess && (
-                     <div className="absolute top-full mt-2 right-0 bg-emerald-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-xl animate-in fade-in slide-in-from-top-1 whitespace-nowrap z-50 flex items-center gap-1.5 pointer-events-none">
-                         <Check size={10} strokeWidth={4} /> Saved to History
-                     </div>
-                 )}
-             </div>
+          <div className="w-full md:w-auto min-w-0 bg-white/40 dark:bg-stone-800/50 p-1 rounded-xl border border-white/40 dark:border-stone-700/50 shadow-sm overflow-hidden">
+             {/* Grid Layout for Mobile (3x2), Flex for Desktop */}
+             <div className="grid grid-cols-3 md:flex md:items-center gap-1">
+                 {styles.map(s => (
+                     <button
+                       key={s.id}
+                       onClick={() => onSetStyle(s.id)}
+                       className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center ${
+                         currentStyle === s.id 
+                           ? 'bg-emerald-500 text-white shadow-md' 
+                           : 'text-slate-500 dark:text-stone-400 hover:bg-white/50 dark:hover:bg-stone-700/50'
+                       }`}
+                     >
+                       {s.label}
+                     </button>
+                 ))}
 
-             <button 
-               onClick={onRefresh}
-               disabled={isGenerating}
-               className="p-1.5 ml-1 text-emerald-600 dark:text-emerald-400 lg:hover:bg-white/50 dark:lg:hover:bg-stone-700/50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-               title="Regenerate Plan"
-             >
-               <RefreshCw size={14} className={isGenerating ? "animate-spin" : ""} />
-             </button>
+                 <div className="hidden md:block w-px h-4 bg-slate-300 dark:bg-stone-600 mx-1 shrink-0"></div>
+                 
+                 <button 
+                   onClick={onRefresh}
+                   disabled={isGenerating}
+                   className="p-1.5 text-emerald-600 dark:text-emerald-400 lg:hover:bg-white/50 dark:lg:hover:bg-stone-700/50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                   title="Regenerate Plan"
+                 >
+                   <RefreshCw size={14} className={isGenerating ? "animate-spin" : ""} />
+                 </button>
+             </div>
           </div>
         </div>
         
@@ -303,7 +249,6 @@ interface DashboardViewProps {
   briefing: string;
   isGeneratingBriefing: boolean;
   onRefreshBriefing: () => void;
-  onSaveBriefing: (content: string) => boolean;
   openAddModal: () => void;
   onViewCalendar: () => void;
   onGoalIncrement: (id: string) => void;
@@ -329,15 +274,14 @@ interface DashboardViewProps {
   onViewHabitHistory: (habit: Habit, view: 'calendar' | 'list') => void;
   // New: Subgoals
   onToggleSubgoal: (goalId: string, subgoalId: string) => void;
-  todaysBriefingEntry?: BriefingHistoryEntry;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ 
-  goals, habits, events, briefing, isGeneratingBriefing, onRefreshBriefing, onSaveBriefing, openAddModal, onViewCalendar,
+  goals, habits, events, briefing, isGeneratingBriefing, onRefreshBriefing, openAddModal, onViewCalendar,
   onGoalIncrement, onGoalDecrement, onDeleteGoal, onEditGoal, displayName, syncError,
   importantDates, onAddImportantDate, onEditImportantDate, onDeleteImportantDate, weather,
   userConfig, onUpdateConfig, habitLogs, onToggleHabit, onUpdateHabitNote, onDeleteHabit, onEditHabit, onViewHabitHistory,
-  onToggleSubgoal, todaysBriefingEntry
+  onToggleSubgoal
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [is24Hour, setIs24Hour] = useState(false);
@@ -428,8 +372,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       onRefresh={onRefreshBriefing} 
       currentStyle={userConfig.briefingStyle}
       onSetStyle={(s) => onUpdateConfig({...userConfig, briefingStyle: s})}
-      onSave={onSaveBriefing}
-      savedBriefingEntry={todaysBriefingEntry}
     />
   );
 
@@ -471,7 +413,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Habits</h3>
           </div>
           {habits.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {habits.map(habit => (
                       <HabitCard 
                           key={habit.id} 

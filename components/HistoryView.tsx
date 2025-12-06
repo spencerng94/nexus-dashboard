@@ -15,7 +15,9 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete }) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    // Use a small timeout to allow UI feedback if needed, but mainly ensuring event loop clears
     onDelete(id);
   };
 
@@ -74,19 +76,21 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete }) => {
                                   </div>
                               </div>
                               
-                              {/* Action Buttons Area - Completely Separate Sibling */}
-                              <div className="flex items-center gap-2 pr-6 pl-4 border-l border-slate-100 dark:border-stone-800 my-4 shrink-0">
+                              {/* Action Buttons Area - Completely Separate Sibling with higher Z-Index */}
+                              <div className="relative z-20 flex items-center gap-2 pr-6 pl-4 border-l border-slate-100 dark:border-stone-800 my-4 shrink-0">
                                   <button
-                                    onClick={() => handleDelete(entry.id)}
-                                    className="p-2.5 rounded-full bg-slate-50 dark:bg-stone-800 text-slate-400 hover:bg-rose-100 hover:text-rose-500 dark:hover:bg-rose-900/20 dark:hover:text-rose-400 transition-colors"
+                                    onClick={(e) => handleDelete(e, entry.id)}
+                                    className="p-3 rounded-full bg-slate-50 dark:bg-stone-800 text-slate-400 hover:bg-rose-100 hover:text-rose-500 dark:hover:bg-rose-900/20 dark:hover:text-rose-400 transition-colors cursor-pointer active:scale-90"
                                     title="Delete Plan"
+                                    type="button"
                                   >
                                       <Trash2 size={18} />
                                   </button>
                                   <button
-                                    onClick={() => toggleExpand(entry.id)}
-                                    className={`p-2.5 rounded-full bg-slate-50 dark:bg-stone-800 text-slate-400 hover:text-emerald-500 transition-colors ${isExpanded ? 'bg-slate-100 dark:bg-stone-700 text-emerald-500' : ''}`}
+                                    onClick={(e) => { e.stopPropagation(); toggleExpand(entry.id); }}
+                                    className={`p-3 rounded-full bg-slate-50 dark:bg-stone-800 text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer active:scale-90 ${isExpanded ? 'bg-slate-100 dark:bg-stone-700 text-emerald-500' : ''}`}
                                     title={isExpanded ? "Collapse" : "Expand"}
+                                    type="button"
                                   >
                                       {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                   </button>
