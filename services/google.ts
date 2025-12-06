@@ -1,4 +1,3 @@
-
 import { CalendarEvent, User } from '../types';
 
 declare const google: any;
@@ -7,345 +6,217 @@ let tokenClient: any | null = null;
 let currentClientId: string | null = null;
 let isRequesting = false;
 
-const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+const SCOPES =
+  'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
 
 export const googleService = {
   /**
-   * Initialize the Google Identity Services Token Client
-   * Checks passed argument or environment variables.
+   * Initialize Google Identity Services token client
+   * - clientId optional, fallback to REACT_APP_GOOGLE_CLIENT_ID / VITE_GOOGLE_CLIENT_ID
+   * - If missing, operates in guest mode
    */
   init(clientId?: string) {
-    if (typeof google === 'undefined') {
-      throw new Error('Google Identity Services script not loaded. Check internet connection.');
+    const envClientId =
+      typeof process !== 'undefined'
+        ? process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID
+        : undefined;
+
+    const resolved = (clientId && clientId.trim()) || (envClientId && envClientId.trim()) || '';
+
+    if (!resolved) {
+      // Guest mode
+      console.info('Guest mode active, skipping OAuth');
+      tokenClient = null;
+      currentClientId = null;
+      return;
     }
 
-    // Attempt to get ID from args, or fallback to environment variables
-    // @ts-ignore
-    const finalId = clientId || process.env.REACT_APP_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-    // Validation
-    if (!finalId || finalId.trim() === '') {
-        throw new Error("Google Client ID is missing. Ensure REACT_APP_GOOGLE_CLIENT_ID or VITE_GOOGLE_CLIENT_ID is set.");
-    }
-    const cleanId = finalId.trim();
-
-    // Idempotency check: If already initialized with the same ID, do nothing.
-    if (tokenClient && currentClientId === cleanId) {
-        console.log("Google Token Client already initialized.");
-        return;
+    if (typeof google === 'undefined' || !google?.accounts?.oauth2?.initTokenClient) {
+      throw new Error('Google Identity Services script not loaded.');
     }
 
-    console.log(`Initializing Google Token Client...`);
-    
+    const cleanId = resolved.trim();
+    if (tokenClient && currentClientId === cleanId) return;
+
     try {
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: cleanId,
         scope: SCOPES,
-        // The callback function is standard for handling the response
         callback: async (response: any) => {
-          // This global handler will be overridden by the specific promise resolver in login(),
-          // but we define a default here to prevent crashes if called externally.
-          console.log("Global callback received.", response);
+          console.log('Global callback received', response);
         },
-        error_callback: (nonResponseError: any) => {
-             console.error("Global error callback:", nonResponseError);
-        }
+        error_callback: (err: any) => {
+          console.error('Global error callback:', err);
+        },
       });
       currentClientId = cleanId;
+      console.log('Google Token Client initialized.');
     } catch (e) {
-      console.error("Failed to initialize token client:", e);
-      throw new Error("Failed to initialize Google Sign-In. Check your Client ID configuration.");
+      console.error('Failed to initialize token client', e);
+      tokenClient = null;
+      currentClientId = null;
+      throw new Error('Failed to initialize Google Sign-In.');
     }
   },
 
   /**
-   * Trigger the popup login flow
+   * Trigger login flow
    */
   login(): Promise<User> {
     return new Promise((resolve, reject) => {
       if (!tokenClient) {
-        reject(new Error('Google Client not initialized. System configuration error.'));
+        reject(new Error('Guest mode: OAuth not initialized.'));
         return;
       }
 
       if (isRequesting) {
-        const msg = "A login popup is already open. Please check your other windows.";
-        console.warn(msg);
-        reject(new Error(msg));
+        reject(new Error('Login popup already open.'));
         return;
       }
 
-      console.log("Starting login flow...");
       isRequesting = true;
 
-      // Define the handler for this specific login attempt
       tokenClient.callback = async (response: any) => {
-        console.log("Login callback received.");
-        isRequesting = false; // Release lock
-        
-        if (response.error) {
-          console.error("GIS Response Error:", response);
+        isRequesting = false;
+        if (response?.error) {
           reject(new Error(`Google Error: ${response.error}`));
           return;
         }
 
-        const accessToken = response.access_token;
+        const accessToken = response?.access_token;
         if (!accessToken) {
-            reject(new Error("No access token received."));
-            return;
+          reject(new Error('No access token received.'));
+          return;
         }
 
         try {
-          // Fetch user profile
           const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` }
+            headers: { Authorization: `Bearer ${accessToken}` },
           });
-          
-          if (!userInfoResponse.ok) {
-             throw new Error("Failed to fetch user profile");
-          }
+
+          if (!userInfoResponse.ok) throw new Error('Failed to fetch user profile');
 
           const userInfo = await userInfoResponse.json();
 
-          const user: User = {
+          resolve({
             uid: userInfo.sub,
             displayName: userInfo.name,
             photoURL: userInfo.picture,
             email: userInfo.email,
-            accessToken: accessToken
-          };
-          
-          resolve(user);
+            accessToken,
+          });
         } catch (err) {
-          console.error("User Info Fetch Error:", err);
           reject(err);
         }
       };
 
-      // Define the error handler for this specific login attempt
-      tokenClient.error_callback = (nonResponseError: any) => {
-        isRequesting = false; // Release lock
-        console.error("GIS Error Callback:", nonResponseError);
-        
-        // CRITICAL: If an error occurs, we destroy the client to force a fresh init next time.
-        // This prevents the "pending" loop if the browser's internal state gets desynced.
+      tokenClient.error_callback = (err: any) => {
+        isRequesting = false;
         tokenClient = null;
         currentClientId = null;
-        
-        let errorMessage = "Google Sign-In failed.";
-    
-        if (nonResponseError.type === 'popup_closed') {
-            const currentOrigin = window.location.origin;
-            errorMessage = `Login Window Closed.\n\n1. Check 'Authorized JavaScript Origins' (NOT Redirect URIs) in Google Cloud.\n2. Ensure this URL is added EXACTLY:\n   ${currentOrigin}\n3. Note: Changes take 5 minutes to propagate.`;
-        } else if (nonResponseError.type === 'popup_blocked') {
-            errorMessage = "Popup blocked. Please check your address bar for a blocked popup icon.";
-        } else {
-            errorMessage = `Configuration Error: ${nonResponseError.message || nonResponseError.type}`;
-        }
-
-        reject(new Error(errorMessage));
+        reject(new Error(err?.message || 'Google Sign-In failed.'));
       };
 
       try {
-        // We use 'select_account' to ensure the user actually sees the Google screen
-        // and doesn't get auto-rejected by a silent failure.
         tokenClient.requestAccessToken({ prompt: 'select_account' });
       } catch (e: any) {
-        console.error("GIS Launch Error:", e);
-        isRequesting = false; 
-        
-        // If we crash here, also reset the client to be safe.
+        isRequesting = false;
         tokenClient = null;
         currentClientId = null;
-        
-        let msg = "Failed to launch Google Sign-In.";
-        if (e.message && e.message.includes('pending')) {
-           msg = "A login window is already open or stuck. Please reload the page and try again.";
-        } else {
-           msg += " " + (e.message || "");
-        }
-        reject(new Error(msg));
+        reject(new Error(e?.message || 'Failed to launch Google Sign-In.'));
       }
     });
   },
 
   /**
-   * Fetch primary calendar events from Google Calendar API
+   * Calendar methods
    */
-  async listEvents(token: string): Promise<CalendarEvent[]> {
-    // Safety check for empty or guest tokens
+  async listEvents(token?: string | null): Promise<CalendarEvent[]> {
     if (!token) return [];
-
     const now = new Date();
-    
-    // Set timeMin to 2 months ago
     const startRange = new Date();
     startRange.setMonth(now.getMonth() - 2);
     startRange.setHours(0, 0, 0, 0);
-
-    // Set timeMax to 3 months in the future
     const endRange = new Date();
     endRange.setMonth(now.getMonth() + 3);
 
     try {
-      const response = await fetch(
+      const res = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${startRange.toISOString()}&timeMax=${endRange.toISOString()}&singleEvents=true&orderBy=startTime`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (!response.ok) {
-        let detailedError = response.statusText;
-        try {
-            const errorBody = await response.json();
-            if (errorBody.error && errorBody.error.message) {
-                detailedError = errorBody.error.message;
-            }
-        } catch (jsonErr) {
-            // If json parse fails, stick with statusText
-        }
-        
-        console.error("Google Calendar API Error Detail:", detailedError);
-        throw new Error(detailedError);
-      }
-      
-      const data = await response.json();
-      
+      if (!res.ok) throw new Error('Failed to fetch events');
+      const data = await res.json();
       return (data.items || []).map((item: any) => {
         const start = new Date(item.start.dateTime || item.start.date);
         const end = new Date(item.end.dateTime || item.end.date);
         const durationMs = end.getTime() - start.getTime();
-        const durationHrs = Math.floor(durationMs / 3600000);
-        const durationMins = Math.round((durationMs % 3600000) / 60000);
-        
-        let durationStr = "All Day";
+        const hours = Math.floor(durationMs / 3600000);
+        const mins = Math.round((durationMs % 3600000) / 60000);
+        let durationStr = 'All Day';
         if (item.start.dateTime) {
-             durationStr = durationHrs > 0 ? `${durationHrs}h` : "";
-             if (durationMins > 0) durationStr += ` ${durationMins}m`;
-             if (durationStr === "") durationStr = "30m"; 
+          durationStr = `${hours > 0 ? hours + 'h' : ''}${mins > 0 ? ' ' + mins + 'm' : ''}`.trim();
+          if (!durationStr) durationStr = '30m';
         }
-
         return {
           id: item.id,
-          title: item.summary || "Untitled",
+          title: item.summary || 'Untitled',
           time: start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           startTime: start.getTime(),
-          type: 'work', // Default, logic can be added to infer type from colorId
-          duration: durationStr.trim()
+          type: 'work',
+          duration: durationStr,
         };
       });
-    } catch (e: any) {
-      console.error("Google Calendar Fetch Error:", e);
-      // Re-throw so the UI knows there was an error
-      throw e;
-    }
-  },
-
-  /**
-   * Create a new event in the primary Google Calendar
-   */
-  async createEvent(token: string, event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent | null> {
-    if (!token) return null;
-
-    const start = new Date(event.startTime);
-    let durationMinutes = 60; 
-    const dStr = event.duration;
-    
-    if (dStr === 'All Day') {
-        durationMinutes = 1440;
-    } else {
-        const hMatch = dStr.match(/(\d+)h/);
-        const mMatch = dStr.match(/(\d+)m/);
-        let mins = 0;
-        if (hMatch) mins += parseInt(hMatch[1]) * 60;
-        if (mMatch) mins += parseInt(mMatch[1]);
-        if (mins > 0) durationMinutes = mins;
-    }
-
-    const end = new Date(start.getTime() + durationMinutes * 60000);
-
-    const eventResource = {
-      summary: event.title,
-      start: { dateTime: start.toISOString() },
-      end: { dateTime: end.toISOString() }
-    };
-
-    try {
-      const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events`,
-        {
-          method: 'POST',
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(eventResource)
-        }
-      );
-      
-      if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData?.error?.message || "Failed to create event");
-      }
-      const data = await response.json();
-      
-      return {
-        ...event,
-        id: data.id,
-        startTime: new Date(data.start.dateTime || data.start.date).getTime()
-      };
     } catch (e) {
-      console.error("Create Event Error", e);
+      console.error('Calendar fetch error', e);
       throw e;
     }
   },
 
-  /**
-   * Delete an event
-   */
-  async deleteEvent(token: string, eventId: string): Promise<boolean> {
-      if (!token) return false;
-      
-      try {
-          const response = await fetch(
-              `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
-              {
-                  method: 'DELETE',
-                  headers: { Authorization: `Bearer ${token}` }
-              }
-          );
-          if (!response.ok) throw new Error("Failed to delete event");
-          return true;
-      } catch (e) {
-          console.error("Delete Event Error:", e);
-          throw e;
-      }
+  async createEvent(token: string | null | undefined, event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent | null> {
+    if (!token) return null;
+    const start = new Date(event.startTime);
+    let durationMinutes = 60;
+    if (event.duration === 'All Day') durationMinutes = 1440;
+    const end = new Date(start.getTime() + durationMinutes * 60000);
+    try {
+      const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ summary: event.title, start: { dateTime: start.toISOString() }, end: { dateTime: end.toISOString() } }),
+      });
+      if (!res.ok) throw new Error('Failed to create event');
+      const data = await res.json();
+      return { ...event, id: data.id, startTime: new Date(data.start.dateTime || data.start.date).getTime() };
+    } catch (e) {
+      console.error('Create event error', e);
+      throw e;
+    }
   },
 
-  /**
-   * Update an event (Patch)
-   */
-  async updateEvent(token: string, eventId: string, updates: any): Promise<boolean> {
-      if (!token) return false;
-      
-      try {
-          const response = await fetch(
-              `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
-              {
-                  method: 'PATCH',
-                  headers: { 
-                      Authorization: `Bearer ${token}`,
-                      'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify(updates)
-              }
-          );
-          if (!response.ok) throw new Error("Failed to update event");
-          return true;
-      } catch (e) {
-          console.error("Update Event Error:", e);
-          throw e;
-      }
-  }
+  async deleteEvent(token: string | null | undefined, eventId: string): Promise<boolean> {
+    if (!token) return false;
+    try {
+      const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      return res.ok;
+    } catch (e) {
+      console.error('Delete event error', e);
+      throw e;
+    }
+  },
+
+  async updateEvent(token: string | null | undefined, eventId: string, updates: any): Promise<boolean> {
+    if (!token) return false;
+    try {
+      const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      return res.ok;
+    } catch (e) {
+      console.error('Update event error', e);
+      throw e;
+    }
+  },
 };
