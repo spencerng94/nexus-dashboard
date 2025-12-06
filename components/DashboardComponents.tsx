@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, Sun, Cloud, CloudRain, Snowflake, CloudLightning, Plus, Clock, ChevronRight, MoreHorizontal, CalendarDays, AlertTriangle, Trash2, X, Save, MapPin, LayoutDashboard, Pencil, Check } from 'lucide-react';
 import { Goal, CalendarEvent, ImportantDate, Habit, DashboardConfig, DashboardSectionConfig, HabitLog, BriefingStyle } from '../types';
@@ -107,14 +106,17 @@ const EventRow: React.FC<{ event: CalendarEvent; onClick?: (event: CalendarEvent
   return (
     <div 
       onClick={() => onClick && onClick(event)}
-      className="flex items-center py-4 px-2 lg:hover:bg-white/10 rounded-2xl transition-all duration-300 cursor-pointer group -mx-2 border border-transparent lg:hover:border-white/5"
+      className="flex items-center py-3 px-3 -mx-3 lg:hover:bg-white/10 rounded-2xl transition-all duration-300 cursor-pointer group border border-transparent lg:hover:border-white/5 mb-1"
     >
-      <div className="w-24 flex flex-col items-end justify-center shrink-0 pr-2">
-        <span className="text-sm font-bold text-blue-200 leading-tight">{startStr}</span>
-        {endStr && <span className="text-xs font-bold text-stone-500 leading-tight">{endStr}</span>}
+      <div className="w-20 flex flex-col items-center justify-center shrink-0">
+        <span className="text-sm font-bold text-blue-200 leading-none">{startStr}</span>
+        <span className="text-xs text-stone-500 font-bold leading-none my-0.5">-</span>
+        {endStr && <span className="text-sm font-bold text-stone-400 leading-none">{endStr}</span>}
       </div>
-      <div className="w-px h-8 bg-white/10 mx-2" />
-      <div className="flex-1 px-2 min-w-0">
+      
+      <div className="w-px h-10 bg-white/10 mx-3" />
+      
+      <div className="flex-1 min-w-0">
         <h4 className="font-bold text-stone-100 text-sm md:text-[15px] truncate">{event.title}</h4>
         <div className="flex items-center gap-3 text-xs font-medium text-stone-400 mt-1">
           <span className="flex items-center gap-1"><Clock size={12} /> {event.duration}</span>

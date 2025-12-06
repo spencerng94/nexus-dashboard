@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings, ArrowUp, ArrowDown, Eye, EyeOff, LayoutDashboard, Moon, Sun, Clock } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate, DashboardConfig, BriefingStyle, Theme } from './types';
@@ -856,7 +854,7 @@ export default function App() {
         onThemeToggle={toggleTheme}
       />
       
-      <main className="md:pl-[120px] lg:pl-[360px] p-6 pb-32 md:pb-10 min-h-screen transition-all duration-300">
+      <main className="md:pl-[112px] lg:pl-[280px] p-6 pb-32 md:pb-10 min-h-screen transition-all duration-300">
         {activeTab === 'dashboard' && (
           <DashboardView 
             goals={goals} 
