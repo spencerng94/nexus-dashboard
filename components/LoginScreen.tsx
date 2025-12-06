@@ -1,80 +1,25 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, Settings, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, Loader2, User as UserIcon } from 'lucide-react';
 
 interface LoginScreenProps {
-  onLogin: (clientId: string) => Promise<void>;
+  onLogin: () => Promise<void>;
   onGuestLogin: () => void;
   loginError: string;
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginError }) => {
-  const [clientId, setClientId] = useState("");
-  const [showConfig, setShowConfig] = useState(false);
-  const [origin, setOrigin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-      
-      // 1. Try Local Storage
-      const storedId = localStorage.getItem('nexus_client_id');
-      if (storedId) {
-        setClientId(storedId);
-      } else {
-        // 2. Try Environment Variable (Safely)
-        try {
-          // Check for process existence before accessing env
-          // @ts-ignore
-          if (typeof process !== 'undefined' && process.env) {
-            // @ts-ignore
-            const envId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-            if (envId) setClientId(envId);
-          }
-        } catch (e) {
-          // ignore
-        }
-      }
-    }
-  }, []);
-
-  const handleClientIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVal = e.target.value;
-    setClientId(newVal);
-    localStorage.setItem('nexus_client_id', newVal);
-  };
 
   const handleGoogleClick = async () => {
-    const finalId = clientId.trim();
-    
-    // Check for ID before loading
-    if (!finalId) {
-      setShowConfig(true);
-      // Wait for animation frame/render then focus
-      setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-      return;
-    }
-
-    // Safety check: Ensure Google Script is loaded
-    // @ts-ignore
-    if (typeof window.google === 'undefined' || typeof window.google.accounts === 'undefined') {
-        alert("Google Sign-In script is not loaded yet. Please check your internet connection or ad blockers.");
-        return;
-    }
-
     if (isLoading) return;
     setIsLoading(true);
     
     try {
-      await onLogin(finalId);
+      // The parent component (App.tsx) handles the Client ID via environment variables
+      await onLogin();
     } catch (e) {
-      // If error occurs (timeout or other), open config to show users where to fix origin/id
-      setShowConfig(true);
+      console.error("Login attempt failed", e);
     } finally {
       setIsLoading(false);
     }
@@ -124,58 +69,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
             </>
           )}
         </button>
-
+        
         <button 
           onClick={onGuestLogin}
           disabled={isLoading}
-          className="w-full bg-white lg:hover:bg-slate-50 text-slate-600 font-bold text-sm py-4 rounded-2xl transition-all border border-slate-200 mb-8 disabled:opacity-50"
+          className="w-full bg-white text-slate-600 font-bold text-lg py-4 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all duration-300 border border-slate-200 lg:hover:bg-slate-50 lg:hover:border-slate-300 lg:hover:text-slate-800 disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Continue as Guest
+          <UserIcon size={24} />
+          <span>Continue as Guest</span>
         </button>
 
-        <div className="border-t border-slate-100 pt-6">
-          <button 
-            onClick={() => setShowConfig(!showConfig)}
-            className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 lg:hover:text-emerald-500 transition-colors mx-auto uppercase tracking-wider"
-          >
-             <Settings size={14} />
-             Configure Client ID
-             {showConfig ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-          
-          {showConfig && (
-            <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300 text-left space-y-4">
-              <div>
-                <p className="text-xs text-slate-500 mb-2">
-                  1. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-emerald-500 hover:underline font-bold">Create OAuth Client ID</a> in Google Cloud.
-                </p>
-                <input 
-                  ref={inputRef}
-                  type="text" 
-                  value={clientId}
-                  onChange={handleClientIdChange}
-                  placeholder="Paste Client ID here..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </div>
-
-              <div>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
-                   2. Add this EXACT URL to <br/><span className="text-emerald-500">"Authorized JavaScript Origins"</span>
-                 </p>
-                 <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-600 break-all select-all flex justify-between items-center group">
-                   {origin}
-                   <span className="text-[10px] text-slate-400 italic opacity-0 lg:group-hover:opacity-100 transition-opacity">copy</span>
-                 </div>
-                 <p className="text-[10px] text-amber-600 mt-2 leading-tight">
-                   ⚠ <strong>DO NOT</strong> use "Authorized Redirect URIs". <br/>
-                   ⚠ <strong>NO</strong> trailing slash (e.g. use <code>.com</code> not <code>.com/</code>). <br/>
-                   ⚠ Changes take 5 mins to work.
-                 </p>
-              </div>
-            </div>
-          )}
-        </div>
+        <p className="text-xs text-slate-400 mt-6">
+          Google Calendar integration enabled for signed-in users.
+        </p>
       </div>
     </div>
   );

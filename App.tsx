@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings, ArrowUp, ArrowDown, Eye, EyeOff, LayoutDashboard, Moon, Sun, Clock } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate, DashboardConfig, BriefingStyle, Theme } from './types';
@@ -262,6 +261,7 @@ export default function App() {
     if (!user) return;
     let currentEvents: CalendarEvent[] = [];
     
+    // Only attempt sync if we have a real access token AND we are not a guest
     if (user.accessToken && !user.isGuest) {
         try {
             setCalendarError(null);
@@ -277,6 +277,7 @@ export default function App() {
             setEvents(localEvents);
         }
     } else {
+        // Guest mode or no token: use local events only
         const localEvents = storageService.getEvents();
         currentEvents = localEvents;
         setEvents(localEvents);
@@ -301,43 +302,50 @@ export default function App() {
     setIsGeneratingBriefing(false);
   };
 
-  // ... (Rest of App.tsx remains largely unchanged - handling login, guests, profiles, etc.)
-
-  const handleLogin = async (clientId: string) => {
+  const handleLogin = async () => {
     setLoginError("");
+
+    // Retrieve Client ID from environment variables (Support standard Create React App or Vite patterns)
+    // @ts-ignore
+    const envClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    if (!envClientId) {
+      const msg = "Configuration Error: Google Client ID is missing. Please set REACT_APP_GOOGLE_CLIENT_ID or VITE_GOOGLE_CLIENT_ID in your environment variables.";
+      setLoginError(msg);
+      return;
+    }
+
     try {
-        let finalClientId = clientId;
-        // Fallback to env var if missing
-        if (!finalClientId) {
-          try {
-             // @ts-ignore
-             if (typeof process !== 'undefined' && process.env) {
-               // @ts-ignore
-               finalClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-             }
-          } catch(e) {}
-        }
-        
-        if (!finalClientId) throw new Error("Please configure a Client ID first.");
-        
-        googleService.init(finalClientId);
+        googleService.init(envClientId);
         const loggedInUser = await googleService.login();
-        // Set default theme to auto if not present
+        
+        // Auto-detect theme preference if new user
         if (!loggedInUser.theme) loggedInUser.theme = 'auto';
+        
         storageService.saveUser(loggedInUser);
         setUser(loggedInUser);
+        // Note: useEffect[user] will trigger syncEvents
+        
     } catch (e: any) {
-        console.error(e);
+        console.error("Login Error:", e);
         const errMsg = e.message || (e.error ? `Google Error: ${e.error}` : "Login Failed");
         setLoginError(errMsg);
-        throw e; // Re-throw so button knows to stop loading
     }
   };
 
   const handleGuestLogin = () => {
-    const newUser: User = { uid: 'guest', displayName: 'Guest', photoURL: null, isGuest: true, theme: 'auto' };
-    storageService.saveUser(newUser);
-    setUser(newUser);
+    const guestUser: User = {
+        uid: 'guest-' + Date.now(),
+        displayName: 'Guest User',
+        photoURL: null,
+        email: null,
+        isGuest: true,
+        theme: 'auto',
+        dashboardConfig: DEFAULT_DASHBOARD_CONFIG
+    };
+    storageService.saveUser(guestUser);
+    setUser(guestUser);
+    // Note: useEffect[user] will trigger syncEvents which handles guest mode
   };
 
   const handleSignOut = () => {
@@ -642,6 +650,7 @@ export default function App() {
     );
     setEvents(optimisticEvents);
 
+    // Only sync to Google if real user and not guest
     if (user?.accessToken && !user.isGuest) {
         try {
             const createdEvent = await googleService.createEvent(user.accessToken, newEventData);
@@ -651,9 +660,11 @@ export default function App() {
         } catch (e: any) {
             console.error("Failed to save to Google Calendar", e);
             alert("Failed to save to Google Calendar: " + e.message);
+            // Fallback to local is already done via optimistic set, but ensure persistence
             storageService.saveEvents(optimisticEvents); 
         }
     } else {
+        // Guest: save to local storage
         storageService.saveEvents(optimisticEvents);
     }
   };

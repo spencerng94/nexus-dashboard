@@ -1,3 +1,4 @@
+
 import { CalendarEvent, User } from '../types';
 
 declare const google: any;
@@ -11,29 +12,31 @@ const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.goog
 export const googleService = {
   /**
    * Initialize the Google Identity Services Token Client
-   * This is now idempotent - it won't re-initialize if the client ID hasn't changed.
+   * Checks passed argument or environment variables.
    */
-  init(clientId: string) {
+  init(clientId?: string) {
     if (typeof google === 'undefined') {
       throw new Error('Google Identity Services script not loaded. Check internet connection.');
     }
 
+    // Attempt to get ID from args, or fallback to environment variables
+    // @ts-ignore
+    const finalId = clientId || process.env.REACT_APP_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
     // Validation
-    if (!clientId || clientId.trim() === '') {
-        throw new Error("Client ID is empty.");
+    if (!finalId || finalId.trim() === '') {
+        throw new Error("Google Client ID is missing. Ensure REACT_APP_GOOGLE_CLIENT_ID or VITE_GOOGLE_CLIENT_ID is set.");
     }
-    const cleanId = clientId.trim();
+    const cleanId = finalId.trim();
 
     // Idempotency check: If already initialized with the same ID, do nothing.
     if (tokenClient && currentClientId === cleanId) {
-        console.log("Google Token Client already initialized for ID:", cleanId);
+        console.log("Google Token Client already initialized.");
         return;
     }
 
     console.log(`Initializing Google Token Client...`);
-    console.log(`- Client ID: ${cleanId}`);
-    console.log(`- Origin: ${window.location.origin}`);
-
+    
     try {
       tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: cleanId,
@@ -42,7 +45,7 @@ export const googleService = {
         callback: async (response: any) => {
           // This global handler will be overridden by the specific promise resolver in login(),
           // but we define a default here to prevent crashes if called externally.
-          console.log("Global callback received (should be handled by promise).", response);
+          console.log("Global callback received.", response);
         },
         error_callback: (nonResponseError: any) => {
              console.error("Global error callback:", nonResponseError);
@@ -51,7 +54,7 @@ export const googleService = {
       currentClientId = cleanId;
     } catch (e) {
       console.error("Failed to initialize token client:", e);
-      throw new Error("Failed to initialize Google Sign-In. Check your Client ID.");
+      throw new Error("Failed to initialize Google Sign-In. Check your Client ID configuration.");
     }
   },
 
@@ -61,7 +64,7 @@ export const googleService = {
   login(): Promise<User> {
     return new Promise((resolve, reject) => {
       if (!tokenClient) {
-        reject(new Error('Google Client not initialized. Please configure Client ID.'));
+        reject(new Error('Google Client not initialized. System configuration error.'));
         return;
       }
 
@@ -170,6 +173,9 @@ export const googleService = {
    * Fetch primary calendar events from Google Calendar API
    */
   async listEvents(token: string): Promise<CalendarEvent[]> {
+    // Safety check for empty or guest tokens
+    if (!token) return [];
+
     const now = new Date();
     
     // Set timeMin to 2 months ago
@@ -240,6 +246,8 @@ export const googleService = {
    * Create a new event in the primary Google Calendar
    */
   async createEvent(token: string, event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent | null> {
+    if (!token) return null;
+
     const start = new Date(event.startTime);
     let durationMinutes = 60; 
     const dStr = event.duration;
@@ -297,6 +305,8 @@ export const googleService = {
    * Delete an event
    */
   async deleteEvent(token: string, eventId: string): Promise<boolean> {
+      if (!token) return false;
+      
       try {
           const response = await fetch(
               `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
@@ -317,6 +327,8 @@ export const googleService = {
    * Update an event (Patch)
    */
   async updateEvent(token: string, eventId: string, updates: any): Promise<boolean> {
+      if (!token) return false;
+      
       try {
           const response = await fetch(
               `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
