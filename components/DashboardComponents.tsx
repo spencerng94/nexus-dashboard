@@ -710,14 +710,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       return <div key="habits" className="animate-in fade-in slide-in-from-bottom-2">{renderHabits()}</div>;
                   case 'schedule':
                       return (
-                          <div key="schedule" className="animate-in fade-in slide-in-from-bottom-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
-                             <div className="col-span-1 lg:col-span-2 xl:col-span-1">{renderSchedule()}</div>
+                          <div key="schedule" className="animate-in fade-in slide-in-from-bottom-2">
+                             {renderSchedule()}
                           </div>
                       );
                   case 'dates':
                       return (
-                          <div key="dates" className="animate-in fade-in slide-in-from-bottom-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
-                             <div className="col-span-1 lg:col-span-2 xl:col-span-1">{renderDates()}</div>
+                          <div key="dates" className="animate-in fade-in slide-in-from-bottom-2">
+                             {renderDates()}
                           </div>
                       );
                   default:

@@ -101,16 +101,16 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
       
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
-         <div className="flex items-center gap-4">
+         <div className="flex items-center gap-4 min-w-0 flex-1">
              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 shadow-lg shadow-slate-100 dark:shadow-none ${theme.bg} ${theme.text}`}>
                  {habit.icon}
              </div>
-             <div>
-                 <h3 className="font-bold text-slate-800 dark:text-stone-100 text-xl leading-tight mb-1">{habit.title}</h3>
-                 <div className="flex gap-2 items-center">
-                    <span className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-md bg-slate-50 dark:bg-stone-800 text-slate-400`}>{habit.category}</span>
+             <div className="min-w-0 flex-1">
+                 <h3 className="font-bold text-slate-800 dark:text-stone-100 text-xl leading-tight mb-1 truncate pr-2">{habit.title}</h3>
+                 <div className="flex gap-2 items-center flex-wrap">
+                    <span className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-md bg-slate-50 dark:bg-stone-800 text-slate-400 shrink-0`}>{habit.category}</span>
                     {(habit.dailyTarget && habit.dailyTarget > 0) && (
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 dark:bg-stone-800 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 dark:bg-stone-800 px-2 py-0.5 rounded-md shrink-0">
                             Target: {habit.dailyTarget} {habit.unit}
                         </span>
                     )}
@@ -118,7 +118,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({ habit, habitLogs, onToggle
              </div>
          </div>
          
-         <div className="flex items-start gap-1">
+         <div className="flex items-start gap-1 shrink-0 ml-1">
              <div className="flex flex-col items-end mr-2 bg-slate-50 dark:bg-stone-800 px-2 py-1 rounded-xl border border-slate-100 dark:border-stone-700">
                  <div className="flex items-center gap-1.5 font-black text-lg">
                      <Flame size={18} fill="currentColor" className={habit.streak > 0 ? "text-amber-500 animate-pulse" : "text-slate-300 dark:text-stone-600"} />
