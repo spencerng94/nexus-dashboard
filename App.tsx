@@ -294,8 +294,15 @@ export default function App() {
             setEvents(googleEvents);
         } catch (e: any) {
             console.error("Failed to sync Google Calendar", e);
-            setCalendarError(e.message || "Failed to sync Calendar");
-            // Fallback to local
+            
+            // Handle insufficient scopes explicitly
+            if (e.message && (e.message.includes('insufficient authentication scopes') || e.message.includes('403'))) {
+                setCalendarError("Missing permissions. Please Sign Out and Sign In again to grant Calendar access.");
+            } else {
+                setCalendarError(e.message || "Failed to sync Calendar");
+            }
+
+            // Fallback to local if sync fails
             if (!currentUser.isGuest) {
                 // If cloud user but google fails, try loading from firestore events
                 const fsEvents = await firestoreService.getEvents(currentUser.uid);

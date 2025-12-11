@@ -11,6 +11,12 @@ export const authService = {
    */
   async login(): Promise<User> {
     try {
+      // CRITICAL FIX: Force the consent screen to appear.
+      // This ensures the user sees the checkboxes for Calendar permissions if they were previously missed or the token is stale.
+      googleProvider.setCustomParameters({
+        prompt: 'select_account consent'
+      });
+
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
       
@@ -20,6 +26,8 @@ export const authService = {
 
       if (accessToken) {
         localStorage.setItem(TOKEN_KEY, accessToken);
+      } else {
+        console.warn("No access token returned from Google Sign-In");
       }
       
       // Check if user exists in Firestore, if not create base profile
