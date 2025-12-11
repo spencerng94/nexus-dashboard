@@ -1,42 +1,55 @@
 
-import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 import { User } from '../types';
 import { firestoreService } from './firestore';
 
+const TOKEN_KEY = 'nexus_google_access_token';
+
 export const authService = {
   /**
    * Sign in with Google Popup
-   * Checks if user profile exists in Firestore; if not, creates it.
-   * Returns fully hydrated User object (with theme, config, etc.)
    */
   async login(): Promise<User> {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
       
-      // Fetch existing profile settings (theme, dashboard config)
+      // Extract Google Access Token for Calendar API
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const accessToken = credential?.accessToken;
+
+      if (accessToken) {
+        localStorage.setItem(TOKEN_KEY, accessToken);
+      }
+      
+      // Check if user exists in Firestore, if not create base profile
       const existingProfile = await firestoreService.getUserProfile(fbUser.uid);
       
-      let appUser: User = {
+      let userProfile: User = {
         uid: fbUser.uid,
         displayName: fbUser.displayName,
         photoURL: fbUser.photoURL,
         email: fbUser.email,
-        accessToken: await fbUser.getIdToken(),
-        theme: 'auto', // Defaults
+        accessToken: accessToken || undefined,
+        theme: 'auto', 
         isGuest: false
       };
 
       if (existingProfile) {
         // Merge existing preferences with latest auth info
-        appUser = { ...appUser, ...existingProfile, accessToken: await fbUser.getIdToken() };
+        userProfile = { 
+          ...userProfile, 
+          ...existingProfile, 
+          // Prefer fresh token, fallback to existing if needed
+          accessToken: accessToken || userProfile.accessToken 
+        };
       } else {
-        // First time login: Save base profile to Firestore
-        await firestoreService.saveUserProfile(appUser);
+        // Save new user to Firestore
+        await firestoreService.saveUserProfile(userProfile);
       }
 
-      return appUser;
+      return userProfile;
     } catch (error) {
       console.error("Login failed", error);
       throw error;
@@ -44,35 +57,52 @@ export const authService = {
   },
 
   /**
+   * Login as Guest
+   */
+  loginGuest(): User {
+     return {
+        uid: 'guest-' + Date.now(),
+        displayName: 'Guest',
+        photoURL: null,
+        email: null,
+        isGuest: true,
+        theme: 'auto'
+     };
+  },
+
+  /**
    * Sign out
    */
   async logout(): Promise<void> {
+    localStorage.removeItem(TOKEN_KEY);
     await signOut(auth);
   },
 
   /**
    * Auth State Observer
-   * Hydrates the user profile from Firestore whenever Auth state changes.
    */
   onUserChanged(callback: (user: User | null) => void) {
     return onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
       if (fbUser) {
         try {
+          // Fetch full profile including theme/config preferences
           const profile = await firestoreService.getUserProfile(fbUser.uid);
-          const token = await fbUser.getIdToken();
           
+          // Try to recover access token from local storage (since Firebase doesn't persist provider tokens)
+          const storedToken = localStorage.getItem(TOKEN_KEY);
+
           const appUser: User = {
             uid: fbUser.uid,
             displayName: fbUser.displayName,
             photoURL: fbUser.photoURL,
             email: fbUser.email,
-            accessToken: token,
+            accessToken: storedToken || undefined,
             isGuest: false,
             ...profile // Spread saved preferences (theme, config, avatar)
           };
           callback(appUser);
         } catch (e) {
-          console.error("Error fetching user profile on state change", e);
+          console.error("Error hydrating user:", e);
           callback(null);
         }
       } else {

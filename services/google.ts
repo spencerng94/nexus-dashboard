@@ -1,5 +1,4 @@
 
-
 import { CalendarEvent, User } from '../types';
 
 declare const google: any;
@@ -26,6 +25,17 @@ const GOOGLE_COLORS: Record<string, string> = {
   '11': '#d50000', // Tomato
 };
 
+// Helper to safely get env vars
+const getEnv = (key: string) => {
+  try {
+    // @ts-ignore
+    if (typeof process !== 'undefined' && process.env) return process.env[key];
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env) return import.meta.env[key];
+  } catch (e) { return undefined; }
+  return undefined;
+};
+
 export const googleService = {
   /**
    * Initialize the Google Identity Services Token Client
@@ -37,12 +47,13 @@ export const googleService = {
     }
 
     // Attempt to get ID from args, or fallback to environment variables
-    // @ts-ignore
-    const finalId = clientId || process.env.REACT_APP_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const finalId = clientId || getEnv('REACT_APP_GOOGLE_CLIENT_ID') || getEnv('VITE_GOOGLE_CLIENT_ID');
 
     // Validation
     if (!finalId || finalId.trim() === '') {
-        throw new Error("Google Client ID is missing. Ensure REACT_APP_GOOGLE_CLIENT_ID or VITE_GOOGLE_CLIENT_ID is set.");
+        console.warn("Google Client ID is missing. Calendar sync via direct GIS will fail.");
+        // We throw here only if this method is explicitly called
+        throw new Error("Google Client ID is missing.");
     }
     const cleanId = finalId.trim();
 
