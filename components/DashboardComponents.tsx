@@ -486,6 +486,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const renderDates = () => (
     <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-[2.5rem] p-8 text-white shadow-xl shadow-stone-900/20 dark:shadow-none relative overflow-hidden flex flex-col min-h-[400px]">
+        {/* Decorative background elements to match Upcoming Dates */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-400 opacity-20 rounded-full blur-xl -ml-5 -mb-5" />
         
@@ -524,7 +525,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="space-y-4 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar flex-1">
             {sortedDates.length > 0 ? (
             sortedDates.map((d) => {
-                // Create date object from YYYY-MM-DD using local time constructor to avoid UTC offset issues
                 const [y, m, dNum] = d.date.split('-').map(Number);
                 const dateObj = new Date(y, m - 1, dNum);
                 
@@ -547,7 +547,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                                     {timeLeft.label}
                                 </span>
                                 
-                                {/* Action Buttons: Visible on mobile, hover only on desktop */}
                                 <div className="flex items-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity gap-1">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); setEditingDate(d); setIsDateModalOpen(true); }}
@@ -595,49 +594,78 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto pb-12">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-6 px-2">
-        <div className="flex items-center gap-4">
+      {/* HEADER SECTION - REFACTORED FOR MOBILE */}
+      <div className="flex flex-col md:flex-row justify-between items-start gap-2 md:gap-6 px-2 relative mb-8">
+        
+        {/* Mobile Wrapper: Icon + Text Col (which includes mobile info) */}
+        <div className="flex items-start gap-3 md:gap-4 w-full md:w-auto">
+          
+          {/* Icon */}
           <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
              <LayoutDashboard className="text-white w-6 h-6 md:w-8 md:h-8" />
           </div>
-          <div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white tracking-tight">{greeting}, {displayName}</h1>
-            <p className="text-emerald-500 dark:text-emerald-400 font-bold text-sm mt-2 uppercase tracking-wider">YOUR PRIORITIES, ORGANIZED WITH AI</p>
+
+          {/* Text Column */}
+          <div className="flex flex-col min-w-0 flex-1">
+             {/* Greeting */}
+             <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight truncate">
+                {greeting}, {displayName}
+             </h1>
+             {/* Tagline */}
+             <p className="text-emerald-500 dark:text-emerald-400 font-bold text-xs md:text-sm mt-0.5 md:mt-2 uppercase tracking-wider truncate">
+                YOUR PRIORITIES, ORGANIZED WITH AI
+             </p>
           </div>
         </div>
+
+        {/* MOBILE ONLY: Time/Weather Row stuck under text, aligned left with icon */}
+        <div className="md:hidden flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs font-bold text-slate-500 dark:text-stone-400 animate-in fade-in slide-in-from-left-2">
+             <span className="text-slate-800 dark:text-stone-200 text-2xl font-bold tracking-tight" onClick={() => setIs24Hour(!is24Hour)}>
+               {currentTime.toLocaleTimeString([], { hour12: !is24Hour, hour: 'numeric', minute: '2-digit' })}
+             </span>
+             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-stone-600" />
+             <span>{dateString.split(',').slice(0, 2).join(',')}</span>
+             
+             {weather && (
+               <>
+                 <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-stone-600" />
+                 <div className="flex items-center gap-1">
+                    <div className={getWeatherColor(weather.condition)}>{getWeatherIcon(weather.condition)}</div>
+                    <span>{weather.temp}°</span>
+                 </div>
+               </>
+             )}
+        </div>
         
-        {/* Right Header Controls: Clock, Weather */}
-        <div className="flex items-start gap-4 self-end md:self-auto">
-           <div className="flex flex-col items-end">
+        {/* DESKTOP ONLY: Right Column - Aligned End */}
+        <div className="hidden md:flex flex-col items-end shrink-0">
               {/* Clock Widget */}
-              <div className="flex flex-col items-end select-none cursor-pointer group mb-1" onClick={() => setIs24Hour(!is24Hour)} title="Toggle 12h/24h">
-                  <div className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-stone-200 tracking-tight leading-none lg:group-hover:text-emerald-500 dark:lg:group-hover:text-emerald-400 transition-colors">
+              <div className="flex flex-col items-end select-none cursor-pointer group mb-0.5 md:mb-1" onClick={() => setIs24Hour(!is24Hour)} title="Toggle 12h/24h">
+                  <div className="text-2xl md:text-5xl font-bold text-slate-800 dark:text-stone-200 tracking-tight leading-none lg:group-hover:text-emerald-500 dark:lg:group-hover:text-emerald-400 transition-colors">
                      {currentTime.toLocaleTimeString([], { hour12: !is24Hour, hour: '2-digit', minute: '2-digit' })}
                   </div>
               </div>
 
               {/* Date below Time */}
-              <p className="text-emerald-500 dark:text-emerald-400 font-bold uppercase tracking-widest text-xs mb-2">{dateString}</p>
+              <p className="text-emerald-500 dark:text-emerald-400 font-bold uppercase tracking-widest text-[10px] md:text-xs mb-1 md:mb-2 text-right">{dateString}</p>
               
               {/* Weather Below Date */}
-              <div className="flex items-center gap-2 text-slate-600 dark:text-stone-400">
+              <div className="flex items-center gap-1.5 md:gap-2 text-slate-600 dark:text-stone-400 text-xs md:text-base">
                 {weather ? (
                   <>
                     <div className={`${getWeatherColor(weather.condition)}`}>
                       {getWeatherIcon(weather.condition)}
                     </div>
-                    <span className="font-bold text-lg leading-none">{weather.temp}°F</span>
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wide leading-none">{weather.condition}</span>
+                    <span className="font-bold leading-none">{weather.temp}°F</span>
+                    <span className="text-[10px] md:text-[10px] font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wide leading-none">{weather.condition}</span>
                   </>
                 ) : (
                    <div className="flex items-center gap-1.5">
-                     <MapPin size={14} className="text-slate-400 animate-pulse" />
-                     <span className="text-xs font-bold text-slate-400">Locating...</span>
+                     <MapPin size={12} className="text-slate-400 animate-pulse" />
+                     <span className="text-[10px] font-bold text-slate-400">Locating...</span>
                    </div>
                 )}
               </div>
-           </div>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { AlertTriangle, Loader2, User as UserIcon, LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, NotebookPen, ArrowLeft, Info } from 'lucide-react';
+import { AlertTriangle, Loader2, User as UserIcon, LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, NotebookPen, ArrowLeft, Info, Grid2x2 } from 'lucide-react';
 
 interface LoginScreenProps {
   onLogin: () => Promise<void>;
@@ -86,6 +86,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
                     icon={<NotebookPen size={20} />} 
                     title="AI Planner" 
                     description="Simply type your plans naturally (e.g. 'Gym at 5, then Dinner'), and let Nexus build a conflict-free schedule for you." 
+                  />
+                  <FeatureCard 
+                    icon={<Grid2x2 size={20} />} 
+                    title="Priority Matrix" 
+                    description="Use the Eisenhower Matrix to categorize goals by urgency and importance, focusing your energy on what truly matters." 
                   />
                   <FeatureCard 
                     icon={<Target size={20} />} 

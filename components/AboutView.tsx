@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, Shield, ArrowRight, Info, NotebookPen, Mail } from 'lucide-react';
+import { LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, Shield, ArrowRight, Info, NotebookPen, Mail, Grid2x2 } from 'lucide-react';
 
 const FeatureCard: React.FC<{ icon: React.ReactNode; title: string; description: string }> = ({ icon, title, description }) => (
   <div className="bg-white/60 dark:bg-stone-900/60 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 dark:border-stone-800 shadow-lg shadow-emerald-100/20 dark:shadow-none lg:hover:shadow-xl lg:hover:shadow-emerald-100/40 transition-all duration-300 lg:hover:-translate-y-1">
@@ -70,6 +69,11 @@ const AboutView: React.FC = () => {
               description="Simply type your plans naturally (e.g. 'Gym at 5, then Dinner'), and let Nexus build a conflict-free schedule for you."
             />
             <FeatureCard 
+              icon={<Grid2x2 size={24} />}
+              title="Priority Matrix"
+              description="Use the Eisenhower Matrix to categorize goals by urgency and importance, focusing your energy on what truly matters."
+            />
+            <FeatureCard 
               icon={<Target size={24} />}
               title="Goal Tracking"
               description="Set numeric targets (e.g., 'Read 5 Books') and track progress visually. Use AI to brainstorm actionable goals based on your interests."
@@ -112,11 +116,16 @@ const AboutView: React.FC = () => {
                 />
                 <StepCard 
                   number="3"
+                  title="Prioritize"
+                  text="Use the Matrix to drag-and-drop goals into 4 quadrants based on urgency and importance."
+                />
+                <StepCard 
+                  number="4"
                   title="Plan"
                   text="Use the AI Planner to instantly structure your day or tomorrow from a simple text prompt."
                 />
                 <StepCard 
-                  number="4"
+                  number="5"
                   title="Track"
                   text="Log your habits and update goal progress daily. Consistency creates momentum."
                 />

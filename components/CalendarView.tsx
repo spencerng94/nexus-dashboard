@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CalendarEvent, ImportantDate, Habit, HabitLog } from '../types';
-import { Plus, X, Clock, Save, Calendar as CalendarIcon, Briefcase, User, ChevronLeft, ChevronRight, AlignJustify, Grid, Star, Dumbbell, Trash2, MapPin } from 'lucide-react';
+import { Plus, X, Clock, Save, Calendar as CalendarIcon, Briefcase, User, ChevronLeft, ChevronRight, AlignJustify, Grid, Star, Dumbbell, Trash2, MapPin, Check } from 'lucide-react';
 
 interface CalendarViewProps {
   events: CalendarEvent[];
@@ -25,9 +25,18 @@ export interface EventFormModalProps {
 }
 
 export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose, onSave, onUpdate, onDelete, editingEvent }) => {
+  
+  // Helper to get local date string YYYY-MM-DD
+  const toLocalYMD = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
     title: '',
-    date: new Date().toISOString().split('T')[0],
+    date: toLocalYMD(new Date()),
     startTime: '09:00',
     endTime: '10:00',
     type: 'work',
@@ -60,7 +69,7 @@ export const EventFormModal: React.FC<EventFormModalProps> = ({ isOpen, onClose,
     } else {
       setFormData({
         title: '',
-        date: new Date().toISOString().split('T')[0],
+        date: toLocalYMD(new Date()),
         startTime: '09:00',
         endTime: '10:00',
         type: 'work',
@@ -334,6 +343,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
     return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
   };
 
+  const getCompletedHabitsForDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    return habits.filter(h => !!habitLogs[`${h.id}_${dateString}`]);
+  };
+
   // Helper to generate dynamic styles from Google Calendar color
   const getEventStyle = (event: CalendarEvent, isWeekView = false) => {
       // If no color from google, use default based on type
@@ -418,7 +435,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
            });
 
            // Get completed habits for this day
-           const completedHabits = showHabits ? habits.filter(h => !!habitLogs[`${h.id}_${dateString}`]) : [];
+           const completedHabits = showHabits ? getCompletedHabitsForDate(dateToCheck) : [];
 
            // Dynamic Styles for Cell
            let cellClasses = "bg-white dark:bg-stone-900 border-slate-100 dark:border-stone-800 lg:hover:border-emerald-200 lg:dark:hover:border-emerald-800 lg:hover:shadow-lg";
@@ -544,6 +561,25 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                       <div className={`text-xs md:text-lg font-bold ${isToday ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-stone-200'}`}>
                         {d.getDate()}
                       </div>
+                      {/* Integrated Habit Icons in Header */}
+                      {showHabits && (
+                        <div className="flex flex-wrap justify-center gap-0.5 mt-1.5 animate-in fade-in zoom-in">
+                            {getCompletedHabitsForDate(d).map(h => {
+                                // Extract color class name like "text-emerald-500" -> "emerald"
+                                const colorMatch = h.color.match(/text-(\w+)-500/);
+                                const colorName = colorMatch ? colorMatch[1] : 'slate';
+                                return (
+                                    <span 
+                                        key={h.id} 
+                                        className={`text-[8px] md:text-[10px] p-0.5 rounded-md bg-${colorName}-100 dark:bg-${colorName}-900/40 text-${colorName}-600 dark:text-${colorName}-400`}
+                                        title={h.title}
+                                    >
+                                        {h.icon}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -573,7 +609,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
                     });
 
                     return (
-                      <div key={dayIdx} className={`relative border-r border-slate-100 dark:border-stone-800 h-[${hours.length * rowHeight}px] ${isToday ? 'bg-emerald-50/10 dark:bg-emerald-900/5' : ''}`}>
+                      <div key={dayIdx} className={`relative border-r border-slate-100 dark:border-stone-800 ${isToday ? 'bg-emerald-50/10 dark:bg-emerald-900/5' : ''}`} style={{ height: `${hours.length * rowHeight}px` }}>
                         {/* Hour Lines */}
                         {hours.map(h => (
                           <div key={h} className="h-[60px] border-b border-slate-50 dark:border-stone-800" />
@@ -633,11 +669,34 @@ const CalendarView: React.FC<CalendarViewProps> = ({ events, importantDates, onA
     });
 
     const isToday = currentDate.toDateString() === new Date().toDateString();
+    const dayHabits = getCompletedHabitsForDate(currentDate);
 
     return (
       <div className="flex flex-col h-[600px] overflow-hidden bg-white dark:bg-stone-900 rounded-[2rem] border border-slate-100 dark:border-stone-800 shadow-sm relative">
         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
           <div className="relative min-h-full">
+            {/* Integrated Habits Section for Day View */}
+            {showHabits && dayHabits.length > 0 && (
+                <div className="sticky top-0 z-20 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-slate-100 dark:border-stone-800 p-3 mb-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Check size={14} className="text-emerald-500" strokeWidth={3} />
+                        <span className="text-xs font-bold text-slate-400 dark:text-stone-500 uppercase tracking-wider">Completed Habits</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {dayHabits.map(h => {
+                            const colorMatch = h.color.match(/text-(\w+)-500/);
+                            const colorName = colorMatch ? colorMatch[1] : 'slate';
+                            return (
+                                <div key={h.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border shadow-sm bg-${colorName}-50 dark:bg-${colorName}-900/20 border-${colorName}-100 dark:border-${colorName}-800`}>
+                                    <span className="text-sm">{h.icon}</span>
+                                    <span className={`text-xs font-bold text-${colorName}-700 dark:text-${colorName}-300`}>{h.title}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {isToday && <CurrentTimeLine startHour={startHour} rowHeight={rowHeight} />}
 
             {hours.map(h => (

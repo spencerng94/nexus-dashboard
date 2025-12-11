@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings, ArrowUp, ArrowDown, Eye, EyeOff, LayoutDashboard, Moon, Sun, Clock } from 'lucide-react';
+import { Plus, Loader2, Sparkles, RefreshCw, Target, Dumbbell, Pencil, Smile, Type, Check, X, Settings, ArrowUp, ArrowDown, Eye, EyeOff, LayoutDashboard, Moon, Sun, Clock, Grid2x2 } from 'lucide-react';
 import { Goal, Habit, HabitLog, CalendarEvent, User, ImportantDate, DashboardConfig, BriefingStyle, Theme } from './types';
 import { storageService } from './services/storage';
 import { googleService } from './services/google';
@@ -16,6 +16,7 @@ import PlannerView from './components/PlannerView';
 import { DashboardView, CategoryFilter } from './components/DashboardComponents';
 import { ProgressCard, GoalFormModal, GoalSuggestionCard, SuggestionControl as GoalSuggestionControl } from './components/GoalComponents';
 import { HabitCard, HabitFormModal, HabitHistoryModal, HabitSuggestionCard, SuggestionControl as HabitSuggestionControl } from './components/HabitComponents';
+import { PriorityMatrixView } from './components/PriorityMatrixView';
 
 // Default Dashboard Config
 const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
@@ -183,7 +184,7 @@ export default function App() {
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // Used for Habit History Modal
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-  const [goalDefaultValues, setGoalDefaultValues] = useState<{title?: string, category?: string, icon?: string} | undefined>(undefined);
+  const [goalDefaultValues, setGoalDefaultValues] = useState<{title?: string, category?: string, icon?: string, priorityQuadrant?: 'q1' | 'q2' | 'q3' | 'q4'} | undefined>(undefined);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [habitDefaultValues, setHabitDefaultValues] = useState<{title?: string, category?: string, icon?: string} | undefined>(undefined);
   const [viewingHabitHistory, setViewingHabitHistory] = useState<Habit | null>(null);
@@ -488,6 +489,12 @@ export default function App() {
       storageService.saveGoals(updatedGoals);
   };
 
+  const handleUpdateGoalQuadrant = (goalId: string, quadrant: 'q1' | 'q2' | 'q3' | 'q4' | undefined) => {
+      const updatedGoals = goals.map(g => g.id === goalId ? { ...g, priorityQuadrant: quadrant } : g);
+      setGoals(updatedGoals);
+      storageService.saveGoals(updatedGoals);
+  };
+
   const loadGoalSuggestions = async (topic?: string) => {
     setIsLoadingSuggestions(true);
     const existingTitles = goals.map(g => g.title);
@@ -725,9 +732,44 @@ export default function App() {
     }
   };
 
-  const handleBatchAddEvents = async (newEvents: Omit<CalendarEvent, 'id'>[]) => {
-     for (const evt of newEvents) {
-         await handleAddEvent(evt);
+  const handleBatchAddEvents = async (newEventsData: Omit<CalendarEvent, 'id'>[]) => {
+     // 1. Create Optimistic Events with Temp IDs
+     const tempEvents = newEventsData.map(evt => ({
+         ...evt,
+         id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+     }));
+
+     // 2. Update State via Functional Update (Fixes Stale Closure Bug in Loop)
+     setEvents(prev => {
+         const updated = [...prev, ...tempEvents].sort((a, b) => 
+            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+         );
+         
+         // If guest, persist immediately
+         if (!user?.accessToken || user.isGuest) {
+             storageService.saveEvents(updated);
+         }
+         return updated;
+     });
+
+     // 3. Sync to Google
+     if (user?.accessToken && !user.isGuest) {
+         for (const tempEvent of tempEvents) {
+             try {
+                 // Remove temp ID before sending to Google
+                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                 const { id, ...eventBody } = tempEvent; 
+                 const createdEvent = await googleService.createEvent(user.accessToken, eventBody);
+                 
+                 if (createdEvent) {
+                     // Replace temp event with real event from Google
+                     setEvents(prev => prev.map(e => e.id === tempEvent.id ? createdEvent : e));
+                 }
+             } catch (e) {
+                 console.error("Failed to batch save event", e);
+                 // Keep local optimistic version if sync fails (or add error handling UI)
+             }
+         }
      }
   };
 
@@ -854,7 +896,7 @@ export default function App() {
         onThemeToggle={toggleTheme}
       />
       
-      <main className="md:pl-[112px] lg:pl-[280px] p-6 pb-32 md:pb-10 min-h-screen transition-all duration-300">
+      <main className="md:pl-[80px] lg:pl-[240px] p-6 pb-32 md:pb-10 min-h-screen transition-all duration-300">
         {activeTab === 'dashboard' && (
           <DashboardView 
             goals={goals} 
@@ -896,6 +938,32 @@ export default function App() {
                 existingEvents={events} 
                 onAddEvents={handleBatchAddEvents} 
             />
+        )}
+        {activeTab === 'matrix' && (
+           <PriorityMatrixView 
+              goals={goals}
+              onUpdateGoalQuadrant={handleUpdateGoalQuadrant}
+              onAddGoal={(quadrant) => {
+                  setGoalDefaultValues({ priorityQuadrant: quadrant });
+                  setEditingGoal(null);
+                  setIsGoalModalOpen(true);
+              }}
+              onEditGoal={(goal) => {
+                  setEditingGoal(goal);
+                  setIsGoalModalOpen(true);
+              }}
+           />
+        )}
+        {activeTab === 'calendar' && (
+           <CalendarView 
+              events={events}
+              importantDates={importantDates}
+              onAddEvent={handleAddEvent}
+              onEditEvent={handleEditEvent}
+              onDeleteEvent={handleDeleteEvent}
+              habits={habits}
+              habitLogs={habitLogs}
+           />
         )}
         {activeTab === 'goals' && (
           <div className="max-w-[1600px] mx-auto">
@@ -968,17 +1036,6 @@ export default function App() {
                )}
              </div>
           </div>
-        )}
-        {activeTab === 'calendar' && (
-          <CalendarView 
-            events={events} 
-            importantDates={importantDates} 
-            onAddEvent={handleAddEvent}
-            onEditEvent={handleEditEvent}
-            onDeleteEvent={handleDeleteEvent}
-            habits={habits}
-            habitLogs={habitLogs}
-          />
         )}
         {activeTab === 'habits' && (
           <div className="max-w-[1600px] mx-auto">

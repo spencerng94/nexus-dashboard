@@ -1,7 +1,5 @@
-
-
 import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2, Plus, Minus, X, Save, Sparkles, Loader2, ArrowRight, Search, Link as LinkIcon, Flame, CheckSquare, Square } from 'lucide-react';
+import { Pencil, Trash2, Plus, Minus, X, Save, Sparkles, Loader2, ArrowRight, Search, Link as LinkIcon, Flame, CheckSquare, Square, AlertCircle, Calendar, Users, GripHorizontal, MousePointerClick } from 'lucide-react';
 import { Goal, Habit, Subgoal } from '../types';
 import { generateSuggestions } from '../services/gemini';
 
@@ -240,7 +238,12 @@ interface GoalFormModalProps {
   onSave: (data: Omit<Goal, 'id' | 'progress'>) => void;
   editingGoal: Goal | null;
   existingGoals?: Goal[];
-  defaultValues?: { title?: string, category?: string, icon?: string };
+  defaultValues?: { 
+      title?: string, 
+      category?: string, 
+      icon?: string,
+      priorityQuadrant?: 'q1' | 'q2' | 'q3' | 'q4'
+  };
 }
 
 export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, onSave, editingGoal, existingGoals = [], defaultValues }) => {
@@ -250,7 +253,8 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
     target: 10,
     unit: 'pts',
     color: 'text-blue-500 bg-blue-500',
-    icon: '🎯'
+    icon: '🎯',
+    priorityQuadrant: undefined as 'q1' | 'q2' | 'q3' | 'q4' | undefined
   });
   
   const [subgoals, setSubgoals] = useState<Subgoal[]>([]);
@@ -270,7 +274,8 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
         target: editingGoal.target,
         unit: editingGoal.unit || 'pts',
         color: editingGoal.color,
-        icon: editingGoal.icon || '🎯'
+        icon: editingGoal.icon || '🎯',
+        priorityQuadrant: editingGoal.priorityQuadrant
       });
       setSubgoals(editingGoal.subgoals || []);
     } else if (defaultValues) {
@@ -280,11 +285,12 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
         target: 10,
         unit: 'pts',
         color: 'text-blue-500 bg-blue-500',
-        icon: defaultValues.icon || '🎯'
+        icon: defaultValues.icon || '🎯',
+        priorityQuadrant: defaultValues.priorityQuadrant
       });
       setSubgoals([]);
     } else {
-      setFormData({ title: '', category: 'Personal', target: 10, unit: 'pts', color: 'text-blue-500 bg-blue-500', icon: '🎯' });
+      setFormData({ title: '', category: 'Personal', target: 10, unit: 'pts', color: 'text-blue-500 bg-blue-500', icon: '🎯', priorityQuadrant: undefined });
       setSubgoals([]);
     }
     setSuggestions([]);
@@ -396,6 +402,72 @@ export const GoalFormModal: React.FC<GoalFormModalProps> = ({ isOpen, onClose, o
                       placeholder="e.g. Read 30 mins"
                       autoFocus
                     />
+                </div>
+
+                {/* Priority Matrix Selector */}
+                <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-stone-400 mb-2 uppercase tracking-wide">Priority (Matrix)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setFormData({...formData, priorityQuadrant: formData.priorityQuadrant === 'q1' ? undefined : 'q1'})}
+                            className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                formData.priorityQuadrant === 'q1' 
+                                ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-500 text-rose-800 dark:text-rose-100 shadow-md' 
+                                : 'bg-white dark:bg-stone-800 border-transparent text-slate-500 dark:text-stone-400 hover:bg-slate-50 dark:hover:bg-stone-700'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <AlertCircle size={14} /> <span className="text-xs font-bold uppercase">Do First</span>
+                            </div>
+                            <p className="text-[10px] opacity-70 leading-tight">Urgent & Important</p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setFormData({...formData, priorityQuadrant: formData.priorityQuadrant === 'q2' ? undefined : 'q2'})}
+                            className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                formData.priorityQuadrant === 'q2' 
+                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-800 dark:text-blue-100 shadow-md' 
+                                : 'bg-white dark:bg-stone-800 border-transparent text-slate-500 dark:text-stone-400 hover:bg-slate-50 dark:hover:bg-stone-700'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <Calendar size={14} /> <span className="text-xs font-bold uppercase">Schedule</span>
+                            </div>
+                            <p className="text-[10px] opacity-70 leading-tight">Important, Not Urgent</p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setFormData({...formData, priorityQuadrant: formData.priorityQuadrant === 'q3' ? undefined : 'q3'})}
+                            className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                formData.priorityQuadrant === 'q3' 
+                                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-800 dark:text-amber-100 shadow-md' 
+                                : 'bg-white dark:bg-stone-800 border-transparent text-slate-500 dark:text-stone-400 hover:bg-slate-50 dark:hover:bg-stone-700'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <Users size={14} /> <span className="text-xs font-bold uppercase">Delegate</span>
+                            </div>
+                            <p className="text-[10px] opacity-70 leading-tight">Urgent, Not Important</p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setFormData({...formData, priorityQuadrant: formData.priorityQuadrant === 'q4' ? undefined : 'q4'})}
+                            className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                formData.priorityQuadrant === 'q4' 
+                                ? 'bg-slate-100 dark:bg-stone-700 border-slate-500 text-slate-800 dark:text-slate-100 shadow-md' 
+                                : 'bg-white dark:bg-stone-800 border-transparent text-slate-500 dark:text-stone-400 hover:bg-slate-50 dark:hover:bg-stone-700'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <Trash2 size={14} /> <span className="text-xs font-bold uppercase">Eliminate</span>
+                            </div>
+                            <p className="text-[10px] opacity-70 leading-tight">Neither</p>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Category & Target */}

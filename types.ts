@@ -16,6 +16,7 @@ export interface Goal {
   color: string;
   icon: string;
   subgoals?: Subgoal[];
+  priorityQuadrant?: 'q1' | 'q2' | 'q3' | 'q4';
 }
 
 export interface Habit {

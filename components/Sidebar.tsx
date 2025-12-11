@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { LayoutDashboard, Calendar as CalendarIcon, Target, Dumbbell, User as UserIcon, LogOut, Info, NotebookPen, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Target, Dumbbell, User as UserIcon, LogOut, Info, NotebookPen, Moon, Sun, Grid2x2 } from 'lucide-react';
 import { User } from '../types';
 
 interface SidebarProps {
@@ -18,6 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
     { id: 'calendar', icon: CalendarIcon, label: 'Calendar' },
     { id: 'goals', icon: Target, label: 'Goals' },
     { id: 'habits', icon: Dumbbell, label: 'Habits' },
+    { id: 'matrix', icon: Grid2x2, label: 'Matrix' },
     { id: 'about', icon: Info, label: 'About' },
   ];
 
@@ -122,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onSign
 
         <button 
           onClick={onSignOut} 
-          className="group relative flex items-center justify-center lg:justify-start p-2 md:p-0 lg:px-4 lg:py-3.5 md:w-12 md:h-12 lg:w-full lg:h-auto rounded-xl md:rounded-2xl text-slate-400 dark:text-stone-500 lg:hover:text-rose-500 dark:lg:hover:text-rose-400 lg:hover:bg-rose-50 dark:lg:hover:bg-rose-900/10 transition-all duration-200 shrink-0"
+          className="hidden md:flex group relative items-center justify-center lg:justify-start p-2 md:p-0 lg:px-4 lg:py-3.5 md:w-12 md:h-12 lg:w-full lg:h-auto rounded-xl md:rounded-2xl text-slate-400 dark:text-stone-500 lg:hover:text-rose-500 dark:lg:hover:text-rose-400 lg:hover:bg-rose-50 dark:lg:hover:bg-rose-900/10 transition-all duration-200 shrink-0"
         >
           <LogOut size={22} className="shrink-0 md:w-5 md:h-5 lg:w-5 lg:h-5" />
           <span className="ml-3 font-semibold text-[14px] hidden lg:block">Sign Out</span>
