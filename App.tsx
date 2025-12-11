@@ -917,7 +917,8 @@ export default function App() {
         onThemeToggle={toggleTheme}
       />
       
-      <main className="md:pl-[80px] lg:pl-[240px] p-6 pb-32 md:pb-10 min-h-screen transition-all duration-300">
+      {/* Updated Main Padding for Tablet/Desktop */}
+      <main className="md:pl-[120px] lg:pl-[290px] p-6 pb-32 md:pb-10 min-h-screen transition-all duration-300">
         {activeTab === 'dashboard' && (
           <DashboardView 
             goals={goals} 

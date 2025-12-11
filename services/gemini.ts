@@ -95,7 +95,7 @@ export const generateDailyBriefing = async (
     let styleInstructions = "";
     switch (style) {
         case 'concise':
-            styleInstructions = "Be brief but include critical details. Summarize today's schedule items and top 2 priorities in a dense, informative paragraph. Do not skip time-sensitive events. No HTML lists.";
+            styleInstructions = "Be direct and efficient. Use a compact list for the day's schedule and top priorities. No filler words. Focus on 'What' and 'When'.";
             break;
         case 'thorough':
             styleInstructions = "Be comprehensive and detailed. Analyze the schedule, goals, and habits in depth. Use structured <ul> lists. Provide specific tactical advice for the day. Executive tone.";
@@ -124,12 +124,12 @@ export const generateDailyBriefing = async (
 
       GENERAL INSTRUCTIONS:
       1. Output raw HTML only. No Markdown block markers.
-      2. If style is 'standard', 'fun', 'motivating', or 'thorough', use these classes:
+      2. Use the following classes for styling (including concise mode):
          - Opening: <p class="text-xl md:text-2xl font-medium text-slate-800 dark:text-slate-100 mb-6 leading-tight">
          - Headers: <h4 class="text-xs font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-widest mb-3 mt-6 border-b border-emerald-100 dark:border-emerald-500/30 pb-1">
          - List Items: <li class="text-sm md:text-base text-slate-600 dark:text-slate-300 mb-2 pl-2 border-l-2 border-slate-100 dark:border-slate-700 block">
          - Highlights: <span class="text-emerald-700 dark:text-emerald-400 font-bold">
-      3. If style is 'concise', return a single <p class="text-lg text-slate-700 dark:text-slate-300 font-medium leading-relaxed"> block containing the critical details.
+      3. For 'concise' mode, keep the opening sentence very short and use bullet points for clarity, but keep them brief.
       4. Ensure lists do NOT use flexbox to prevent wrapping issues.
     `;
 
