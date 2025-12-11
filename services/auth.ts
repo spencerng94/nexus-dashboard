@@ -1,4 +1,3 @@
-
 import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 import { User } from '../types';
@@ -82,32 +81,49 @@ export const authService = {
    * Auth State Observer
    */
   onUserChanged(callback: (user: User | null) => void) {
-    return onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
-      if (fbUser) {
-        try {
-          // Fetch full profile including theme/config preferences
-          const profile = await firestoreService.getUserProfile(fbUser.uid);
-          
-          // Try to recover access token from local storage (since Firebase doesn't persist provider tokens)
-          const storedToken = localStorage.getItem(TOKEN_KEY);
+    return onAuthStateChanged(
+      auth, 
+      async (fbUser: FirebaseUser | null) => {
+        if (fbUser) {
+          try {
+            // Fetch full profile including theme/config preferences
+            const profile = await firestoreService.getUserProfile(fbUser.uid);
+            
+            // Try to recover access token from local storage (since Firebase doesn't persist provider tokens)
+            const storedToken = localStorage.getItem(TOKEN_KEY);
 
-          const appUser: User = {
-            uid: fbUser.uid,
-            displayName: fbUser.displayName,
-            photoURL: fbUser.photoURL,
-            email: fbUser.email,
-            accessToken: storedToken || undefined,
-            isGuest: false,
-            ...profile // Spread saved preferences (theme, config, avatar)
-          };
-          callback(appUser);
-        } catch (e) {
-          console.error("Error hydrating user:", e);
+            const appUser: User = {
+              uid: fbUser.uid,
+              displayName: fbUser.displayName,
+              photoURL: fbUser.photoURL,
+              email: fbUser.email,
+              accessToken: storedToken || undefined,
+              isGuest: false,
+              ...profile // Spread saved preferences (theme, config, avatar)
+            };
+            callback(appUser);
+          } catch (e) {
+            console.error("Error hydrating user:", e);
+            // Fallback to basic user if hydration fails
+            const storedToken = localStorage.getItem(TOKEN_KEY);
+            callback({
+                uid: fbUser.uid,
+                displayName: fbUser.displayName,
+                photoURL: fbUser.photoURL,
+                email: fbUser.email,
+                accessToken: storedToken || undefined,
+                isGuest: false,
+                theme: 'auto'
+            });
+          }
+        } else {
           callback(null);
         }
-      } else {
+      },
+      (error) => {
+        console.error("Auth state change error:", error);
         callback(null);
       }
-    });
+    );
   }
 };

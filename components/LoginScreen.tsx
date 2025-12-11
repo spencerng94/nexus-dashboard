@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { AlertTriangle, Loader2, User as UserIcon, LayoutDashboard, Target, Dumbbell, Calendar, Sparkles, NotebookPen, ArrowLeft, Info, Grid2x2 } from 'lucide-react';
 
@@ -48,6 +46,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
       setIsLoading(false);
     }
   };
+
+  const isUnauthorizedDomain = loginError.includes("auth/unauthorized-domain");
 
   if (showAbout) {
     return (
@@ -160,7 +160,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onGuestLogin, loginE
            <div className="mb-6 p-4 bg-amber-50/90 backdrop-blur-sm text-amber-800 text-xs md:text-sm rounded-2xl border border-amber-200 flex items-start gap-3 text-left animate-in fade-in slide-in-from-top-2 shadow-sm">
              <AlertTriangle size={18} className="shrink-0 mt-0.5 text-amber-600" />
              <div className="flex-1 min-w-0">
-               <pre className="whitespace-pre-wrap font-medium leading-relaxed block font-sans text-[12px]">{loginError}</pre>
+               {isUnauthorizedDomain ? (
+                 <>
+                   <p className="font-bold text-sm mb-1">Domain Not Authorized</p>
+                   <p className="leading-relaxed mb-2">This domain needs to be added to Firebase:</p>
+                   <ol className="list-decimal pl-4 space-y-1 mb-2">
+                     <li>Go to Firebase Console &gt; Authentication &gt; Settings &gt; Authorized domains</li>
+                     <li>Add this domain: <strong>{window.location.hostname}</strong></li>
+                   </ol>
+                   <p>Or continue as guest below.</p>
+                 </>
+               ) : (
+                 <pre className="whitespace-pre-wrap font-medium leading-relaxed block font-sans text-[12px]">{loginError}</pre>
+               )}
              </div>
            </div>
         )}

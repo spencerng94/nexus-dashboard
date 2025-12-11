@@ -198,11 +198,27 @@ export default function App() {
 
   // Auth Listener
   useEffect(() => {
+    // Safety timeout to prevent infinite loading if Firebase hangs
+    const safetyTimeout = setTimeout(() => {
+        setIsLoadingAuth(prev => {
+            if (prev) {
+                console.warn("Auth check timed out. Defaulting to logged out.");
+                return false;
+            }
+            return prev;
+        });
+    }, 4000);
+
     const unsubscribe = authService.onUserChanged((authUser) => {
         setUser(authUser);
         setIsLoadingAuth(false);
+        clearTimeout(safetyTimeout);
     });
-    return () => unsubscribe();
+    
+    return () => {
+        unsubscribe();
+        clearTimeout(safetyTimeout);
+    };
   }, []);
 
   // Theme Sync
